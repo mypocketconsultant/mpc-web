@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 export interface SuggestedPrompt {
   id: string;
   title: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
+  iconImage?: string;
   bgColor: string;
   iconColor: string;
+  href?: string;
 }
 
 interface SuggestedPromptsProps {
@@ -22,37 +25,66 @@ export default function SuggestedPrompts({
   onSelect,
 }: SuggestedPromptsProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-        <div>
-          <h3 className="text-base font-semibold text-gray-900 mb-4">
-            Today&apos;s suggested prompt
-          </h3>
-          <div className="space-y-3">
-            {prompts.map((prompt) => (
-              <button
-                key={prompt.id}
-                type="button"
-                onClick={() => onSelect(prompt.id)}
-                aria-pressed={selectedPrompt === prompt.id}
-                className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all border-2 ${
-                  selectedPrompt === prompt.id
-                    ? "bg-gradient-to-r from-[#E8D5FF] to-[#F0E5FF] border-[#9B7FFF]"
-                    : `${prompt.bgColor} border-transparent hover:border-gray-200`
-                }`}
+    <div className="w-full my-10">
+      <h3 className="text-center text-sm mt text-gray-500 mb-4">
+        Today&apos;s suggested prompt
+      </h3>
+      
+      <div className="grid grid-cols-1 mt-10 md:grid-cols-3 gap-4">
+        {prompts.map((prompt) => {
+          const className = `flex flex-col items-start gap-3 p-5 rounded-2xl transition-all border bg-white ${
+            selectedPrompt === prompt.id
+              ? "border-[#9B7FFF] shadow-md"
+              : "border-gray-200 hover:shadow-md"
+          }`;
+
+          const content = (
+            <>
+              {/* Icon */}
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0"
+                style={{ backgroundColor: prompt.iconColor }}
               >
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full ${prompt.bgColor} flex-shrink-0`}
-                >
-                  <span className={prompt.iconColor}>{prompt.icon}</span>
+                {prompt.iconImage ? (
+                  <img 
+                    src={prompt.iconImage} 
+                    alt="" 
+                    className="w-12 h-12 object-contain" 
+                  />
+                ) : (
+                  <span className="text-2xl">{prompt.icon}</span>
+                )}
+              </div>
+
+              {/* Title */}
+              <span className="text-left text-sm font-semibold text-gray-900 leading-tight">
+                {prompt.title}
+              </span>
+            </>
+          );
+
+          if (prompt.href) {
+            return (
+              <Link key={prompt.id} href={prompt.href}>
+                <div className={className}>
+                  {content}
                 </div>
-                <span className="text-left text-sm font-medium text-gray-700">
-                  {prompt.title}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={prompt.id}
+              type="button"
+              onClick={() => onSelect(prompt.id)}
+              aria-pressed={selectedPrompt === prompt.id}
+              className={className}
+            >
+              {content}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

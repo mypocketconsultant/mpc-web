@@ -1,18 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Mic } from "lucide-react";
 
 interface InputFooterProps {
   placeholder?: string;
   onSend?: (message: string) => void;
   onAttach?: () => void;
+  onMicrophone?: () => void;
 }
 
 export default function InputFooter({
   placeholder = "Ask me to optimize your LinkedIn...",
   onSend,
   onAttach,
+  onMicrophone,
 }: InputFooterProps) {
   const [inputValue, setInputValue] = useState("");
 
@@ -31,12 +33,12 @@ export default function InputFooter({
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex gap-3">
+    <div className=" border-gray-200 bg-white p-6">
+      <div className="max-w-[1100px] mx-auto">
+        <div className="flex gap-3 items-center">
           <button
             onClick={onAttach}
-            className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex-shrink-0 p-4 shadow-md hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Attach file"
           >
             <Paperclip className="h-5 w-5 text-gray-600" />
@@ -47,14 +49,14 @@ export default function InputFooter({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 py-3 placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]"
+            className="flex-1 rounded-full border shadow-md border-gray-300 bg-white px-4 py-4 placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]"
           />
           <button
-            onClick={handleSend}
-            className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white hover:from-[#6B4FFF] hover:to-[#400A88] transition-all flex items-center justify-center"
-            aria-label="Send message"
+            onClick={onMicrophone}
+            className="flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-800"
+            aria-label="Voice input"
           >
-            <Send className="h-4 w-4" />
+            <Mic className="h-5 w-5" />
           </button>
         </div>
       </div>

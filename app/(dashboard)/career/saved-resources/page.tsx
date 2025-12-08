@@ -7,6 +7,7 @@ import Link from "next/link";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import DailyTips from "../components/DailyTips";
+import SuggestedPrompts from "../components/SuggestedPrompts";
 import tipsIcon from "@/public/daily.png";
 
 export default function SavedResourcesPage() {
@@ -40,19 +41,19 @@ export default function SavedResourcesPage() {
   const suggestedPrompts = [
     {
       id: 1,
-      icon: "🔄",
+      iconImage: "/daily.png",
       title: "Run a 10-sec scan of my CV",
       subtitle: "(Upload CV)",
     },
     {
       id: 2,
-      icon: "📄",
+      iconImage: "/ai.png",
       title: "Create New Resume",
       subtitle: "",
     },
     {
       id: 3,
-      icon: "✍️",
+      iconImage: "/career.png",
       title: "Write a cover letter",
       subtitle: "",
     },
@@ -81,33 +82,42 @@ export default function SavedResourcesPage() {
             Career Advisory / Saved Resources
           </Link>
 
+          <hr className="my-14" />
+
           <div className="flex justify-between gap-8">
             {/* Left Content - Recent Documents */}
             <div className="w-[500px]">
               <div className=" rounded-3xl p-8 ">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center  gap-5 mb-8">
                   <h2 className="text-lg font-bold text-gray-900">
                     Recent documents
                   </h2>
-                  <button className="text-sm font-semibold text-[#5A3FFF] hover:text-[#300878] transition-colors">
+                  <button className="text-sm font-semibold text-[#656565] hover:text-[#656565] transition-colors">
                     see all...
                   </button>
                 </div>
 
                 {/* Documents List */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentDocuments.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all"
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all group"
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <FileText className="w-5 h-5 text-[#5A3FFF] flex-shrink-0" />
-                        <span className="font-medium text-gray-900 text-sm">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Document icon with background */}
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                        </div>
+
+                        {/* Document title */}
+                        <span className="font-medium text-gray-700 text-sm truncate">
                           {doc.title}
                         </span>
                       </div>
-                      <button className="text-xs font-semibold text-[#5A3FFF] hover:text-[#300878] transition-colors whitespace-nowrap ml-4">
+
+                      {/* Action button */}
+                      <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-nowrap ml-4">
                         {doc.promptHistory}
                       </button>
                     </div>
@@ -121,31 +131,19 @@ export default function SavedResourcesPage() {
               <DailyTips dailyTip={dailyTip} tipsIcon={tipsIcon} />
             </div>
           </div>
-
+          <hr className="my-4" />
           {/* Suggested Prompts Section */}
-          <div className="mt-16">
-            <h3 className="text-center text-gray-500 text-sm font-medium mb-8">
-              Today's suggested prompt
-            </h3>
-
-            <div className="grid grid-cols-3 gap-6 mb-12">
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt.id}
-                  onClick={() => setSelectedPrompt(prompt.id.toString())}
-                  className="bg-gradient-to-br from-[#E8D5FF] to-[#F0E6FF] rounded-3xl p-8 text-center hover:shadow-lg transition-all group"
-                >
-                  <div className="text-4xl mb-4">{prompt.icon}</div>
-                  <h4 className="font-semibold text-gray-900 text-sm mb-2">
-                    {prompt.title}
-                  </h4>
-                  {prompt.subtitle && (
-                    <p className="text-xs text-gray-600">{prompt.subtitle}</p>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SuggestedPrompts
+            prompts={suggestedPrompts.map((prompt) => ({
+              id: prompt.id.toString(),
+              title: prompt.title,
+              iconImage: prompt.iconImage,
+              bgColor: "bg-gradient-to-br from-[#E8D5FF] to-[#F0E6FF]",
+              iconColor: "text-2xl",
+            }))}
+            selectedPrompt={selectedPrompt}
+            onSelect={(id) => setSelectedPrompt(id)}
+          />
         </div>
       </main>
 

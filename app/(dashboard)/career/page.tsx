@@ -75,32 +75,29 @@ export default function HomePage() {
     },
   ];
 
-  const suggestedPrompts: SuggestedPrompt[] = [
+    const suggestedPrompts = [
     {
-      id: "resume-report",
-      title: "Create a career summary report",
-      icon: <FileText className="h-5 w-5" />,
-      bgColor: "bg-[#E8F0FF]",
-      iconColor: "text-[#4A90E2]",
+      id: 1,
+      iconImage: "/daily.png",
+      title: "Run a 10-sec scan of my CV",
+      subtitle: "(Upload CV)",
     },
     {
-      id: "linkedin",
-      title: "Optimize my LinkedIn profile",
-      icon: <Share2 className="h-5 w-5" />,
-      bgColor: "bg-[#F3E8FF]",
-      iconColor: "text-[#8B5CF6]",
+      id: 2,
+      iconImage: "/ai.png",
+      title: "Create New Resume",
+      subtitle: "",
     },
     {
-      id: "performance",
-      title: "Create a performance review summary",
-      icon: <Lightbulb className="h-5 w-5" />,
-      bgColor: "bg-[#FFF5E6]",
-      iconColor: "text-[#F59E0B]",
+      id: 3,
+      iconImage: "/career.png",
+      title: "Write a cover letter",
+      subtitle: "",
     },
   ];
 
   return (
-    <div className="flex flex-col  h-full bg-white">
+    <div className="flex flex-col  h-full ">
       <Header title={getTitleFromPath(pathname)} />
       {/* Main Content */}
       <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide">
@@ -122,17 +119,19 @@ export default function HomePage() {
             tipsIcon={tipsIcon}
           />
 
+          <hr className="" />
           {/* Today's Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              {/* Today's Suggested Prompts */}
-              {/* <SuggestedPrompts
-                prompts={suggestedPrompts}
-                selectedPrompt={selectedPrompt}
-                onSelect={setSelectedPrompt}
-              /> */}
-            </div>
-          </div>
+          <SuggestedPrompts
+            prompts={suggestedPrompts.map((prompt) => ({
+              id: prompt.id.toString(),
+              title: prompt.title,
+              iconImage: prompt.iconImage,
+              bgColor: "bg-gradient-to-br from-[#E8D5FF] to-[#F0E6FF]",
+              iconColor: "text-2xl",
+            }))}
+            selectedPrompt={selectedPrompt}
+            onSelect={(id) => setSelectedPrompt(id)}
+          />
         </div>
       </main>
 

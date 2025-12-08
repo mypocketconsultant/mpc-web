@@ -145,6 +145,11 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {children}
         </main>
+
+        {/* Footer */}
+        <div className="bg-white border-t border-gray-200 px-6 py-4">
+          <h1 className="text-center text-sm text-gray-600">My Pocket Consultant v 1.0</h1>
+        </div>
       </div>
     </div>
   )
