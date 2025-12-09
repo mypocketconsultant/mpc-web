@@ -33,7 +33,7 @@ export default function InputFooter({
   };
 
   return (
-    <div className=" border-gray-200 bg-white p-6">
+    <div className="  p-6">
       <div className="max-w-[1100px] mx-auto">
         <div className="flex gap-3 items-center">
           <button

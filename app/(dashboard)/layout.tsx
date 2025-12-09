@@ -52,7 +52,7 @@ export default function DashboardLayout({
   const NavLink = ({ icon: Icon, label, href, active = false }: any) => (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-4 py-4 rounded-full transition-all font-medium ${
+      className={`flex items-center gap-3 px-2 py-4 rounded-full transition-all font-medium ${
         active
           ? "bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg"
           : "text-gray-700 hover:bg-gray-100"
@@ -60,7 +60,7 @@ export default function DashboardLayout({
       style={active ? { backgroundColor: '#5A3FFF' } : {}}
     >
       <Icon className="h-5 w-5 flex-shrink-0" />
-      <span className="text-sm">{label}</span>
+      {sidebarOpen && <span className="text-sm">{label}</span>}
     </Link>
   )
 
@@ -68,16 +68,20 @@ export default function DashboardLayout({
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg border-r border-gray-200 overflow-y-auto transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-40 bg-white shadow-lg border-r border-gray-200 overflow-y-auto transition-all duration-300 ease-in-out md:static md:translate-x-0 ${
+          sidebarOpen ? "w-64 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"
         }`}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {/* Header */}
         <div className="flex flex-col gap-8 px-4 pt-6 pb-2">
-          <button className="self-start p-2 mb-2" aria-label="Menu">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="self-start p-2 mb-2 hover:bg-gray-100 rounded-lg transition-colors" 
+            aria-label="Menu"
+          >
             {/* Hamburger icon SVG */}
-         <RiMenuFold2Line className="text-2xl" />
+           <RiMenuFold2Line className="text-2xl" />
           </button>
           <img src="/LogoSqu.png" alt="My Pocket Consultant" className="w-32 h-auto mx-auto" />
         </div>
@@ -93,9 +97,11 @@ export default function DashboardLayout({
 
           {/* Modules Section */}
           <div>
-            <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Modules
-            </h3>
+            {sidebarOpen && (
+              <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Modules
+              </h3>
+            )}
             <div className="space-y-2">
               {modules.map((item) => (
                 <NavLink key={item.href} {...item} active={pathname === item.href} />
@@ -104,13 +110,15 @@ export default function DashboardLayout({
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200" />
+          {sidebarOpen && <div className="border-t border-gray-200" />}
 
           {/* Settings Section */}
           <div>
-            <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Settings
-            </h3>
+            {sidebarOpen && (
+              <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Settings
+              </h3>
+            )}
             <div className="space-y-2">
               {settings.map((item) => (
                 <NavLink key={item.href} {...item} active={pathname === item.href} />

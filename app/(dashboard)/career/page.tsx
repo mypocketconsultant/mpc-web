@@ -75,7 +75,7 @@ export default function HomePage() {
     },
   ];
 
-    const suggestedPrompts = [
+  const suggestedPrompts = [
     {
       id: 1,
       iconImage: "/daily.png",
@@ -103,11 +103,13 @@ export default function HomePage() {
       <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Go back home */}
-          <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8">
-            <ChevronLeft className="h-4 w-4" />
-            <span>Go back home</span>
-          </button>
-
+          <Link href="/home">
+            <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors">
+              <ChevronLeft className="h-4 w-4" />
+              <span>Go back home</span>
+            </button>
+          </Link>
+          <hr className="my-10" />
           {/* Quick Links Section */}
           <QuickLinksSection
             quickLinks={quickLinks}

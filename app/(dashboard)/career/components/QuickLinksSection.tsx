@@ -29,7 +29,7 @@ export default function QuickLinksSection({
 }: QuickLinksSectionProps) {
   return (
     <section className="mb-12">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Quick links</h2>
+      <h2 className="text-lg font-bold text-gray-900 mb-6">Quick links</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Quick Links Grid - Left Side (2 cols) */}
