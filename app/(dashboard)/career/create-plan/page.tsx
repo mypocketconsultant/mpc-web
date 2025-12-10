@@ -8,10 +8,33 @@ import Header from "@/app/components/header";
 import TimelineWidget from "../components/TimelineWidget";
 import AIEditSidebar from "../components/AIEditSidebar";
 
+interface Message {
+  id: string;
+  type: "user" | "assistant";
+  content: string;
+  file?: {
+    name: string;
+    size: string;
+  };
+}
+
 export default function CreatePlanPage() {
   const pathname = usePathname();
   const [viewType, setViewType] = useState<"week" | "month">("week");
-  const [aiInput, setAiInput] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      type: "user",
+      content: "Help me plan my career this week",
+    },
+    {
+      id: "2",
+      type: "assistant",
+      content:
+        "I can help you create an effective career plan. Let's start with your priorities.",
+    },
+  ]);
 
   const getTitleFromPath = (path: string) => {
     if (path.includes("/create-plan")) return "Career Planner";
@@ -126,21 +149,25 @@ export default function CreatePlanPage() {
             Career Advisory / Career Planner
           </Link>
 
-<hr  className="my-10" />
+          <hr className="my-10" />
           <div className="grid grid-cols-12 gap-8">
             {/* Left Sidebar - AI Editor */}
             <div className="col-span-5 sticky top-8 h-fit">
               <AIEditSidebar
-                title="Edit with AI"
-                resumeTitle="Remi Ladi Resume.pdf"
-                resumeSize="55kb"
-                updatedResumeTitle="Remi Ladi Resume / CV"
-                placeholder="Ask me to modify a plan..."
-                inputValue={aiInput}
-                onInputChange={setAiInput}
-                onSend={(message) => console.log("Sent:", message)}
-                onAttach={() => console.log("Attach clicked")}
-                onMicrophone={() => console.log("Microphone clicked")}
+                messages={messages}
+                inputValue={inputValue}
+                onInputChange={setInputValue}
+                onSend={(msg) => {
+                  setMessages([
+                    ...messages,
+                    {
+                      id: Date.now().toString(),
+                      type: "user",
+                      content: msg,
+                    },
+                  ]);
+                  setInputValue("");
+                }}
               />
             </div>
 

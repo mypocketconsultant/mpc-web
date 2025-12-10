@@ -8,13 +8,35 @@ import Header from "@/app/components/header";
 import AIEditSidebar from "../components/AIEditSidebar";
 import CreateGoalForm from "../components/CreateGoalForm";
 
+interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  file?: {
+    name: string;
+    size: string;
+  };
+}
+
 export default function CreateGoalPage() {
   const pathname = usePathname();
   const [goalTitle, setGoalTitle] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("08:00 am");
-  const [aiInput, setAiInput] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      type: 'user',
+      content: 'Help me create a goal for this week',
+    },
+    {
+      id: '2',
+      type: 'assistant',
+      content: "I can help you create an actionable goal. What would you like to focus on?"
+    }
+  ]);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
 
@@ -49,20 +71,6 @@ export default function CreateGoalPage() {
     });
   };
 
-  const handleSendAI = () => {
-    if (aiInput.trim()) {
-      console.log("AI Message:", aiInput);
-      setAiInput("");
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendAI();
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
@@ -87,16 +95,17 @@ export default function CreateGoalPage() {
 
             <div className="col-span-5 sticky top-8 h-fit">
               <AIEditSidebar
-                title="Edit with AI"
-                resumeTitle="Remi Ladi Resume.pdf"
-                resumeSize="55kb"
-                updatedResumeTitle="Remi Ladi Resume / CV"
-                placeholder="Ask me to modify a plan..."
-                inputValue={aiInput}
-                onInputChange={setAiInput}
-                onSend={(message) => console.log("Sent:", message)}
-                onAttach={() => console.log("Attach clicked")}
-                onMicrophone={() => console.log("Microphone clicked")}
+                messages={messages}
+                inputValue={inputValue}
+                onInputChange={setInputValue}
+                onSend={(msg) => {
+                  setMessages([...messages, {
+                    id: Date.now().toString(),
+                    type: 'user',
+                    content: msg
+                  }]);
+                  setInputValue('');
+                }}
               />
             </div>
             {/* Right Content - Form */}

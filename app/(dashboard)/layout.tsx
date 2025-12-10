@@ -104,7 +104,11 @@ export default function DashboardLayout({
             )}
             <div className="space-y-2">
               {modules.map((item) => (
-                <NavLink key={item.href} {...item} active={pathname === item.href} />
+                <NavLink 
+                  key={item.href} 
+                  {...item} 
+                  active={pathname === item.href || pathname.startsWith(item.href + '/')} 
+                />
               ))}
             </div>
           </div>

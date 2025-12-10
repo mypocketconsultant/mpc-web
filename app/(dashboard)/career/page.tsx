@@ -48,7 +48,7 @@ export default function HomePage() {
       title: "Resume Builder",
       icon: <Image src={resumeIcon} alt="Resume" width={32} height={32} />,
       color: "from-[#C4B0FF] to-[#9B7FFF]",
-      href: "#",
+      href: "/career/resume-builder",
     },
     {
       id: "cv",
@@ -104,7 +104,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors">
+            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF]  mb-8 transition-colors">
               <ChevronLeft className="h-4 w-4" />
               <span>Go back home</span>
             </button>
