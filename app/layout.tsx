@@ -43,9 +43,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={railway.variable}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${clashDisplay.variable} ${lato.variable} ${railway.variable} antialiased`}
+        className={`${railway.className} antialiased`}
       >
         {children}
       </body>
