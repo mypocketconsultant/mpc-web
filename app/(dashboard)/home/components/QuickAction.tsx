@@ -40,7 +40,7 @@ export default function QuickAction({
         <button
           key={idx}
           onClick={item.onClick}
-       className="rounded-3xl p-4 flex flex-col justify-between hover:shadow-lg transition-all"
+       className="rounded-3xl p-4 flex flex-col shadow-md justify-between hover:shadow-lg transition-all"
           style={{ 
             background: "linear-gradient(135deg, #E8D5FF 0%, #D4C5F9 50%, #C5B5F0 100%)",
             minHeight: "auto" 

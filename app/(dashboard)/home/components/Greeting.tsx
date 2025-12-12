@@ -12,7 +12,7 @@ export default function Greeting({
   onCompleteProfile,
 }: GreetingProps) {
   return (
-    <div className="mb-8 bg-gradient-to-r from-gray-50 shadow-md to-white rounded-2xl p-6 border border-gray-200 flex items-center justify-between">
+    <div className="mb-8 bg-gradient-to-r from-gray-50 shadow-lg to-white rounded-2xl p-6 border border-gray-200 flex items-center justify-between">
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-3">Hi {name},</h2>
         <button

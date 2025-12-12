@@ -13,7 +13,7 @@ interface DailyTipsProps {
 
 export default function DailyTips({ dailyTip, tipsIcon }: DailyTipsProps) {
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg h-fit">
+    <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg h-fit">
       <div className="flex items-start gap-4 mb-6">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br flex-shrink-0">
           <Image src={tipsIcon} alt="Daily Tips" />
@@ -29,7 +29,7 @@ export default function DailyTips({ dailyTip, tipsIcon }: DailyTipsProps) {
           </span>
           <span>
             <strong className="text-gray-900">{dailyTip.title}</strong>
-            <p className="text-gray-600 mt-2 text-sm leading-relaxed">
+            <p className="text-gray-600 mt-2 max-w- text-sm leading-relaxed">
               {dailyTip.description}
             </p>
           </span>

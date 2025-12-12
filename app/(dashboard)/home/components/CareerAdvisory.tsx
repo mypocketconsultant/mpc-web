@@ -20,7 +20,7 @@ export default function CareerAdvisory({
   image,
 }: CareerAdvisoryProps) {
   return (
-    <div className="mb-8 bg-[#CAE2FF] rounded-2xl p-8 border border-blue-200 flex items-center justify-between">
+    <div className="mb-8 bg-[#CAE2FF] shadow-lg rounded-2xl p-8 border border-blue-200 flex items-center justify-between">
       <div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">
           {title}

@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
+import FileUploadModal from "@/app/components/FileUploadModal";
 
 interface Message {
   id: string;
@@ -34,6 +35,8 @@ export default function AIEditSidebar({
   inputValue = "",
   onInputChange,
 }: AIEditSidebarProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleSend = () => {
     if (inputValue.trim()) {
       onSend?.(inputValue);
@@ -46,6 +49,16 @@ export default function AIEditSidebar({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleAttachClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleFileUpload = (file: File) => {
+    onAttach?.();
+    // You can also pass the file data here if needed
+    console.log("File uploaded:", file);
   };
 
   return (
@@ -119,7 +132,7 @@ export default function AIEditSidebar({
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
         <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 hover:border-gray-300 transition-colors">
           <button
-            onClick={onAttach}
+            onClick={handleAttachClick}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
             aria-label="Attach file"
           >
@@ -145,6 +158,13 @@ export default function AIEditSidebar({
           </button>
         </div>
       </div>
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpload={handleFileUpload}
+      />
     </div>
   );
 }

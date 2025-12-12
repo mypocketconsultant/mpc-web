@@ -29,7 +29,7 @@ export default function QuickLinksSection({
 }: QuickLinksSectionProps) {
   return (
     <section className="mb-12">
-      <h2 className="text-lg font-bold text-gray-900 mb-6">Quick links</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Quick links</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Quick Links Grid - Left Side (2 cols) */}
@@ -39,7 +39,7 @@ export default function QuickLinksSection({
               <Link
                 key={link.id}
                 href={link.href}
-                className={`group relative overflow-hidden rounded-2xl p-6 text-gray-900 transition-all hover:shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-br min-h-[130px] flex flex-col justify-between ${link.color}`}
+                className={`group relative shadow-lg overflow-hidden rounded-2xl p-6 text-gray-900 transition-all hover:shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-br min-h-[130px] flex flex-col justify-between ${link.color}`}
               >
                 <div className="flex items-start">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/30 backdrop-blur-sm">

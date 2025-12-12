@@ -9,8 +9,8 @@ interface HeaderProps {
 
 export default function Header({ title = "Home" }: HeaderProps) {
   return (
-    <header className="border-b border-gray-200 shadow-md bg-white sticky top-0 z-10">
-      <div className="flex items-center justify-between px-6 py-4">
+    <header className="border-b border-gray-200 shadow-md px-40 bg-white sticky top-0 z-10">
+      <div className="flex items-center justify-between  py-4">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-gray-900">{title}</h1>
         </div>
@@ -21,25 +21,25 @@ export default function Header({ title = "Home" }: HeaderProps) {
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Notifications"
           >
-            <Bell className="h-5 w-5 text-gray-600" />
+            <Bell className="h-5 w-5 text-black " />
           </button>
           <button
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Quick actions"
           >
-            <Zap className="h-5 w-5 text-gray-600" />
+            <Zap className="h-5 w-5 text-black" />
           </button>
           <button
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Settings"
           >
-            <Settings className="h-5 w-5 text-gray-600" />
+            <Settings className="h-5 w-5 text-black" />
           </button>
           <button
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="User profile"
           >
-            <User className="h-5 w-5 text-gray-600" />
+            <User className="h-5 w-5 text-black " />
           </button>
         </div>
       </div>

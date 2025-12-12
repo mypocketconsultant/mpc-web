@@ -47,14 +47,14 @@ export default function TimelineWidget({
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           
-          <div className="flex items-center gap-2">
-            <span className="text-base font-medium text-gray-700">
+          <div className="flex items-center p-5 bg-white rounded-lg gap-3">
+            <span className="text-base font-semibold text-gray-900">
               {currentWeek}
             </span>
             <select
               value={viewType}
               onChange={(e) => onViewChange?.(e.target.value as "week" | "month")}
-              className="text-base text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer"
+              className="px-3 py-2 text-base font-medium text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent cursor-pointer hover:border-gray-400 transition-all"
             >
               <option value="week">Week view</option>
               <option value="month">Month view</option>
