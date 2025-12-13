@@ -33,7 +33,7 @@ export default function DashboardLayout({
   ]
 
   const modules = [
-    { icon: LifeBuoy, label: "Life Advisor", href: "/modules/life-advisor" },
+    { icon: LifeBuoy, label: "Life Advisor", href: "/Life" },
     { icon: Briefcase, label: "Career Consulting", href: "/career" },
     { icon: Users, label: "Business Consultancy", href: "/modules/business-consultancy" },
     { icon: BookOpen, label: "Study Support", href: "/modules/study-support" },

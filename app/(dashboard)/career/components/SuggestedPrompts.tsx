@@ -32,7 +32,7 @@ export default function SuggestedPrompts({
       
       <div className="grid grid-cols-1 mt-10 md:grid-cols-3 gap-4">
         {prompts.map((prompt) => {
-          const className = `flex flex-col items-start gap-3 p-5 rounded-2xl transition-all border bg-white ${
+          const className = `flex flex-col items-start gap-3 p-5 rounded-2xl transition-all border bg-blue-100 ${
             selectedPrompt === prompt.id
               ? "border-[#9B7FFF] shadow-md"
               : "border-gray-200 hover:shadow-md"
