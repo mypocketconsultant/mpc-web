@@ -24,7 +24,9 @@ import tipsIcon from "@/public/tip.png";
 import SuggestedPrompts, {
   SuggestedPrompt,
 } from "../career/components/SuggestedPrompts";
-import QuickLinksSection, { QuickLink } from "../career/components/QuickLinksSection";
+import QuickLinksSection, {
+  QuickLink,
+} from "../career/components/QuickLinksSection";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import MoodSelector from "./components/MoodSelector";
@@ -59,11 +61,9 @@ export default function LifeAdvisorPage() {
     {
       id: "insights",
       title: "Insights and saved resources",
-      icon: (
-        <Image src={resourcesIcon} alt="Insights" width={32} height={32} />
-      ),
+      icon: <Image src={resourcesIcon} alt="Insights" width={32} height={32} />,
       color: "from-[#F5D5E3] to-[#F0C4D4]",
-      href: "#",
+      href: "/Life/insights",
     },
   ];
 
@@ -101,7 +101,9 @@ export default function LifeAdvisorPage() {
               <span>Home</span>
             </button>
           </Link>
-
+          <h2 className="text-xl  font-medium text-gray-900 mb-8">
+            How are you feeling today, Remi?
+          </h2>
           {/* Mood Question */}
           <div className="mb-8">
             <MoodSelector />

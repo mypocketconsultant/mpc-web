@@ -29,9 +29,7 @@ export default function MoodSelector({ onMoodSelect }: MoodSelectorProps) {
 
  return (
     <div className="w-full max-w-2xl mx-auto  rounded-2xl p-8 mb-8">
-      <h2 className="text-xl font-normal text-gray-900 mb-8">
-        How are you feeling today, Remi?
-      </h2>
+     
 
       {/* Score Display */}
       <div className="flex justify-end mb-4">
