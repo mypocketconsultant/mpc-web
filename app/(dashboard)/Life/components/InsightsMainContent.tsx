@@ -41,9 +41,9 @@ export default function InsightsMainContent({
   return (
     <div className="col-span-2 space-y-6">
       {/* Recent Documents & Daily Tips Row */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6 ">
         {/* Recent Documents */}
-        <div>
+        <div className="">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-lg font-semibold text-gray-900">
               Recent documents
@@ -82,15 +82,15 @@ export default function InsightsMainContent({
               className="rounded-full flex-shrink-0"
             />
             <div className="flex-1">
-              <h3 className="text-base font-bold text-gray-900 mb-3">
+              <h6 className="text-lg font-medium text-black mb-3">
                 Daily life tips
-              </h3>
+              </h6>
            
             </div>
           </div>
              <div className="space-y-2 text-sm p-5 text-gray-600">
-                <p className="font-semibold text-gray-900">• Eat good food</p>
-                <p className="text-sm max-w-xs leading-relaxed">
+                <h2 className="font-semibold text-base text-black">• Eat good food</h2>
+                <p className="text-base text-black max-w-xs  leading-snug">
                   Improve your diet to include fibre and fruits. This
                   ensures proper dietary nutrition.
                 </p>

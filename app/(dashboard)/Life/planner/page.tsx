@@ -175,6 +175,7 @@ export default function LifePlannerPage() {
             {/* Right Column - Calendar - Full Width */}
             <div className="lg:col-span-2">
               <PlannerCalendar
+              //@ts-ignore
                 viewMode={viewMode}
                 selectedFilter={selectedFilter}
                 events={events}
