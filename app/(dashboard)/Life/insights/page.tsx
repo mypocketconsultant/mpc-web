@@ -116,12 +116,7 @@ export default function InsightsPage() {
         </div>
       </main>
 
-      {/* Chat Input Footer */}
-      <InputFooter
-        placeholder="Ask about your insights..."
-        onSend={(message) => console.log("Sent:", message)}
-        onAttach={() => console.log("Attach clicked")}
-      />
+    
     </div>
   );
 }

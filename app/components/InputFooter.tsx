@@ -38,7 +38,7 @@ export default function InputFooter({
   };
 
   const handleInputClick = () => {
-    router.push("/chat");
+    router.push("/career/chat");
   };
 
   const handleAttachClick = () => {
@@ -50,7 +50,7 @@ export default function InputFooter({
   };
 
   return (
-    <div className="  p-6">
+    <div className="p-6">
       <div className="max-w-[1100px] mx-auto">
         <div className="flex gap-3 items-center">
           <button

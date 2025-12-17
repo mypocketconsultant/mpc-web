@@ -5,19 +5,13 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
-  Zap,
-  Send,
-  Lightbulb,
-  Share2,
+
   Settings as SettingsIcon,
-  User,
-  Bell,
-  Paperclip,
-  FileText,
+
 } from "lucide-react";
 import Image from "next/image";
-import resumeIcon from "@/public/daily.png";
-import cvIcon from "@/public/career.png";
+import resumeIcon from "@/public/Talk.png";
+import chatIcon from "@/public/Robot.png";
 import careerIcon from "@/public/career.png";
 import resourcesIcon from "@/public/ai.png";
 import tipsIcon from "@/public/tip.png";
@@ -42,26 +36,26 @@ export default function LifeAdvisorPage() {
       title: "Talk about how you feel",
       icon: <Image src={resumeIcon} alt="Mood" width={32} height={32} />,
       color: "from-[#FBD2D3] to-[#FBD2D3]",
-      href: "#",
+      href: "/Life/mood-entry",
     },
     {
       id: "chat",
       title: "Chat with me",
-      icon: <Image src={cvIcon} alt="Chat" width={32} height={32} />,
+      icon: <Image src={chatIcon} alt="Chat" width={36} height={36} />,
       color: "from-[#FDEDED] to-[#FDEDED]",
-      href: "#",
+      href: "/Life/chat",
     },
     {
       id: "planner",
       title: "Life Planner",
-      icon: <Image src={careerIcon} alt="Planner" width={32} height={32} />,
+      icon: <Image src={careerIcon} alt="Planner" width={36} height={36} />,
       color: "from-[#FBD2D3] to-[#FBD2D3]",
-      href: "#",
+      href: "/Life/planner",
     },
     {
       id: "insights",
       title: "Insights and saved resources",
-      icon: <Image src={resourcesIcon} alt="Insights" width={32} height={32} />,
+      icon: <Image src={resourcesIcon} alt="Insights" width={36} height={36} />,
       color: "from-[#F5D5E3] to-[#F0C4D4]",
       href: "/Life/insights",
     },
@@ -92,7 +86,7 @@ export default function LifeAdvisorPage() {
     <div className="flex flex-col h-full">
       <Header title="Life Advisor" />
       {/* Main Content */}
-      <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide">
+      <main className="flex-1 overflow-auto max-w-[1200px] mx-auto scrollbar-hide">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Go back home */}
           <Link href="/home">

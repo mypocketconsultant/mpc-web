@@ -69,20 +69,23 @@ export default function FoodAI({
       {/* Scrollable Chat Area */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-6 min-h-0">
         {messages.length === 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* User Question Bubble */}
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 min-h-[120px] flex items-center justify-center">
-              <p className="text-sm text-gray-600 text-center leading-relaxed">
-                Can you put together a document that tells me of foods that make my
-                mood better?
-              </p>
+            <div className="flex justify-end">
+              <div className="bg-white rounded-2xl p-2 border  border-gray-200 shadow-sm max-w-[80%]">
+                <p className="text-sm text-gray-700 text-right leading-relaxed">
+                  Can you put together a document that tells me of foods that make my mood better?
+                </p>
+              </div>
             </div>
 
             {/* AI Response Bubble */}
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 min-h-[80px] flex items-center justify-center">
-              <p className="text-xs text-gray-500 text-center">
-                Here's your document
-              </p>
+            <div className="flex justify-start">
+              <div className="bg-gray-50 rounded-2xl p-6 shadow-sm border border-gray-100 max-w-[90%]">
+                <p className="text-sm text-gray-600 text-center">
+                  Here's your document
+                </p>
+              </div>
             </div>
           </div>
         ) : (
@@ -142,7 +145,7 @@ export default function FoodAI({
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
         <div className="flex items-center gap-2 mb-4">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-bold  text-black">
             Foods for better moods
           </p>
           <span className="text-base">📄</span>

@@ -13,26 +13,28 @@ interface DailyTipsProps {
 
 export default function DailyTips({ dailyTip, tipsIcon }: DailyTipsProps) {
   return (
-    <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg h-fit">
-      <div className="flex items-start gap-4 mb-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br flex-shrink-0">
-          <Image src={tipsIcon} alt="Daily Tips" />
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md w-[300px]">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex h-12 w-12 items-center justify-center  flex-shrink-0">
+          <Image src={tipsIcon} alt="Daily Tips" width={32} height={32} />
         </div>
-        <h3 className="font-semibold text-lg text-gray-900 pt-2">
-          Daily tips
-        </h3>
+        <h6 className="font-medium text-xl text-gray-900">
+          Daily life tips
+        </h6>
       </div>
-      <ul className="space-y-4 text-sm text-gray-700">
-        <li className="flex gap-3">
-          <span className="text-[#5A3FFF] font-bold flex-shrink-0 mt-1">
+      <ul className="space-y-3">
+        <li className="flex gap-2">
+          <span className="text-gray-900 font-bold flex-shrink-0">
             •
           </span>
-          <span>
-            <strong className="text-gray-900">{dailyTip.title}</strong>
-            <p className="text-gray-600 mt-2 max-w- text-sm leading-relaxed">
+          <div>
+            <strong className="text-black text-base block mb-1">
+              {dailyTip.title}
+            </strong>
+            <p className="text-black text-base leading-snug">
               {dailyTip.description}
             </p>
-          </span>
+          </div>
         </li>
       </ul>
     </div>

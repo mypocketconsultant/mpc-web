@@ -62,7 +62,7 @@ export default function InsightsMainContent({
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <FileText className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="flex-1  flex-row">
+                <div className="flex-1 flex flex-row justify-between items-center">
                   <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{doc.date}</p>
                 </div>
@@ -72,7 +72,7 @@ export default function InsightsMainContent({
         </div>
 
         {/* Daily Tips */}
-        <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm">
+        <div className="bg-white rounded-2xl py-6 flex-col items-center shadow-md px-3 border w-[268px] border-gray-100 ">
           <div className="flex items-start gap-3">
             <Image
               src={tipsIcon}
@@ -82,18 +82,19 @@ export default function InsightsMainContent({
               className="rounded-full flex-shrink-0"
             />
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">
+              <h3 className="text-base font-bold text-gray-900 mb-3">
                 Daily life tips
               </h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p className="font-medium text-gray-900">• Eat good food</p>
-                <p className="text-xs  leading-relaxed">
+           
+            </div>
+          </div>
+             <div className="space-y-2 text-sm p-5 text-gray-600">
+                <p className="font-semibold text-gray-900">• Eat good food</p>
+                <p className="text-sm max-w-xs leading-relaxed">
                   Improve your diet to include fibre and fruits. This
                   ensures proper dietary nutrition.
                 </p>
               </div>
-            </div>
-          </div>
         </div>
       </div>
 

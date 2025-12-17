@@ -53,14 +53,14 @@ export default function HomePage() {
     {
       id: "cv",
       title: "CV Builder",
-      icon: <Image src={cvIcon} alt="CV" width={32} height={32} />,
+      icon: <Image src={cvIcon} alt="CV" width={36} height={36} />,
       color: "from-[#E6E4FF] to-[#E6E4FF]",
       href: "#",
     },
     {
       id: "career",
       title: "Career Planner",
-      icon: <Image src={careerIcon} alt="Career" width={32} height={32} />,
+      icon: <Image src={careerIcon} alt="Career" width={36} height={36} />,
       color: "rom-[#E6E4FF] to-[#E6E4FF]",
       href: "/career/create-plan",
     },
@@ -68,7 +68,7 @@ export default function HomePage() {
       id: "resources",
       title: "Saved Career Resources",
       icon: (
-        <Image src={resourcesIcon} alt="Resources" width={32} height={32} />
+        <Image src={resourcesIcon} alt="Resources" width={36} height={36} />
       ),
       color: "from-[#C4B0FF] to-[#9B7FFF]",
       href: "/career/saved-resources",
