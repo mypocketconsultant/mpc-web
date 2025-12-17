@@ -14,7 +14,7 @@ import resumeIcon from "@/public/Talk.png";
 import chatIcon from "@/public/Robot.png";
 import careerIcon from "@/public/career.png";
 import resourcesIcon from "@/public/ai.png";
-import tipsIcon from "@/public/tip.png";
+import tipsIcon from "@/public/DailyTip.png";
 import SuggestedPrompts, {
   SuggestedPrompt,
 } from "../career/components/SuggestedPrompts";

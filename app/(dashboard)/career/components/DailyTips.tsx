@@ -9,17 +9,18 @@ interface DailyTip {
 interface DailyTipsProps {
   dailyTip: DailyTip;
   tipsIcon: any;
+  title?: string;
 }
 
-export default function DailyTips({ dailyTip, tipsIcon }: DailyTipsProps) {
+export default function DailyTips({ dailyTip,  tipsIcon, title = "Daily life tips" }: DailyTipsProps) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md w-[300px]">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex h-12 w-12 items-center justify-center  flex-shrink-0">
-          <Image src={tipsIcon} alt="Daily Tips" width={32} height={32} />
+          <Image src={tipsIcon} alt={title} width={36} height={36} />
         </div>
         <h6 className="font-medium text-xl text-gray-900">
-          Daily life tips
+          {title}
         </h6>
       </div>
       <ul className="space-y-3">
@@ -31,7 +32,7 @@ export default function DailyTips({ dailyTip, tipsIcon }: DailyTipsProps) {
             <strong className="text-black text-base block mb-1">
               {dailyTip.title}
             </strong>
-            <p className="text-black text-base leading-snug">
+            <p className="text-black text-sm leading-snug">
               {dailyTip.description}
             </p>
           </div>
