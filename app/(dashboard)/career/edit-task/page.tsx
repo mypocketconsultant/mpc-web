@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ interface Message {
   };
 }
 
-export default function EditTaskPage() {
+function EditTaskContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const taskId = searchParams.get("id");
@@ -135,5 +135,13 @@ export default function EditTaskPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function EditTaskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditTaskContent />
+    </Suspense>
   );
 }

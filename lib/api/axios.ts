@@ -9,14 +9,11 @@ const axiosInstance = axios.create({
   baseURL,
   timeout: 60000,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     const workspaceId = localStorage.getItem("lastWorkspace");
     if (workspaceId) {
       config.headers["X-Workspace-Id"] = workspaceId;

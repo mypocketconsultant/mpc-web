@@ -1,18 +1,13 @@
 "use client";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import FormSection from "@/components/getting-started/step1";
 import FormSection2 from "@/components/getting-started/step2";
 import FormSection3 from "@/components/getting-started/step3";
 import FormSection4 from "@/components/getting-started/step4";
-import {
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { signUpWithEmail } from "@/services/auth";
+import { verifyAuth } from "@/services/auth";
 
-export default function SignupPage() { 
+function SignupContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +17,8 @@ export default function SignupPage() {
   const [career, setCareer] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
-  
+  const [idToken, setIdToken] = useState("");
+
   const searchParams = useSearchParams();
   const authType = searchParams.get('authType');
 
@@ -69,29 +65,99 @@ export default function SignupPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleEmailAuth = async (authType: string) => {
-    console.log("Email authentication process started");
-    console.log({ email, password, confirmPassword });
-    await signUpWithEmail(email, password, authType);
-    setValidationErrors({});
-    setCurrentStep((prev) => Math.min(prev + 1, 4));
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleEmailAuth = async () => {
+    setIsLoading(true);
+    try {
+      // Only create Firebase user and get idToken, don't send to backend yet
+      const { auth } = await import("@/lib/firebase");
+      const { createUserWithEmailAndPassword, sendEmailVerification } = await import("firebase/auth");
+
+      console.log("[Auth] Creating Firebase user with email:", email);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("[Auth] Firebase user created, UID:", result.user.uid);
+
+      const token = await result.user.getIdToken();
+      console.log("[Auth] Got Firebase ID token");
+
+      setIdToken(token);
+
+      // Send email verification
+      await sendEmailVerification(result.user);
+      console.log("[Auth] Email verification sent");
+
+      setValidationErrors({});
+      setCurrentStep((prev) => Math.min(prev + 1, 4));
+    } catch (error: any) {
+      console.error("[Auth] Email auth error:", error);
+      setValidationErrors({ submit: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignupCompletion = async () => {
+    setIsLoading(true);
+    try {
+      if (authType === 'email') {
+        // Send all collected data to backend
+        const apiService = (await import("@/lib/api/apiService")).apiService;
+
+        console.log("[Auth] Sending complete signup to backend with:", {
+          idToken,
+          email,
+          firstName: firstname,
+          lastName: lastname,
+          country,
+          preferredModule: career,
+        });
+
+        const response = await apiService.post("/v1/auth/signup", {
+          idToken,
+          firstName: firstname,
+          lastName: lastname,
+          country,
+          preferredModule: career,
+        });
+
+        console.log("[Auth] Backend signup response:", response);
+
+        // Verify auth with the backend
+        const verifyResult = await verifyAuth();
+        if (verifyResult.error) {
+          setValidationErrors({ submit: "Authentication verification failed" });
+          setIsLoading(false);
+          return;
+        }
+        setValidationErrors({});
+        router.push("/home");
+      } else {
+        // For other auth types (Google, etc.)
+        const verifyResult = await verifyAuth();
+        if (verifyResult.error) {
+          setValidationErrors({ submit: "Authentication verification failed" });
+          setIsLoading(false);
+          return;
+        }
+        setValidationErrors({});
+        router.push("/home");
+      }
+    } catch (error: any) {
+      console.error("[Auth] Signup completion error:", error);
+      setValidationErrors({ submit: error.message });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleNext = () => {
-    console.log(currentStep)
     if (validateStep()) {
       if (authType === 'email' && currentStep === 1) {
-        handleEmailAuth(authType);
+        handleEmailAuth();
       } else if (currentStep === 4) {
-        console.log({
-          email,
-          password,
-          firstname,
-          lastname,
-          country,
-          career,
-          confirmPassword,
-        });
+        handleSignupCompletion();
       } else {
         setValidationErrors({});
         setCurrentStep((prev) => Math.min(prev + 1, 4));
@@ -195,12 +261,21 @@ export default function SignupPage() {
           Back
         </button>
         <button
-          className="bg-[#6549CC] shadow-xl text-[#FFE5DF] px-4 py-2 rounded-[16px] font-bold font-railway text-[13px]"
+          className="bg-[#6549CC] shadow-xl text-[#FFE5DF] px-4 py-2 rounded-[16px] font-bold font-railway text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleNext}
+          disabled={isLoading}
         >
-          Next
+          {isLoading ? "Loading..." : "Next"}
         </button>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }

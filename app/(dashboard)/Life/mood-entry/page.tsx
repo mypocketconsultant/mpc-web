@@ -21,6 +21,9 @@ interface Message {
 export default function MoodEntryPage() {
   const [messages, setMessages] = useState<Message[]>([]);
 
+  const moodEmojis = ["😢", "😕", "😐", "🙂", "😊", "😃", "🥰", "😍", "✨"];
+  const moodLabels = ["Very Bad", "Bad", "Not Great", "Okay", "Good", "Great", "Very Good", "Excellent", "Amazing"];
+
   const handleSend = (message: string) => {
     if (message.trim()) {
       const newMessage: Message = {
