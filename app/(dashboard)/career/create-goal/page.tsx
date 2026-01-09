@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { apiService } from "@/lib/api/apiService";
 import Header from "@/app/components/header";
 import AIEditSidebar from "../components/AIEditSidebar";
 import CreateGoalForm from "../components/CreateGoalForm";
@@ -38,7 +39,7 @@ export default function CreateGoalPage() {
     }
   ]);
   const [reminderEnabled, setReminderEnabled] = useState(true);
-  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getTitleFromPath = (path: string) => {
     if (path.includes("/create-goal")) return "Create New Goal";
@@ -46,29 +47,85 @@ export default function CreateGoalPage() {
     return "My Pocket Consultant";
   };
 
-  const suggestedPrompts = [
-    { id: 1, text: "Research company insights using AI", icon: "🤖" },
-    { id: 2, text: "Prepare CV", icon: "📄" },
-    { id: 3, text: "Prepare Cover Letter", icon: "📝" },
-    { id: 4, text: "Send Application", icon: "✉️" },
-  ];
+  const handleCreateGoal = async () => {
+    if (!goalTitle.trim()) {
+      return;
+    }
 
-  const handlePromptToggle = (promptId: number) => {
-    setSelectedPrompts((prev) =>
-      prev.includes(promptId.toString())
-        ? prev.filter((id) => id !== promptId.toString())
-        : [...prev, promptId.toString()]
-    );
-  };
+    // Build reminder schedule string
+    let reminderScheduleString = "none";
+    if (reminderEnabled) {
+      if (selectedDate) {
+        // Convert time from "HH:mm am/pm" format to 24-hour "HH:mm" format
+        let time24hr = selectedTime;
+        if (selectedTime) {
+          const timeParts = selectedTime.toLowerCase().match(/(\d{1,2}):(\d{2})\s*(am|pm)?/);
+          if (timeParts) {
+            let hours = parseInt(timeParts[1], 10);
+            const minutes = timeParts[2];
+            const meridiem = timeParts[3];
 
-  const handleCreateGoal = () => {
-    console.log("Creating goal:", {
-      goalTitle,
-      goalDescription,
-      selectedDate,
-      selectedTime,
-      selectedPrompts,
-    });
+            if (meridiem) {
+              if (meridiem === "pm" && hours !== 12) {
+                hours += 12;
+              } else if (meridiem === "am" && hours === 12) {
+                hours = 0;
+              }
+            }
+
+            time24hr = `${String(hours).padStart(2, "0")}:${minutes}`;
+          }
+        } else {
+          time24hr = "00:00";
+        }
+        reminderScheduleString = `${selectedDate} ${time24hr}`;
+      } else {
+        reminderScheduleString = "none";
+      }
+    }
+
+    const message = `Goal: ${goalTitle}\nDescription: ${goalDescription}\nreminderSchedule: ${reminderScheduleString}`;
+
+    const payload = {
+      message,
+      intent: "planner_create",
+      session_id: `goal-${Date.now()}`,
+    };
+
+    console.log("[Frontend → mpc-api] Payload:", JSON.stringify(payload, null, 2));
+
+    setIsLoading(true);
+
+    try {
+      const response : any = await apiService.post("/v1/career/goal", payload);
+
+      if (response?.data?.message) {
+        setMessages([...messages, {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: response.data.message
+        }]);
+      }
+
+      // Store plan_id in localStorage
+      if (response?.data?.plan_id) {
+        localStorage.setItem("currentGoalId", response.data.plan_id);
+      }
+
+      // Clear form on success
+      setGoalTitle('');
+      setGoalDescription('');
+      setSelectedDate('');
+    } catch (error) {
+      console.error('[handleCreateGoal] Error:', error);
+      setMessages([...messages, {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: 'Failed to create goal. Please try again.'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -92,7 +149,6 @@ export default function CreateGoalPage() {
 
           <div className="grid grid-cols-12 gap-8">
             {/* Left Sidebar - AI Editor */}
-
             <div className="col-span-5 sticky top-8 h-fit">
               <AIEditSidebar
                 messages={messages}
@@ -121,9 +177,6 @@ export default function CreateGoalPage() {
                 onTimeChange={setSelectedTime}
                 reminderEnabled={reminderEnabled}
                 onReminderChange={setReminderEnabled}
-                suggestedPrompts={suggestedPrompts}
-                selectedPrompts={selectedPrompts}
-                onPromptToggle={handlePromptToggle}
                 onCreateGoal={handleCreateGoal}
                 onClose={() => window.location.href = "/career/create-plan"}
               />

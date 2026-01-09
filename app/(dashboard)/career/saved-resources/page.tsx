@@ -1,18 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
-import { ChevronLeft, FileText, Mic, Paperclip } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronLeft, FileText } from "lucide-react";
 import Link from "next/link";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import DailyTips from "../components/DailyTips";
 import SuggestedPrompts from "../components/SuggestedPrompts";
 import tipsIcon from "@/public/daily.png";
+import { apiService } from "@/lib/api/apiService";
+
+interface ResumeDocument {
+  id: string;
+  title: string | null;
+  status: string | null;
+  created_at: string | null;
+}
+
+const INITIAL_LIMIT = 5;
 
 export default function SavedResourcesPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<ResumeDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
 
   const getTitleFromPath = (path: string) => {
     if (path.includes("/saved-resources")) return "Saved Resources";
@@ -20,23 +36,58 @@ export default function SavedResourcesPage() {
     return "My Pocket Consultant";
   };
 
-  const recentDocuments = [
-    {
-      id: 1,
-      title: "Remi Ladi Resume / CV.doc",
-      promptHistory: "see prompt history",
-    },
-    {
-      id: 2,
-      title: "Remi Ladi Cover Letter.doc",
-      promptHistory: "see prompt history",
-    },
-    {
-      id: 3,
-      title: "Remi Ladi Professional Bio.doc",
-      promptHistory: "see prompt history",
-    },
-  ];
+  const fetchResumes = async (currentOffset: number = 0, append: boolean = false) => {
+    try {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      const response = await apiService.get<{
+        data: {
+          items: ResumeDocument[];
+          total: number;
+          limit: number;
+          offset: number;
+        }
+      }>(`/v1/resume-builder?limit=${INITIAL_LIMIT}&offset=${currentOffset}`);
+
+      const resumes = response?.data?.items || [];
+      const totalCount = response?.data?.total || 0;
+
+      if (append) {
+        setDocuments((prev) => [...prev, ...resumes]);
+      } else {
+        setDocuments(resumes);
+      }
+      setTotal(totalCount);
+      setOffset(currentOffset + resumes.length);
+    } catch (error) {
+      console.error("Failed to fetch resumes:", error);
+      if (!append) {
+        setDocuments([]);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResumes(0, false);
+  }, []);
+
+  const handleLoadMore = () => {
+    fetchResumes(offset, true);
+  };
+
+  const handleSeeChat = (resumeId: string) => {
+    localStorage.setItem('currentResumeId', resumeId);
+    router.push('/career/resume-builder');
+  };
+
+  const hasMore = documents.length < total;
 
   const suggestedPrompts = [
     {
@@ -88,40 +139,68 @@ export default function SavedResourcesPage() {
             {/* Left Content - Recent Documents */}
             <div className="w-[500px]">
               <div className=" rounded-3xl p-8 ">
-                <div className="flex items-center  gap-5 mb-8">
+                <div className="flex items-center gap-5 mb-8">
                   <h2 className="text-lg font-bold text-gray-900">
                     Recent documents
                   </h2>
-                  <button className="text-sm font-semibold text-[#656565] hover:text-[#656565] transition-colors">
-                    see all...
-                  </button>
+                  {total > 0 && (
+                    <span className="text-sm text-gray-500">
+                      {documents.length} of {total}
+                    </span>
+                  )}
                 </div>
 
                 {/* Documents List */}
                 <div className="space-y-2">
-                  {recentDocuments.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {/* Document icon with background */}
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-4 h-4 text-blue-600" />
-                        </div>
-
-                        {/* Document title */}
-                        <span className="font-medium text-gray-700 text-sm truncate">
-                          {doc.title}
-                        </span>
-                      </div>
-
-                      {/* Action button */}
-                      <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-nowrap ml-4">
-                        {doc.promptHistory}
-                      </button>
+                  {isLoading ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Loading documents...
                     </div>
-                  ))}
+                  ) : documents.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No documents found
+                    </div>
+                  ) : (
+                    <>
+                      {documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all group"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Document icon with background */}
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                            </div>
+
+                            {/* Document title */}
+                            <span className="font-medium text-gray-700 text-sm truncate">
+                              {doc.title || "Untitled Resume"}
+                            </span>
+                          </div>
+
+                          {/* Action button */}
+                          <button
+                            onClick={() => handleSeeChat(doc.id)}
+                            className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-nowrap ml-4"
+                          >
+                            see chat
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Load More Button */}
+                      {hasMore && (
+                        <button
+                          onClick={handleLoadMore}
+                          disabled={isLoadingMore}
+                          className="w-full mt-4 py-2 text-sm font-semibold text-[#5A3FFF] hover:text-[#4832CC] transition-colors disabled:opacity-50"
+                        >
+                          {isLoadingMore ? "Loading..." : "Load more"}
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

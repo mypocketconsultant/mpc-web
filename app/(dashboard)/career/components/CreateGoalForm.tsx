@@ -22,9 +22,6 @@ interface CreateGoalFormProps {
   onTimeChange: (value: string) => void;
   reminderEnabled: boolean;
   onReminderChange: (value: boolean) => void;
-  suggestedPrompts: SuggestedPrompt[];
-  selectedPrompts: string[];
-  onPromptToggle: (promptId: number) => void;
   onCreateGoal: () => void;
   onClose?: () => void;
 }
@@ -40,9 +37,6 @@ export default function CreateGoalForm({
   onTimeChange,
   reminderEnabled,
   onReminderChange,
-  suggestedPrompts,
-  selectedPrompts,
-  onPromptToggle,
   onCreateGoal,
   onClose,
 }: CreateGoalFormProps) {
@@ -85,32 +79,6 @@ export default function CreateGoalForm({
             placeholder="Add a description"
             className="w-full px-4 py-4 rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white text-sm min-h-[120px] resize-none transition-all"
           />
-        </div>
-
-        {/* Suggested Prompts */}
-        <div className="mb-6 space-y-3">
-          {suggestedPrompts.map((prompt) => (
-            <label
-              key={prompt.id}
-              className="flex items-center gap-3 cursor-pointer group"
-            >
-              <input
-                type="checkbox"
-                checked={selectedPrompts.includes(prompt.id.toString())}
-                onChange={() => onPromptToggle(prompt.id)}
-                className="w-5 h-5 rounded border-2 border-gray-300 text-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-offset-0 cursor-pointer"
-              />
-              <span className="text-sm font-medium text-gray-700 flex-1">
-                {prompt.text}
-              </span>
-              {prompt.hasAiPrompt && (
-                <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                  <Zap className="w-3 h-3" />
-                  Run AI prompt
-                </span>
-              )}
-            </label>
-          ))}
         </div>
 
         {/* Set Reminder Section */}

@@ -25,6 +25,7 @@ interface EditTaskFormProps {
   onActionToggle?: (actionId: number) => void;
   onSave: () => void;
   onClose?: () => void;
+  isSaving?: boolean;
 }
 
 export default function EditTaskForm({
@@ -43,6 +44,7 @@ export default function EditTaskForm({
   onActionToggle,
   onSave,
   onClose,
+  isSaving = false,
 }: EditTaskFormProps) {
   return (
     <div className="max-w-2xl mx-auto">
@@ -50,9 +52,10 @@ export default function EditTaskForm({
       <div className="flex items-center justify-between p-6 border-b border-gray-100">
         <button
           onClick={onSave}
-          className="px-5 py-2 bg-[#5A3FFF] text-white rounded-full text-sm font-semibold hover:bg-[#4A2FEF] transition-all"
+          disabled={isSaving}
+          className="px-5 py-2 bg-[#5A3FFF] text-white rounded-full text-sm font-semibold hover:bg-[#4A2FEF] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
         <button
           onClick={onClose}

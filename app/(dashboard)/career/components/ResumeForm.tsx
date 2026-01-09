@@ -60,6 +60,8 @@ interface ResumeFormProps {
   currentStep?: number;
   onStepChange?: (step: number) => void;
   onNewResume?: () => void;
+  resumeId?: string | null;
+  onDownloadResume?: () => void;
 }
 
 interface StepConfig {
@@ -99,6 +101,47 @@ const INITIAL_EXPERIENCE: ExperienceData = {
   descriptionExperience: "",
 };
 
+// Validation helper functions
+const isProfileValid = (profile: ProfileData): boolean => {
+  return (
+    profile.firstName.trim() !== "" &&
+    profile.lastName.trim() !== "" &&
+    profile.phoneNumber.trim() !== ""
+  );
+};
+
+const isEducationEntryValid = (edu: EducationData): boolean => {
+  return (
+    edu.nameOfSchool.trim() !== "" &&
+    edu.fieldOfStudy.trim() !== "" &&
+    edu.certification.trim() !== "" &&
+    edu.year.trim() !== "" &&
+    edu.descriptionGraduation.trim() !== ""
+  );
+};
+
+const areAllEducationsValid = (educations: EducationData[]): boolean => {
+  return educations.length > 0 && educations.every(isEducationEntryValid);
+};
+
+const isExperienceEntryValid = (exp: ExperienceData): boolean => {
+  return (
+    exp.company.trim() !== "" &&
+    exp.role.trim() !== "" &&
+    exp.location.trim() !== "" &&
+    exp.date.trim() !== "" &&
+    exp.descriptionExperience.trim() !== ""
+  );
+};
+
+const areAllExperiencesValid = (experiences: ExperienceData[]): boolean => {
+  return experiences.length > 0 && experiences.every(isExperienceEntryValid);
+};
+
+const areSkillsValid = (skills: string[]): boolean => {
+  return skills.length >= 1;
+};
+
 export default function ResumeForm({
   onNext,
   onClose,
@@ -126,6 +169,8 @@ export default function ResumeForm({
   currentStep: propCurrentStep,
   onStepChange,
   onNewResume,
+  resumeId,
+  onDownloadResume,
 }: ResumeFormProps) {
   // State setters use lifted callbacks if provided
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -226,7 +271,6 @@ export default function ResumeForm({
       onDeleteExperience(index);
     }
   };
-
 
   const handleNext = async (): Promise<void> => {
     if (currentStep < 4) {
@@ -336,7 +380,7 @@ export default function ResumeForm({
   const currentStepConfig = STEP_CONFIG[currentStep];
 
   return (
-    <div className="p-8">
+    <div className="p-8 relative">
       {/* Header with buttons */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -346,6 +390,14 @@ export default function ResumeForm({
               className="px-6 py-2 rounded-full font-bold text-sm bg-[#5A3FFF] text-white transition-colors"
             >
               New Resume
+            </button>
+            <button
+              onClick={onDownloadResume}
+              disabled={!resumeId}
+              title={resumeId ? "Download resume as PDF" : "Create or load a resume first"}
+              className="px-6 py-2 rounded-full font-bold text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Download Resume
             </button>
             <button className="text-[#5A3FFF] text-sm font-medium hover:underline">
               Change template
@@ -452,8 +504,10 @@ export default function ResumeForm({
           onClick={handleNext}
           disabled={
             isSubmitting ||
-            (currentStep === 2 && (educations.length < 1 || educations.length > 9)) ||
-            (currentStep === 3 && (experience.length < 1 || experience.length > 9))
+            (currentStep === 1 && !isProfileValid(profile)) ||
+            (currentStep === 2 && !areAllEducationsValid(educations)) ||
+            (currentStep === 3 && !areAllExperiencesValid(experience)) ||
+            (currentStep === 4 && (!areAllEducationsValid(educations) || !areAllExperiencesValid(experience) || !areSkillsValid(skills)))
           }
           className="px-6 py-3 bg-[#5A3FFF] text-white rounded-lg font-bold hover:bg-[#4a2fe0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           aria-label={isLastStep() ? "Complete resume" : "Go to next step"}
@@ -505,10 +559,15 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
           placeholder="First"
           value={profile.firstName}
           onChange={(e) => onChange("firstName", e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+            profile.firstName.trim() === "" ? "border-red-300" : "border-gray-300"
+          }`}
           aria-label="First name"
         />
         <label className="block text-xs text-gray-600 mt-2">First name</label>
+        {profile.firstName.trim() === "" && (
+          <p className="text-xs text-red-500 mt-1">First name is required</p>
+        )}
       </div>
       <div>
         <input
@@ -516,22 +575,34 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
           placeholder="Last"
           value={profile.lastName}
           onChange={(e) => onChange("lastName", e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+            profile.lastName.trim() === "" ? "border-red-300" : "border-gray-300"
+          }`}
           aria-label="Last name"
         />
         <label className="block text-xs text-gray-600 mt-2">Last name</label>
+        {profile.lastName.trim() === "" && (
+          <p className="text-xs text-red-500 mt-1">Last name is required</p>
+        )}
       </div>
       <div>
         <div className="flex items-center gap-2">
           <span className="text-gray-600">🇳🇬 +234</span>
-          <input
-            type="tel"
-            placeholder="Phone number"
-            value={profile.phoneNumber}
-            onChange={(e) => onChange("phoneNumber", e.target.value)}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
-            aria-label="Phone number"
-          />
+          <div className="flex-1">
+            <input
+              type="tel"
+              placeholder="Phone number"
+              value={profile.phoneNumber}
+              onChange={(e) => onChange("phoneNumber", e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                profile.phoneNumber.trim() === "" ? "border-red-300" : "border-gray-300"
+              }`}
+              aria-label="Phone number"
+            />
+            {profile.phoneNumber.trim() === "" && (
+              <p className="text-xs text-red-500 mt-1">Phone number is required</p>
+            )}
+          </div>
         </div>
       </div>
     </>
@@ -608,9 +679,14 @@ function EducationForm({
                       onChange={(e) =>
                         onUpdate(index, "nameOfSchool", e.target.value)
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        edu.nameOfSchool.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="School name"
                     />
+                    {edu.nameOfSchool.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">School name is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -620,9 +696,14 @@ function EducationForm({
                       onChange={(e) =>
                         onUpdate(index, "fieldOfStudy", e.target.value)
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        edu.fieldOfStudy.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Field of study"
                     />
+                    {edu.fieldOfStudy.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Field of study is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -632,9 +713,14 @@ function EducationForm({
                       onChange={(e) =>
                         onUpdate(index, "certification", e.target.value)
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        edu.certification.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Certification or degree"
                     />
+                    {edu.certification.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Certification is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -642,9 +728,14 @@ function EducationForm({
                       placeholder="Year"
                       value={edu.year}
                       onChange={(e) => onUpdate(index, "year", e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        edu.year.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Graduation year"
                     />
+                    {edu.year.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Year is required</p>
+                    )}
                   </div>
                   <div>
                     <textarea
@@ -657,10 +748,15 @@ function EducationForm({
                           e.target.value
                         )
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none ${
+                        edu.descriptionGraduation.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       rows={3}
                       aria-label="Education description"
                     />
+                    {edu.descriptionGraduation.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Description is required</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -764,9 +860,14 @@ function ExperienceForm({
                       onChange={(e) =>
                         onUpdate(index, "company", e.target.value)
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        exp.company.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Company name"
                     />
+                    {exp.company.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Company name is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -774,9 +875,14 @@ function ExperienceForm({
                       placeholder="Role"
                       value={exp.role}
                       onChange={(e) => onUpdate(index, "role", e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        exp.role.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Job role"
                     />
+                    {exp.role.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Role is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -786,9 +892,14 @@ function ExperienceForm({
                       onChange={(e) =>
                         onUpdate(index, "location", e.target.value)
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        exp.location.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Job location"
                     />
+                    {exp.location.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Location is required</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -796,9 +907,14 @@ function ExperienceForm({
                       placeholder="Date"
                       value={exp.date}
                       onChange={(e) => onUpdate(index, "date", e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
+                        exp.date.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       aria-label="Employment date"
                     />
+                    {exp.date.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Date is required</p>
+                    )}
                   </div>
                   <div>
                     <textarea
@@ -811,10 +927,15 @@ function ExperienceForm({
                           e.target.value
                         )
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none"
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none ${
+                        exp.descriptionExperience.trim() === "" ? "border-red-300" : "border-gray-300"
+                      }`}
                       rows={3}
                       aria-label="Experience description"
                     />
+                    {exp.descriptionExperience.trim() === "" && (
+                      <p className="text-xs text-red-500 mt-1">Description is required</p>
+                    )}
                   </div>
                 </div>
               )}

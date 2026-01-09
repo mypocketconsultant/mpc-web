@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -9,6 +8,7 @@ export interface PlanItem {
   day: number;
   hasEvents: boolean;
   tasks: Array<{
+    id: string;
     title: string;
     time: string;
     description: string;
@@ -123,7 +123,7 @@ export default function TimelineWidget({
                       <p className="text-sm text-gray-600 leading-relaxed mb-3">
                         {task.description}
                       </p>
-                      <Link href={`/career/edit-task?id=${taskIdx}`}>
+                      <Link href={`/career/edit-task?planId=${task.id}`}>
                         <button className="text-sm font-semibold text-gray-900 underline hover:text-[#5A3FFF] transition-colors">
                           Click to edit
                         </button>

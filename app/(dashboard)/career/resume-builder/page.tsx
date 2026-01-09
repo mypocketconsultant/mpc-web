@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -8,6 +8,7 @@ import axios from 'axios';
 import Header from '@/app/components/header';
 import AIEditSidebar from '../components/AIEditSidebar';
 import ResumeForm from '../components/ResumeForm';
+import ResumePdfModal from '../components/ResumePdfModal';
 
 interface Message {
   id: string;
@@ -55,10 +56,17 @@ export default function ResumeBuilder() {
   const pathname = usePathname();
   const [inputValue, setInputValue] = useState('');
   const [resumeId, setResumeId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [resetFormTrigger, setResetFormTrigger] = useState<number | undefined>();
-  const [initialFormData, setInitialFormData] = useState<any>(undefined);
+
+  // Processing state for uploaded resume
+  const [isProcessingResume, setIsProcessingResume] = useState(false);
+  const [processingUploadId, setProcessingUploadId] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Loading state for session fetch
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Form state lifted from ResumeForm
   const [documentTitle, setDocumentTitle] = useState('');
@@ -77,11 +85,22 @@ export default function ResumeBuilder() {
   const [selectedEducationIndex, setSelectedEducationIndex] = useState<number | null>(null);
   const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null);
 
-  // Initialize resumeId from localStorage on mount
+  // PDF modal state
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+
+  // Initialize resumeId and processing state from localStorage on mount
   useEffect(() => {
     const savedResumeId = localStorage.getItem('currentResumeId');
     if (savedResumeId) {
       setResumeId(savedResumeId);
+    }
+
+    // Restore processing state if page was reloaded during upload
+    const savedUploadId = localStorage.getItem('processingUploadId');
+    if (savedUploadId) {
+      console.log('[ResumeBuilder] Restoring processing state for uploadId:', savedUploadId);
+      setProcessingUploadId(savedUploadId);
+      setIsProcessingResume(true);
     }
   }, []);
 
@@ -92,10 +111,131 @@ export default function ResumeBuilder() {
     }
   }, [resumeId]);
 
+  // Save processing state to localStorage whenever it changes
+  useEffect(() => {
+    if (isProcessingResume && processingUploadId) {
+      console.log('[ResumeBuilder] Saving processing state to localStorage:', processingUploadId);
+      localStorage.setItem('processingUploadId', processingUploadId);
+    } else if (!isProcessingResume) {
+      // Clear processing state when complete
+      console.log('[ResumeBuilder] Clearing processing state from localStorage');
+      localStorage.removeItem('processingUploadId');
+    }
+  }, [isProcessingResume, processingUploadId]);
+
+  // Poll for upload status
+  const pollUploadStatus = useCallback(async (uploadId: string) => {
+    try {
+      console.log('[ResumeBuilder] Polling upload status for:', uploadId);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/upload/status/${uploadId}`,
+        { withCredentials: true }
+      );
+
+      console.log('[ResumeBuilder] Poll response:', response.data);
+
+      const { status, error, resumeId: parsedDocId } = response.data?.data || {};
+
+      if (status === 'parsed') {
+        console.log('[ResumeBuilder] Resume parsing complete, stopping polling');
+        console.log('[ResumeBuilder] parsed_doc_id (resumeId):', parsedDocId);
+
+        // Stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        setIsProcessingResume(false);
+        setProcessingUploadId(null);
+
+        // NOW set the resumeId to the parsed document ID
+        // This is the MongoDB document ID that should be used for all subsequent calls
+        if (parsedDocId) {
+          setResumeId(parsedDocId);
+          localStorage.setItem('currentResumeId', parsedDocId);
+          console.log('[ResumeBuilder] Set resumeId to parsed_doc_id:', parsedDocId);
+        }
+
+        // Add success message
+        const successMessage: Message = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: 'Resume parsed successfully! Use the chat to get started or review the parsed content.',
+        };
+        setMessages(prev => [...prev, successMessage]);
+
+        // fetchChatHistory will be triggered by useEffect when resumeId changes
+
+      } else if (status === 'failed') {
+        console.error('[ResumeBuilder] Resume parsing failed:', error);
+
+        // Stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        setIsProcessingResume(false);
+        setProcessingUploadId(null);
+
+        // Add error message
+        const errorMsg: Message = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: `Failed to parse resume: ${error || 'Unknown error'}. Please try uploading again.`,
+          isError: true,
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
+      // If still processing (uploaded/parsing), keep polling
+    } catch (err) {
+      console.error('[ResumeBuilder] Error polling upload status:', err);
+    }
+  }, []);
+
+  // Start polling when processingUploadId is set
+  useEffect(() => {
+    if (processingUploadId && isProcessingResume) {
+      console.log('[ResumeBuilder] Starting polling for uploadId:', processingUploadId);
+
+      // Poll immediately
+      pollUploadStatus(processingUploadId);
+
+      // Then poll every 2 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        pollUploadStatus(processingUploadId);
+      }, 2000);
+
+      // Cleanup on unmount or when polling stops
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+    }
+  }, [processingUploadId, isProcessingResume, pollUploadStatus]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Handle new resume - reset all state
   const handleNewResume = () => {
     // Clear localStorage
     localStorage.removeItem('currentResumeId');
+
+    // Stop any active polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    setIsProcessingResume(false);
+    setProcessingUploadId(null);
 
     // Reset all form state
     setResumeId(null);
@@ -115,17 +255,42 @@ export default function ResumeBuilder() {
     setMessages([]);
   };
 
+  // Handle download resume - open PDF modal
+  const handleDownloadResume = () => {
+    setIsPdfModalOpen(true);
+  };
+
   // Fetch chat history and form data
-  const fetchChatHistory = async (id?: string) => {
+  const fetchChatHistory = useCallback(async (id?: string) => {
     const fetchResumeId = id || resumeId;
+    console.log(fetchResumeId, 'fetchresumid')
     if (!fetchResumeId) return;
+
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    setIsLoadingSession(true);
 
     try {
       console.log('[ResumeBuilder] Fetching chat history and form data for resumeId:', fetchResumeId);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${fetchResumeId}/chat-history`,
-        { withCredentials: true }
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${fetchResumeId}/session`,
+        {
+          withCredentials: true,
+          signal
+        }
       );
+
+      if (signal.aborted) {
+        console.log('[ResumeBuilder] Fetch cancelled');
+        return;
+      }
 
       if (response.data?.data?.messages) {
         console.log('[ResumeBuilder] Chat history loaded, messages count:', response.data.data.messages.length);
@@ -157,7 +322,6 @@ export default function ResumeBuilder() {
           experienceCount: response.data.data.formData.experience?.length,
           skillsCount: response.data.data.formData.skills?.length,
         });
-        setInitialFormData(response.data.data.formData);
         // Populate form state from loaded data
         const formData = response.data.data.formData;
         if (formData.documentTitle) setDocumentTitle(formData.documentTitle);
@@ -166,16 +330,43 @@ export default function ResumeBuilder() {
         if (formData.experience) setExperience(formData.experience);
         if (formData.skills) setSkills(formData.skills);
       }
+
+      setIsLoadingSession(false);
     } catch (error) {
-      console.error('[ResumeBuilder] Error fetching chat history:', error);
-      // Silently fail - no chat history is fine
+      if (axios.isCancel(error)) {
+        console.log('[ResumeBuilder] Session fetch cancelled');
+      } else {
+        console.error('[ResumeBuilder] Error fetching chat history:', error);
+        const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
+          ? error.response.data.message
+          : 'Failed to load resume session. Please try again.';
+
+        // Add error message to chat
+        const errorMsg: Message = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: errorMessage,
+          isError: true,
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
+      setIsLoadingSession(false);
     }
-  };
+  }, [resumeId]);
 
   // Fetch chat history and form data when resumeId is available
   useEffect(() => {
-    fetchChatHistory();
-  }, [resumeId]);
+    if (resumeId) {
+      fetchChatHistory();
+    }
+
+    // Cleanup: abort request if component unmounts or resumeId changes
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [resumeId, fetchChatHistory]);
 
   const getTitleFromPath = (path: string) => {
     if (path.includes('/resume-builder')) return 'Resume Builder';
@@ -210,6 +401,73 @@ export default function ResumeBuilder() {
     // Trigger form reset to step 1 while keeping all data
     setResetFormTrigger(Date.now());
     console.log('[ResumeBuilder] Triggered form reset to step 1');
+  };
+
+  const handleFileUpload = async (file: File): Promise<void> => {
+    console.log('[ResumeBuilder] handleFileUpload called with file:', file.name);
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      console.error('[ResumeBuilder] Invalid file type:', file.type);
+      throw new Error('Only PDF files are supported');
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      console.log('[ResumeBuilder] Uploading file to mpc-api...');
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/upload`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      console.log('[ResumeBuilder] Upload response:', response.data);
+
+      const { resumeId: uploadId } = response.data?.data || {};
+
+      if (uploadId) {
+        // Add a message to indicate upload success
+        const uploadMessage: Message = {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: `Resume "${file.name}" uploaded successfully! Analyzing your resume...`,
+        };
+        setMessages(prev => [...prev, uploadMessage]);
+
+        // Start processing state and polling - DO NOT set resumeId yet
+        // We wait for parsing to complete and use parsed_doc_id as resumeId
+        console.log('[ResumeBuilder] Starting processing state with uploadId:', uploadId);
+        setIsProcessingResume(true);
+        setProcessingUploadId(uploadId);
+
+        console.log('[ResumeBuilder] Resume uploaded, upload_id:', uploadId);
+      }
+    } catch (error) {
+      console.error('[ResumeBuilder] Upload error:', error);
+
+      const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
+        ? error.response.data.message
+        : 'Failed to upload resume. Please try again.';
+
+      // Add error message
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: errorMessage,
+        isError: true,
+      };
+      setMessages(prev => [...prev, errorMsg]);
+
+      throw error;
+    }
   };
 
   const handleSend = async (message: string, mode: 'chat' | 'edit' = 'chat', sectionName?: string) => {
@@ -386,7 +644,20 @@ export default function ResumeBuilder() {
       <Header title={getTitleFromPath(pathname)} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto scrollbar-hide">
+      <main className="flex-1 overflow-auto scrollbar-hide relative">
+        {/* Loading Overlay - Scoped to Main Content Area */}
+        {(isProcessingResume || (isLoadingSession && resumeId)) && (
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999] rounded-lg">
+            <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-lg">
+              <div className="w-12 h-12 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-gray-900">{isProcessingResume ? 'Analyzing your resume' : 'Loading resume data'}</p>
+                <p className="text-sm text-gray-500 mt-1">{isProcessingResume ? 'This usually takes 10-30 seconds' : 'Please wait...'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-[1100px] mx-auto px-8 py-8">
           {/* Breadcrumb */}
           <Link
@@ -408,18 +679,8 @@ export default function ResumeBuilder() {
                 onInputChange={setInputValue}
                 onSend={handleSend}
                 onToggleExpanded={toggleMessageExpanded}
-                resumeId={resumeId || ''}
-                currentExperience={experience}
-                currentSkills={skills}
-                currentEducations={educations}
-                targetRole={targetRole}
-                onTargetRoleChange={setTargetRole}
-                expandedEducationIndex={expandedEducationIndex}
-                expandedSectionIndex={expandedSectionIndex}
-                selectedEducationIndex={selectedEducationIndex}
-                onSelectedEducationIndexChange={setSelectedEducationIndex}
-                selectedExperienceIndex={selectedExperienceIndex}
-                onSelectedExperienceIndexChange={setSelectedExperienceIndex}
+                onFileUpload={handleFileUpload}
+                intent="resume-builder"
               />
             </div>
 
@@ -467,11 +728,23 @@ export default function ResumeBuilder() {
                 currentStep={currentStep}
                 onStepChange={setCurrentStep}
                 onNewResume={handleNewResume}
+                resumeId={resumeId}
+                onDownloadResume={handleDownloadResume}
               />
             </div>
           </div>
         </div>
       </main>
+
+      {/* PDF Download Modal */}
+      {resumeId && (
+        <ResumePdfModal
+          isOpen={isPdfModalOpen}
+          onClose={() => setIsPdfModalOpen(false)}
+          resumeId={resumeId}
+          resumeTitle={documentTitle}
+        />
+      )}
     </div>
   );
 }

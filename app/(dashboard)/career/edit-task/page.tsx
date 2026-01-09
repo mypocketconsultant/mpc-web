@@ -1,79 +1,202 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import Header from "@/app/components/header";
 import AIEditSidebar from "../components/AIEditSidebar";
-import EditTaskForm from "../components/EditTaskForm";
+import PlanForm from "../components/PlanForm";
+import TasksList from "../components/TasksList";
+import { apiService } from "@/lib/api/apiService";
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: 'user' | 'assistant' | 'loading';
   content: string;
+  fullContent?: string;
+  isError?: boolean;
+  isExpanded?: boolean;
   file?: {
     name: string;
     size: string;
   };
 }
 
+interface Plan {
+  id: string;
+  name: string;
+  goal: string;
+  created_at: string;
+  horizon: string;
+  status: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  due_date: string | null;
+  status: string;
+}
+
 function EditTaskContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const planId = searchParams.get("planId");
   const taskId = searchParams.get("id");
 
-  const [taskTitle, setTaskTitle] = useState("Job Opportunit...");
-  const [taskDescription, setTaskDescription] = useState(
-    "Lorem ipsum dolor sit amet, consectetur adipiscing"
-  );
-  const [taskTime, setTaskTime] = useState("10:00");
-  const [taskDate, setTaskDate] = useState("2025-10-21");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [planName, setPlanName] = useState("");
+  const [planGoal, setPlanGoal] = useState("");
+  const [createdDate, setCreatedDate] = useState("");
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'user',
-      content: 'Help me refine this task',
-    },
-    {
-      id: '2',
-      type: 'assistant',
-      content: "I can help you improve your task. What would you like to change?"
-    }
-  ]);
-  const [reminderEnabled, setReminderEnabled] = useState(true);
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
-
-  const suggestedActions = [
-    { id: 1, text: "Research company insights using AI", hasAiPrompt: true },
-    { id: 2, text: "Prepare CV", hasAiPrompt: true },
-    { id: 3, text: "Prepare Cover Letter", hasAiPrompt: true },
-    { id: 4, text: "Send Application", hasAiPrompt: false },
-  ];
-
-  const handleActionToggle = (actionId: number) => {
-    setSelectedActions((prev) =>
-      prev.includes(actionId.toString())
-        ? prev.filter((id) => id !== actionId.toString())
-        : [...prev, actionId.toString()]
-    );
-  };
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const getTitleFromPath = (path: string) => {
-    if (path.includes("/edit-task")) return "Edit Task";
+    if (path.includes("/edit-task")) return planId ? "Edit Plan" : "Edit Task";
     if (path.includes("/career")) return "Career Advisory";
     return "My Pocket Consultant";
   };
 
-  const handleSaveTask = () => {
-    console.log("Saving task:", {
-      id: taskId,
-      title: taskTitle,
-      description: taskDescription,
-      time: taskTime,
-      date: taskDate,
-    });
+  const fetchPlan = async () => {
+    if (!planId) return;
+
+    try {
+      setIsLoading(true);
+      const response = await apiService.get<{
+        data: {
+          plan: Plan;
+          tasks: Task[];
+        };
+      }>(`/v1/career/plans/${planId}/details`);
+
+      const plan = response?.data?.plan;
+      if (plan) {
+        setPlanName(plan.name || "");
+        setPlanGoal(plan.goal || "");
+        setCreatedDate(plan.created_at?.split("T")[0] || "");
+      }
+
+      const planTasks = response?.data?.tasks || [];
+      setTasks(planTasks);
+    } catch (error) {
+      console.error("Failed to fetch plan:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (planId) {
+      fetchPlan();
+    }
+  }, [planId]);
+
+  const handleTaskStatusChange = async (taskIdToUpdate: string, newStatus: string) => {
+    try {
+      await apiService.patch(`/v1/career/tasks/${taskIdToUpdate}`, {
+        status: newStatus,
+      });
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskIdToUpdate ? { ...task, status: newStatus } : task
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+    }
+  };
+
+  const handleSavePlan = async () => {
+    if (!planId) return;
+
+    try {
+      setIsSaving(true);
+      await apiService.patch(`/v1/career/plans/${planId}`, {
+        name: planName,
+        goal: planGoal,
+        created_at: createdDate,
+      });
+    } catch (error) {
+      console.error("Failed to save plan:", error);
+      setIsSaving(false);
+    }
+  };
+
+  const handleSend = async (message: string) => {
+    if (!message.trim()) return;
+
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: message,
+    };
+
+    const loadingBubbleId = (Date.now() + 1).toString();
+    const loadingBubble: Message = {
+      id: loadingBubbleId,
+      type: 'loading',
+      content: '',
+    };
+
+    setMessages((prev) => [...prev, newUserMessage, loadingBubble]);
+    setInputValue('');
+
+    try {
+      const response = await apiService.post<{ data: { message: string } }>(
+        '/v1/career/goal',
+        {
+          message,
+          session_id: `edit-plan-${planId}`,
+        }
+      );
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === loadingBubbleId
+            ? {
+                id: msg.id,
+                type: 'assistant' as const,
+                content: response?.data?.message || 'No response',
+              }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error('[EditTask] Error sending message:', error);
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === loadingBubbleId
+            ? {
+                id: msg.id,
+                type: 'assistant' as const,
+                content: 'Failed to send message. Please try again.',
+                isError: true,
+              }
+            : msg
+        )
+      );
+    }
+  };
+
+  const toggleMessageExpanded = (messageId: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.id === messageId) {
+          const fullContent = msg.fullContent || msg.content;
+          return {
+            ...msg,
+            isExpanded: !msg.isExpanded,
+            content: msg.isExpanded ? fullContent.substring(0, 200) + '...' : fullContent,
+          };
+        }
+        return msg;
+      })
+    );
   };
 
   return (
@@ -97,39 +220,38 @@ function EditTaskContent() {
             {/* Left Sidebar - AI Editor */}
             <div className="col-span-5 sticky top-8 h-fit">
               <AIEditSidebar
+                title="Edit with AI"
                 messages={messages}
                 inputValue={inputValue}
                 onInputChange={setInputValue}
-                onSend={(msg) => {
-                  setMessages([...messages, {
-                    id: Date.now().toString(),
-                    type: 'user',
-                    content: msg
-                  }]);
-                  setInputValue('');
-                }}
+                onSend={handleSend}
+                onToggleExpanded={toggleMessageExpanded}
+                placeholder="Ask me to help refine this plan..."
               />
             </div>
 
             {/* Right Content - Form */}
             <div className="col-span-7">
-              <EditTaskForm
-                taskTitle={taskTitle}
-                onTitleChange={setTaskTitle}
-                taskDescription={taskDescription}
-                onDescriptionChange={setTaskDescription}
-                taskTime={taskTime}
-                onTimeChange={setTaskTime}
-                taskDate={taskDate}
-                onDateChange={setTaskDate}
-                reminderEnabled={reminderEnabled}
-                onReminderChange={setReminderEnabled}
-                suggestedActions={suggestedActions}
-                selectedActions={selectedActions}
-                onActionToggle={handleActionToggle}
-                onSave={handleSaveTask}
-                onClose={() => window.location.href = "/career/create-plan"}
-              />
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-gray-500">Loading plan...</div>
+                </div>
+              ) : planId ? (
+                <>
+                  <PlanForm
+                    planName={planName}
+                    onNameChange={setPlanName}
+                    planGoal={planGoal}
+                    onGoalChange={setPlanGoal}
+                    createdDate={createdDate}
+                    onDateChange={setCreatedDate}
+                    onSave={handleSavePlan}
+                    onClose={() => window.location.href = "/career/create-plan"}
+                    isSaving={isSaving}
+                  />
+                  <TasksList tasks={tasks} onTaskStatusChange={handleTaskStatusChange} />
+                </>
+              ) : null}
             </div>
           </div>
         </div>

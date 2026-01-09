@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Upload, File, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface FileUploadModalProps {
@@ -117,12 +118,15 @@ export default function FileUploadModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div 
-      className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+  // Use portal to render modal at document.body level, escaping any stacking context issues
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 flex items-center justify-center z-[9999] p-4 bg-black/30 backdrop-blur-sm"
       onClick={handleClose}
     >
-      <div 
+      <div
         className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl max-w-sm sm:max-w-lg w-full mx-auto overflow-hidden animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
       >
@@ -267,6 +271,7 @@ export default function FileUploadModal({
           animation: fadeIn 0.2s ease-out;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

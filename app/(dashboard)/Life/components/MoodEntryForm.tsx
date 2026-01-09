@@ -1,23 +1,37 @@
 import React, { useState } from 'react';
 import { X, Mic } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { apiService } from '@/lib/api/apiService';
 
 export default function MoodEntryForm() {
   const router = useRouter();
   const [overallMood, setOverallMood] = useState(1);
   const [energyLevel, setEnergyLevel] = useState(1);
   const [journalText, setJournalText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const moodEmojis = ["😰", "😟", "😕", "😐", "🙂", "😊", "🤗", "😍", "✨"];
 
-  const handleSave = () => {
-    console.log('Saving mood entry:', {
-      overallMood,
-      energyLevel,
-      journalText,
-      date: "Monday, 17. October",
-      time: "08:00 am"
-    });
+  const handleSave = async () => {
+    if (!journalText.trim()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiService.post('/v1/life/journals', {
+        entry_type: 'mood',
+        text: journalText,
+        mood: `${overallMood}/10`,
+        energy_level: `${energyLevel}/10`,
+        tags: ['MOOD'],
+      });
+      router.back();
+    } catch (error) {
+      console.error('[MoodEntryForm] Save error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -25,8 +39,12 @@ export default function MoodEntryForm() {
       <div className=" bg-white rounded-3xl w-[800px] shadow-xs border border-gray-100">
         {/* Header */}
         <div className="flex items-center justify-between p-6  border-gray-100">
-          <button className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-full hover:bg-indigo-700 transition-colors">
-            Publish
+          <button
+            onClick={handleSave}
+            disabled={isSubmitting}
+            className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Publish'}
           </button>
           <button 
             onClick={() => router.back()}

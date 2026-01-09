@@ -32,6 +32,16 @@ class ApiService {
     }
   }
 
+  async patch<T>(url: string, data: unknown, config = {}) {
+    try {
+      const response = await axiosInstance.patch<T>(url, data, config);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   async delete<T>(url: string, config = {}) {
     try {
       const response = await axiosInstance.delete<T>(url, config);

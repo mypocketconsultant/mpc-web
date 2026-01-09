@@ -42,25 +42,15 @@ interface Message {
 interface AIEditSidebarProps {
   title?: string;
   messages?: Message[];
-  onSend?: (message: string, mode?: 'chat' | 'edit', sectionName?: string) => void;
+  onSend?: (message: string, intent?: string) => void;
   onAttach?: () => void;
   onMicrophone?: () => void;
   placeholder?: string;
   inputValue?: string;
   onInputChange?: (value: string) => void;
   onToggleExpanded?: (messageId: string) => void;
-  resumeId?: string;
-  currentExperience?: any[];
-  currentSkills?: string[];
-  currentEducations?: any[];
-  targetRole?: string;
-  onTargetRoleChange?: (role: string) => void;
-  expandedEducationIndex?: number | null;
-  expandedSectionIndex?: number | null;
-  selectedEducationIndex?: number | null;
-  onSelectedEducationIndexChange?: (index: number | null) => void;
-  selectedExperienceIndex?: number | null;
-  onSelectedExperienceIndexChange?: (index: number | null) => void;
+  onFileUpload?: (file: File) => Promise<void>;
+  intent?: 'resume-builder' | 'career-advisor' | 'planner_create';
 }
 
 export default function AIEditSidebar({
@@ -73,25 +63,14 @@ export default function AIEditSidebar({
   inputValue = "",
   onInputChange,
   onToggleExpanded,
-  resumeId = "",
-  currentExperience = [],
-  currentSkills = [],
-  currentEducations = [],
-  targetRole = "",
-  onTargetRoleChange,
-  expandedEducationIndex,
-  expandedSectionIndex,
-  selectedEducationIndex,
-  onSelectedEducationIndexChange,
-  selectedExperienceIndex,
-  onSelectedExperienceIndexChange,
+  onFileUpload,
+  intent,
 }: AIEditSidebarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [selectedResumeTitle, setSelectedResumeTitle] = useState<string>("");
-  const [mode, setMode] = useState<'chat' | 'edit'>('chat');
-  const [selectedSection, setSelectedSection] = useState<'experience' | 'skills' | 'education'>('experience');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const handleResumeLinkClick = (e: React.MouseEvent, message: Message) => {
     e.preventDefault();
@@ -114,26 +93,9 @@ export default function AIEditSidebar({
 
   const handleSend = () => {
     if (inputValue.trim()) {
-      console.log("[AIEditSidebar] handleSend triggered");
-      console.log("[AIEditSidebar] Current mode:", mode);
-      console.log("[AIEditSidebar] Input value:", inputValue);
-      console.log("[AIEditSidebar] Selected section:", selectedSection);
-      console.log("[AIEditSidebar] Target role:", targetRole);
-      console.log("[AIEditSidebar] Resume ID:", resumeId);
-
-      if (mode === 'edit') {
-        console.log("[AIEditSidebar] Sending EDIT request with:");
-        console.log("[AIEditSidebar]   - message:", inputValue);
-        console.log("[AIEditSidebar]   - mode: 'edit'");
-        console.log("[AIEditSidebar]   - sectionName:", selectedSection);
-        console.log("[AIEditSidebar]   - Will extract bullets from section:", selectedSection);
-        onSend?.(inputValue, 'edit', selectedSection);
-      } else {
-        console.log("[AIEditSidebar] Sending CHAT request with:");
-        console.log("[AIEditSidebar]   - message:", inputValue);
-        console.log("[AIEditSidebar]   - mode: 'chat'");
-        onSend?.(inputValue, 'chat');
-      }
+      console.log("[AIEditSidebar] handleSend triggered", { intent, message: inputValue });
+      // Always pass intent prop to parent - don't rely on prop being undefined
+      onSend?.(inputValue, intent);
       onInputChange?.("");
     }
   };
@@ -149,155 +111,35 @@ export default function AIEditSidebar({
     setIsModalOpen(true);
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
+    console.log("[AIEditSidebar] File upload triggered:", file.name);
+    if (onFileUpload) {
+      setIsUploadingFile(true);
+      try {
+        await onFileUpload(file);
+      } finally {
+        setIsUploadingFile(false);
+      }
+    }
     onAttach?.();
-    // You can also pass the file data here if needed
-    console.log("File uploaded:", file);
   };
 
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col">
-      {/* Header with Mode Toggle */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 text-lg">{title}</h3>
-          {/* Mode Toggle */}
-          <div className="flex gap-2 bg-gray-100 rounded-full p-1">
-            <button
-              onClick={() => setMode('chat')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                mode === 'chat'
-                  ? 'bg-white text-[#5A3FFF] shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Chat
-            </button>
-            <button
-              onClick={() => setMode('edit')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                mode === 'edit'
-                  ? 'bg-white text-[#5A3FFF] shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Edit
-            </button>
+    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col relative">
+      {/* Upload Loading Overlay - only for uploading file */}
+      {isUploadingFile && (
+        <div className="absolute inset-0 bg-white/80 rounded-3xl flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-700">Uploading resume...</p>
           </div>
         </div>
+      )}
 
-        {/* Edit Mode Controls */}
-        {mode === 'edit' && (
-          <div className="space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            {/* Target Role Input */}
-            <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">
-                Target Role
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Senior Software Engineer"
-                value={targetRole}
-                onChange={(e) => onTargetRoleChange?.(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]"
-              />
-            </div>
-
-            {/* Section Selection */}
-            <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">
-                Section to Edit
-              </label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value as 'experience' | 'skills' | 'education')}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] appearance-none"
-              >
-                <option value="experience">Experience</option>
-                <option value="skills">Skills</option>
-                <option value="education">Education</option>
-              </select>
-            </div>
-
-            {/* Item Selection (for experience and education) */}
-            {(selectedSection === 'experience' || selectedSection === 'education') && (
-              <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-1">
-                  Select Item to Edit
-                </label>
-                <select
-                  value={selectedSection === 'experience' ? (selectedExperienceIndex ?? 0) : (selectedEducationIndex ?? 0)}
-                  onChange={(e) => {
-                    const idx = parseInt(e.target.value);
-                    if (selectedSection === 'experience') {
-                      onSelectedExperienceIndexChange?.(idx);
-                    } else {
-                      onSelectedEducationIndexChange?.(idx);
-                    }
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] appearance-none"
-                >
-                  {selectedSection === 'experience' && currentExperience.length > 0 ? (
-                    currentExperience.map((exp, idx) => (
-                      <option key={idx} value={idx}>
-                        {exp.company || 'Untitled'} - {exp.role || 'No role'}
-                      </option>
-                    ))
-                  ) : selectedSection === 'education' && currentEducations.length > 0 ? (
-                    currentEducations.map((edu, idx) => (
-                      <option key={idx} value={idx}>
-                        {edu.nameOfSchool || 'Untitled'}
-                      </option>
-                    ))
-                  ) : (
-                    <option>No items available</option>
-                  )}
-                </select>
-              </div>
-            )}
-
-            {/* Preview of current item */}
-            <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">
-                Current Item
-              </label>
-              <div className="max-h-24 overflow-y-auto bg-white border border-gray-300 rounded p-2 text-xs text-gray-600 space-y-1">
-                {selectedSection === 'experience' && currentExperience.length > 0 ? (
-                  (() => {
-                    const idx = selectedExperienceIndex ?? 0;
-                    const exp = currentExperience[idx];
-                    return exp ? (
-                      <div className="space-y-0.5">
-                        <div><strong>Company:</strong> {exp.company}</div>
-                        <div><strong>Role:</strong> {exp.role}</div>
-                        <div><strong>Location:</strong> {exp.location}</div>
-                        <div><strong>Date:</strong> {exp.date}</div>
-                      </div>
-                    ) : null;
-                  })()
-                ) : selectedSection === 'skills' && currentSkills.length > 0 ? (
-                  <div>• {currentSkills.join(', ')}</div>
-                ) : selectedSection === 'education' && currentEducations.length > 0 ? (
-                  (() => {
-                    const idx = selectedEducationIndex ?? 0;
-                    const edu = currentEducations[idx];
-                    return edu ? (
-                      <div className="space-y-0.5">
-                        <div><strong>School:</strong> {edu.nameOfSchool}</div>
-                        <div><strong>Field:</strong> {edu.fieldOfStudy}</div>
-                        <div><strong>Certification:</strong> {edu.certification}</div>
-                        <div><strong>Year:</strong> {edu.year}</div>
-                      </div>
-                    ) : null;
-                  })()
-                ) : (
-                  <div className="text-gray-400 italic">No items in this section</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Header */}
+      <div className="mb-6">
+        <h3 className="font-bold text-gray-900 text-lg">{title}</h3>
       </div>
 
       {/* Scrollable Chat Area */}
@@ -477,7 +319,7 @@ export default function AIEditSidebar({
 
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
-        <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 hover:border-gray-300 transition-colors">
+        <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 transition-colors hover:border-gray-300">
           <button
             onClick={handleAttachClick}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
@@ -485,7 +327,7 @@ export default function AIEditSidebar({
           >
             <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
           </button>
-          
+
           <input
             type="text"
             placeholder={placeholder}
@@ -494,7 +336,7 @@ export default function AIEditSidebar({
             onKeyDown={handleKeyPress}
             className="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400"
           />
-          
+
           <button
             onClick={onMicrophone}
             className="p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md"

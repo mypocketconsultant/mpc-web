@@ -22,6 +22,7 @@ interface FoodAIProps {
   onAttach?: () => void;
   onMicrophone?: () => void;
   placeholder?: string;
+  isLoading?: boolean;
 }
 
 export default function FoodAI({
@@ -32,9 +33,9 @@ export default function FoodAI({
   onAttach,
   onMicrophone,
   placeholder = "Ask me to modif...",
+  isLoading = false,
 }: FoodAIProps) {
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSubmit = () => {
@@ -127,6 +128,19 @@ export default function FoodAI({
               )}
             </div>
           ))
+        )}
+
+        {/* Loading Bubble */}
+        {isLoading && (
+          <div className="flex justify-start mb-4">
+            <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Bottom Document Reference */}

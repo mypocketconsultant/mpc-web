@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
-import InputFooter from "@/app/components/InputFooter";
 import AIEditSidebar from "../components/FoodAI";
 import MoodEntryForm from "../components/MoodEntryForm";
+import { apiService } from "@/lib/api/apiService";
 
 interface Message {
   id: string;
@@ -18,30 +18,57 @@ interface Message {
   };
 }
 
+interface LifeChatResponse {
+  status: string;
+  message: string;
+  data: {
+    module: string;
+    intent: string;
+    message: string;
+    plan?: unknown;
+    actions?: unknown[];
+    metadata?: unknown;
+  };
+}
+
 export default function MoodEntryPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId] = useState(() => `mood-${Date.now()}`);
 
-  const moodEmojis = ["😢", "😕", "😐", "🙂", "😊", "😃", "🥰", "😍", "✨"];
-  const moodLabels = ["Very Bad", "Bad", "Not Great", "Okay", "Good", "Great", "Very Good", "Excellent", "Amazing"];
-
-  const handleSend = (message: string) => {
-    if (message.trim()) {
+  const handleSend = async (message: string) => {
+    if (message.trim() && !isLoading) {
       const newMessage: Message = {
         id: Date.now().toString(),
         type: 'user',
         content: message,
       };
-      setMessages([...messages, newMessage]);
-      
-      // Simulate AI response
-      setTimeout(() => {
+      setMessages(prev => [...prev, newMessage]);
+      setIsLoading(true);
+
+      try {
+        const response = await apiService.post<LifeChatResponse>('/v1/life/chat', {
+          message,
+          session_id: sessionId,
+        });
+
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
-          content: "I've updated your mood entry based on your input.",
+          content: response.data?.message || "I've processed your request.",
         };
         setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+      } catch (error) {
+        console.error('[MoodEntryPage] Chat error:', error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: "Sorry, I couldn't process your request. Please try again.",
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -71,6 +98,7 @@ export default function MoodEntryPage() {
                 onAttach={() => console.log("Attach clicked")}
                 onMicrophone={() => console.log("Microphone clicked")}
                 placeholder="Ask me to modify a plan..."
+                isLoading={isLoading}
               />
             </div>
 
