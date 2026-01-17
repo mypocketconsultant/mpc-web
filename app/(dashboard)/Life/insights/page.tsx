@@ -14,6 +14,8 @@ import FoodAI from "../components/FoodAI";
 import InsightsMainContent from "../components/InsightsMainContent";
 import AIPoweredInsights from "../components/AIPoweredInsights";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 // Type definitions
 interface Message {
@@ -77,6 +79,7 @@ export default function InsightsPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   // Transform API metrics to component format
   const transformMetrics = useCallback((metrics: ApiMetrics): MoodMetric[] => {
@@ -186,11 +189,11 @@ export default function InsightsPage() {
       }
     } catch (error) {
       console.error('[InsightsPage] Error fetching insights:', error);
-      // Keep existing data or show empty state
+      showToast('error', 'Failed to load insights');
     } finally {
       setIsLoading(false);
     }
-  }, [transformMetrics, transformInsights]);
+  }, [transformMetrics, transformInsights, showToast]);
 
   // Fetch on mount and when period changes
   useEffect(() => {
@@ -241,14 +244,8 @@ export default function InsightsPage() {
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('[InsightsPage] Error calling chat API:', error);
-
       const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
-      const errorResponse: Message = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: `Error: ${errorMessage}`,
-      };
-      setMessages(prev => [...prev, errorResponse]);
+      showToast('error', errorMessage);
     } finally {
       setIsChatLoading(false);
     }
@@ -309,6 +306,8 @@ export default function InsightsPage() {
           </div>
         </div>
       </main>
+
+      <Toast toast={toast} />
     </div>
   );
 }

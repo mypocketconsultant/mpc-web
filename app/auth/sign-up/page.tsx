@@ -5,10 +5,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup } from "firebase/auth";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 export default function SignupPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
@@ -20,16 +23,36 @@ export default function SignupPage() {
       const idToken = await result.user.getIdToken();
       console.log("[Auth] Got Firebase ID token");
 
-      // Store the idToken in sessionStorage so it can be retrieved in getting-started page
-      sessionStorage.setItem("googleIdToken", idToken);
+      // Try to login first to check if user exists
+      try {
+        const apiService = (await import("@/lib/api/apiService")).apiService;
+        await apiService.post("/v1/auth/login", { idToken });
 
-      // Navigate to getting-started with authType=google
-      router.push("/auth/getting-started?authType=google");
+        // User exists! Login successful - redirect to home
+        console.log("[Auth] User already exists, logging in directly");
+        showToast('success', 'Welcome back! Login successful.');
+        router.push("/home");
+        return;
+      } catch (loginError: any) {
+        // Check if it's a 404 (user not found)
+        if (loginError.response?.status === 404) {
+          // User doesn't exist - proceed with signup
+          console.log("[Auth] User doesn't exist, proceeding with signup flow");
+          sessionStorage.setItem("googleIdToken", idToken);
+          router.push("/auth/getting-started?authType=google");
+        } else {
+          // Other error - throw to be caught by outer catch block
+          throw loginError;
+        }
+      }
     } catch (error: any) {
       console.error("[Auth] Google sign-up error:", error);
       // Handle specific errors
       if (error.code === "auth/popup-closed-by-user") {
         console.log("[Auth] User closed the popup");
+      } else {
+        const errorMessage = error.response?.data?.message || 'Google authentication failed';
+        showToast('error', errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -92,6 +115,8 @@ export default function SignupPage() {
           </button>
         </div>
       </div>
+
+      <Toast toast={toast} />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -45,6 +47,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [context, setContext] = useState<"career" | "life">("career");
   const [sessionId, setSessionId] = useState<string>("");
+  const { toast, showToast } = useToast();
 
   // Initialize context and session ID on mount
   useEffect(() => {
@@ -152,22 +155,12 @@ export default function ChatPage() {
 
         setMessages((prev) => [...prev, aiMessage]);
       } else {
-        // Show error message
-        const errorMessage: Message = {
-          id: `error_${Date.now()}`,
-          type: "ai",
-          content: "Sorry, I couldn't process your request. Please try again.",
-        };
-        setMessages((prev) => [...prev, errorMessage]);
+        // Show error toast
+        showToast('error', "Sorry, I couldn't process your request. Please try again.");
       }
     } catch (error) {
       console.error("Error in handleSend:", error);
-      const errorMessage: Message = {
-        id: `error_${Date.now()}`,
-        type: "ai",
-        content: "An error occurred. Please try again.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      showToast('error', "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -317,6 +310,8 @@ export default function ChatPage() {
         onMicrophone={handleMicrophone}
         context={context}
       />
+
+      <Toast toast={toast} />
     </div>
   );
 }

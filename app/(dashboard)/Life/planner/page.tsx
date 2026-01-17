@@ -7,6 +7,8 @@ import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
 import PlannerCalendar, { DayData, DayEntry } from "../components/PlannerCalendar";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Plan {
   id: string;
@@ -29,6 +31,7 @@ export default function LifePlannerPage() {
   const router = useRouter();
   const [events, setEvents] = useState<DayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast, showToast } = useToast();
 
   const handleEntryClick = (planId: string) => {
     console.log('[LifePlannerPage] Navigating to edit plan:', planId);
@@ -56,6 +59,7 @@ export default function LifePlannerPage() {
         setEvents(calendarEvents);
       } catch (error) {
         console.error('[LifePlannerPage] Failed to fetch plans:', error);
+        showToast('error', 'Failed to load plans');
         setEvents([]);
       } finally {
         setIsLoading(false);
@@ -63,7 +67,7 @@ export default function LifePlannerPage() {
     };
 
     fetchPlans();
-  }, []);
+  }, [showToast]);
 
   const transformPlansToCalendarEvents = (plans: Plan[]): DayData[] => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -141,6 +145,8 @@ export default function LifePlannerPage() {
           </div>
         </div>
       </main>
+
+      <Toast toast={toast} />
     </div>
   );
 }

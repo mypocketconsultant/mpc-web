@@ -7,6 +7,8 @@ import Header from "@/app/components/header";
 import AIEditSidebar from "../components/FoodAI";
 import MoodEntryForm from "../components/MoodEntryForm";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -35,6 +37,7 @@ export default function MoodEntryPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => `mood-${Date.now()}`);
+  const { toast, showToast } = useToast();
 
   const handleSend = async (message: string) => {
     if (message.trim() && !isLoading) {
@@ -60,12 +63,7 @@ export default function MoodEntryPage() {
         setMessages(prev => [...prev, aiResponse]);
       } catch (error) {
         console.error('[MoodEntryPage] Chat error:', error);
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: "Sorry, I couldn't process your request. Please try again.",
-        };
-        setMessages(prev => [...prev, errorMessage]);
+        showToast('error', "Sorry, I couldn't process your request. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -110,7 +108,7 @@ export default function MoodEntryPage() {
         </div>
       </main>
 
-     
+      <Toast toast={toast} />
     </div>
   );
 }

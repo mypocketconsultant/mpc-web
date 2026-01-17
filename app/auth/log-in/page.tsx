@@ -6,6 +6,8 @@ import Image from "next/image";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import axios from "axios";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
@@ -50,6 +53,7 @@ export default function LoginPage() {
       );
 
       setValidationErrors({});
+      showToast('success', 'Login successful!');
       router.push("/home");
     } catch (error: any) {
       console.error("[Auth] Login error:", error);
@@ -64,7 +68,7 @@ export default function LoginPage() {
         errorMessage = error.response?.data?.message || errorMessage;
       }
 
-      setValidationErrors({ submit: errorMessage });
+      showToast('error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +83,7 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
 
       const idToken = await result.user.getIdToken();
-  
+
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
         { idToken },
@@ -87,6 +91,7 @@ export default function LoginPage() {
       );
 
       setValidationErrors({});
+      showToast('success', 'Login successful!');
       router.push("/home");
     } catch (error: any) {
       console.error("[Auth] Google login error:", error);
@@ -98,7 +103,7 @@ export default function LoginPage() {
         errorMessage = error.message;
       }
 
-      setValidationErrors({ submit: errorMessage });
+      showToast('error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -226,6 +231,8 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      <Toast toast={toast} />
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { apiService } from "@/lib/api/apiService";
 import Header from "@/app/components/header";
 import AIEditSidebar from "../components/AIEditSidebar";
 import CreateGoalForm from "../components/CreateGoalForm";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -40,6 +42,7 @@ export default function CreateGoalPage() {
   ]);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const getTitleFromPath = (path: string) => {
     if (path.includes("/create-goal")) return "Create New Goal";
@@ -112,15 +115,13 @@ export default function CreateGoalPage() {
         sessionStorage.setItem("currentGoalId", response.data.plan_id);
       }
 
+      showToast('success', 'Goal created successfully!');
+
       // Navigate to create-plan page on success
       router.push("/career/create-plan");
     } catch (error) {
       console.error('[handleCreateGoal] Error:', error);
-      setMessages([...messages, {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: 'Failed to create goal. Please try again.'
-      }]);
+      showToast('error', 'Failed to create goal. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +184,8 @@ export default function CreateGoalPage() {
           </div>
         </div>
       </main>
+
+      <Toast toast={toast} />
     </div>
   );
 }

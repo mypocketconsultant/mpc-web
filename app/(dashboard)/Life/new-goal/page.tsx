@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
 import AIEditSidebar from "../components/FoodAI";
 import GoalForm from "../components/GoalForm";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -25,12 +27,6 @@ interface Step {
   due_date: string;
 }
 
-interface Toast {
-  id: string;
-  type: 'success' | 'error';
-  message: string;
-}
-
 export default function NewGoalPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -40,7 +36,7 @@ export default function NewGoalPage() {
   const [domains, setDomains] = useState<string[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
+  const { toast, showToast } = useToast();
 
   // Generate session ID on component mount
   useEffect(() => {
@@ -115,12 +111,6 @@ export default function NewGoalPage() {
   useEffect(() => {
     fetchPlanDetails();
   }, [fetchPlanDetails]);
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    const id = Date.now().toString();
-    setToast({ id, type, message });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const handleSend = async (message: string) => {
     if (!message.trim()) return;
@@ -291,21 +281,7 @@ export default function NewGoalPage() {
         </div>
       </main>
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-fade-in" style={{
-          backgroundColor: toast.type === 'success' ? '#D1FAE5' : '#FEE2E2',
-        }}>
-          {toast.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-green-600" />
-          ) : (
-            <AlertCircle className="w-5 h-5 text-red-600" />
-          )}
-          <span style={{ color: toast.type === 'success' ? '#065F46' : '#7F1D1D' }} className="text-sm font-medium">
-            {toast.message}
-          </span>
-        </div>
-      )}
+      <Toast toast={toast} />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { ChevronLeft, Paperclip, Mic } from "lucide-react";
 import Header from "@/app/components/header";
 import { apiService } from "@/lib/api/apiService";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -23,6 +25,7 @@ export default function LifeChatPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
+  const { toast, showToast } = useToast();
 
   // Generate session ID on mount
   useEffect(() => {
@@ -65,14 +68,8 @@ export default function LifeChatPage() {
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('[LifeChatPage] Error calling chat API:', error);
-
       const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
-      const errorResponse: Message = {
-        id: Date.now().toString(),
-        type: "ai",
-        content: `Error: ${errorMessage}`,
-      };
-      setMessages(prev => [...prev, errorResponse]);
+      showToast('error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -216,6 +213,8 @@ export default function LifeChatPage() {
           </div>
         </div>
       </div>
+
+      <Toast toast={toast} />
     </div>
   );
 }

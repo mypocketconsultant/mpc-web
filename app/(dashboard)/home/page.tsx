@@ -18,11 +18,13 @@ import CareerAdvisory from "./components/CareerAdvisory";
 import ExpandToolkit from "./components/ExpandToolkit";
 import InputFooter from "@/app/components/InputFooter";
 import QuickAction from "./components/QuickAction";
+import { useUser } from "@/hooks/useUser";
 
 export default function HomePage() {
   const pathname = usePathname();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
+  const { user, loading } = useUser();
 
   // Map routes to titles
   const getTitleFromPath = (path: string) => {
@@ -42,7 +44,7 @@ export default function HomePage() {
       <main className="flex-1 overflow-auto scrollbar-hide">
         <div className="max-w-[1100px] mx-auto px-6 py-8">
           {/* Greeting Section */}
-          <Greeting name="Remi" />
+          <Greeting name={loading ? "User" : (user?.firstName || "User")} />
 
           {/* Career Advisory Section */}
           <CareerAdvisory onRunAudit={() => router.push("/career/resume-builder")} />

@@ -6,6 +6,8 @@ import FormSection2 from "@/components/getting-started/step2";
 import FormSection3 from "@/components/getting-started/step3";
 import FormSection4 from "@/components/getting-started/step4";
 import { verifyAuth } from "@/services/auth";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 function SignupContent() {
   const searchParams = useSearchParams();
@@ -22,6 +24,7 @@ function SignupContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
   const [idToken, setIdToken] = useState("");
+  const { toast, showToast } = useToast();
 
   // For Google auth, retrieve the idToken from sessionStorage
   useEffect(() => {
@@ -101,10 +104,11 @@ function SignupContent() {
       console.log("[Auth] Email verification sent");
 
       setValidationErrors({});
+      showToast('success', 'Account created! Please check your email for verification.');
       setCurrentStep((prev) => Math.min(prev + 1, 4));
     } catch (error: any) {
       console.error("[Auth] Email auth error:", error);
-      setValidationErrors({ submit: error.message });
+      showToast('error', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -158,15 +162,16 @@ function SignupContent() {
       // Verify auth with the backend
       const verifyResult = await verifyAuth();
       if (verifyResult.error) {
-        setValidationErrors({ submit: "Authentication verification failed" });
+        showToast('error', 'Authentication verification failed');
         setIsLoading(false);
         return;
       }
       setValidationErrors({});
+      showToast('success', authType === 'email' ? 'Account setup complete!' : 'Google account linked successfully!');
       router.push("/home");
     } catch (error: any) {
       console.error("[Auth] Signup completion error:", error);
-      setValidationErrors({ submit: error.message });
+      showToast('error', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -290,6 +295,8 @@ function SignupContent() {
           {isLoading ? "Loading..." : "Next"}
         </button>
       </div>
+
+      <Toast toast={toast} />
     </div>
   );
 }

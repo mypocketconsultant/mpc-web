@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
 import Header from "@/app/components/header";
 import AIEditSidebar from "../components/AIEditSidebar";
 import TimelineWidget, { PlanItem } from "../components/TimelineWidget";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface PlanFromDB {
   id: string;
@@ -39,6 +40,7 @@ export default function CreatePlanPage() {
     const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     return new Date(today.setDate(diff));
   });
+  const { toast, showToast } = useToast();
 
   // AI Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -106,6 +108,7 @@ export default function CreatePlanPage() {
       setPlanItems(transformed);
     } catch (error) {
       console.error("Failed to fetch plans:", error);
+      showToast('error', 'Failed to load career plans. Please try again.');
       const emptyWeek = transformPlansToTimelineItems([], currentWeekStart);
       setPlanItems(emptyWeek);
     }
@@ -181,6 +184,8 @@ export default function CreatePlanPage() {
           </div>
         </div>
       </main>
+
+      <Toast toast={toast} />
     </div>
   );
 }
