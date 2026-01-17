@@ -8,7 +8,7 @@ import axios from 'axios';
 import Header from '@/app/components/header';
 import AIEditSidebar from '../components/AIEditSidebar';
 import ResumeForm from '../components/ResumeForm';
-import ResumePdfModal from '../components/ResumePdfModal';
+import ResumeTemplateSelector from '../components/ResumeTemplateSelector';
 
 interface Message {
   id: string;
@@ -669,13 +669,17 @@ export default function ResumeBuilder() {
         </div>
       </main>
 
-      {/* PDF Download Modal */}
+      {/* Resume Template Selector Modal */}
       {resumeId && (
-        <ResumePdfModal
+        <ResumeTemplateSelector
           isOpen={isPdfModalOpen}
           onClose={() => setIsPdfModalOpen(false)}
           resumeId={resumeId}
           resumeTitle={documentTitle}
+          profile={profile}
+          educations={educations}
+          experience={experience}
+          skills={skills}
         />
       )}
     </div>

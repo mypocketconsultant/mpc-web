@@ -24,11 +24,13 @@ import QuickLinksSection, {
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import MoodSelector from "./components/MoodSelector";
+import { useUser } from "@/hooks/useUser";
 
 export default function LifeAdvisorPage() {
   const pathname = usePathname();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const { user } = useUser();
 
   const quickLinks: QuickLink[] = [
     {
@@ -96,7 +98,7 @@ export default function LifeAdvisorPage() {
             </button>
           </Link>
           <h2 className="text-xl  font-medium text-gray-900 mb-8">
-            How are you feeling today, Remi?
+            How are you feeling today{user?.firstName ? `, ${user.firstName}` : ''}?
           </h2>
           {/* Mood Question */}
           <div className="mb-8">
