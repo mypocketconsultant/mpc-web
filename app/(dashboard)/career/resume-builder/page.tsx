@@ -9,6 +9,8 @@ import Header from '@/app/components/header';
 import AIEditSidebar from '../components/AIEditSidebar';
 import ResumeForm from '../components/ResumeForm';
 import ResumeTemplateSelector from '../components/ResumeTemplateSelector';
+import { useToast } from '@/hooks/useToast';
+import { Toast } from '@/components/Toast';
 
 interface Message {
   id: string;
@@ -54,6 +56,7 @@ interface ExperienceData {
 export default function ResumeBuilder() {
   const router = useRouter();
   const pathname = usePathname();
+  const { toast, showToast } = useToast();
   const [inputValue, setInputValue] = useState('');
   const [resumeId, setResumeId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -203,7 +206,7 @@ export default function ResumeBuilder() {
       // Then poll every 2 seconds
       pollingIntervalRef.current = setInterval(() => {
         pollUploadStatus(processingUploadId);
-      }, 2000);
+      }, 6000);
 
       // Cleanup on unmount or when polling stops
       return () => {
@@ -416,6 +419,9 @@ export default function ResumeBuilder() {
     // Trigger form reset to step 1 while keeping all data
     setResetFormTrigger(Date.now());
     console.log('[ResumeBuilder] Triggered form reset to step 1');
+
+    // Show success toast
+    showToast('success', 'Resume saved successfully!');
   };
 
   const handleFileUpload = async (file: File): Promise<void> => {
@@ -571,25 +577,25 @@ export default function ResumeBuilder() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Loading Overlay */}
+      {(isProcessingResume || (isLoadingSession && resumeId)) && (
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999]">
+          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-lg">
+            <div className="w-12 h-12 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-900">{isProcessingResume ? 'Analyzing your resume' : 'Loading resume data'}</p>
+              <p className="text-sm text-gray-500 mt-1">{isProcessingResume ? 'This usually takes 10-30 seconds' : 'Please wait...'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <Header title={getTitleFromPath(pathname)} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto scrollbar-hide relative">
-        {/* Loading Overlay - Scoped to Main Content Area */}
-        {(isProcessingResume || (isLoadingSession && resumeId)) && (
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999] rounded-lg">
-            <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-lg">
-              <div className="w-12 h-12 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-gray-900">{isProcessingResume ? 'Analyzing your resume' : 'Loading resume data'}</p>
-                <p className="text-sm text-gray-500 mt-1">{isProcessingResume ? 'This usually takes 10-30 seconds' : 'Please wait...'}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <main className="flex-1 overflow-auto scrollbar-hide">
         <div className="max-w-[1100px] mx-auto px-8 py-8">
           {/* Breadcrumb */}
           <Link
@@ -682,6 +688,9 @@ export default function ResumeBuilder() {
           skills={skills}
         />
       )}
+
+      {/* Toast Notification */}
+      <Toast toast={toast} />
     </div>
   );
 }

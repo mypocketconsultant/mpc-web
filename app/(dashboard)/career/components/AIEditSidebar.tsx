@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import ResumePdfModal from "./ResumePdfModal";
-import AnalysisMessageComponent from "./AnalysisMessageComponent";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Section {
@@ -15,8 +14,9 @@ interface Section {
 }
 
 interface AnalysisPlan {
-  overall_score: number;
-  summary: string;
+  overall_score?: number;
+  summary?: string;
+  target_role?: string;
   sections: Section[];
   [key: string]: any; // Allow for any additional fields from AI
 }
@@ -64,7 +64,7 @@ export default function AIEditSidebar({
   placeholder = "Ask me to modify a plan...",
   inputValue = "",
   onInputChange,
-  onToggleExpanded,
+  onToggleExpanded: _onToggleExpanded,
   onFileUpload,
   intent,
   emptyStateMessage = "Start a conversation",
@@ -179,9 +179,8 @@ export default function AIEditSidebar({
                 renderedIndices.add(index + 1);
 
                 const analysisPlan = nextMessage.analysisPlan;
+                const hasAnalysis = !!analysisPlan;
 
-                // Render grouped message (resume + analysis together)
-                const hasAnalysis = analysisPlan && analysisPlan.sections && analysisPlan.sections.length > 0;
                 return (
                   <div key={message.id}>
                     <div className="flex justify-start mb-4">
@@ -207,18 +206,62 @@ export default function AIEditSidebar({
                           </span>
                         </button>
 
-                        {/* Main AI Message - Check for Analysis Plan */}
-                        {analysisPlan && analysisPlan.sections && analysisPlan.sections.length > 0 ? (
-                          <AnalysisMessageComponent
-                            content={nextMessage.content}
-                            analysisPlan={analysisPlan}
-                            isExpanded={nextMessage.isExpanded || false}
-                            onToggleExpanded={() => onToggleExpanded?.(nextMessage.id)}
-                          />
-                        ) : (
-                          <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                            {nextMessage.content}
-                          </p>
+                        {/* Main AI Message Content */}
+                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                          {nextMessage.content}
+                        </p>
+
+                        {/* If analysisPlan exists, show it */}
+                        {analysisPlan && (
+                          <div className="mt-4 space-y-3">
+                            {/* Target Role */}
+                            {analysisPlan.target_role && (
+                              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">Target Role: </span>
+                                <span className="text-sm font-medium text-purple-800">{analysisPlan.target_role}</span>
+                              </div>
+                            )}
+
+                            {/* Sections */}
+                            {analysisPlan.sections && analysisPlan.sections.map((section: Section, idx: number) => (
+                              <div key={idx} className="bg-white rounded-lg p-4 border border-blue-100">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="text-sm font-bold text-gray-900">{section.name}</h4>
+                                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">{section.score}/10</span>
+                                </div>
+
+                                {/* Issues */}
+                                {section.issues && section.issues.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-xs font-semibold text-red-700 mb-1 uppercase">Issues</p>
+                                    <ul className="space-y-1">
+                                      {section.issues.map((issue: string, i: number) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
+                                          <span className="text-red-500">•</span>
+                                          <span>{issue}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Recommendations */}
+                                {section.recommendations && section.recommendations.length > 0 && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-green-700 mb-1 uppercase">Recommendations</p>
+                                    <ul className="space-y-1">
+                                      {section.recommendations.map((rec: string, i: number) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
+                                          <span className="text-green-600">✓</span>
+                                          <span>{rec}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -298,25 +341,67 @@ export default function AIEditSidebar({
                   ) : (
                     /* Assistant Message Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
+                      <div className={`rounded-2xl p-5 max-w-[85%] ${
+                        message.analysisPlan
+                          ? 'bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100'
+                          : 'bg-gray-50'
+                      }`}>
+                        {/* Always show content */}
                         <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
                           {message.content}
                         </p>
-                        {message.fullContent && message.fullContent.length > 200 && !message.isExpanded && (
-                          <button
-                            onClick={() => onToggleExpanded?.(message.id)}
-                            className="text-[#5A3FFF] text-xs font-semibold mt-3 hover:underline cursor-pointer transition-colors"
-                          >
-                            See more
-                          </button>
-                        )}
-                        {message.isExpanded && message.fullContent && message.fullContent.length > 200 && (
-                          <button
-                            onClick={() => onToggleExpanded?.(message.id)}
-                            className="text-[#5A3FFF] text-xs font-semibold mt-3 hover:underline cursor-pointer transition-colors"
-                          >
-                            See less
-                          </button>
+
+                        {/* If analysisPlan exists, show it */}
+                        {message.analysisPlan && (
+                          <div className="mt-4 space-y-3">
+                            {/* Target Role */}
+                            {message.analysisPlan.target_role && (
+                              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">Target Role: </span>
+                                <span className="text-sm font-medium text-purple-800">{message.analysisPlan.target_role}</span>
+                              </div>
+                            )}
+
+                            {/* Sections */}
+                            {message.analysisPlan.sections && message.analysisPlan.sections.map((section: Section, idx: number) => (
+                              <div key={idx} className="bg-white rounded-lg p-4 border border-blue-100">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="text-sm font-bold text-gray-900">{section.name}</h4>
+                                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">{section.score}/10</span>
+                                </div>
+
+                                {/* Issues */}
+                                {section.issues && section.issues.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-xs font-semibold text-red-700 mb-1 uppercase">Issues</p>
+                                    <ul className="space-y-1">
+                                      {section.issues.map((issue: string, i: number) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
+                                          <span className="text-red-500">•</span>
+                                          <span>{issue}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Recommendations */}
+                                {section.recommendations && section.recommendations.length > 0 && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-green-700 mb-1 uppercase">Recommendations</p>
+                                    <ul className="space-y-1">
+                                      {section.recommendations.map((rec: string, i: number) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
+                                          <span className="text-green-600">✓</span>
+                                          <span>{rec}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>

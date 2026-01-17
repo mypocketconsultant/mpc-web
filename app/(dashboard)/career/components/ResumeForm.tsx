@@ -399,9 +399,6 @@ export default function ResumeForm({
             >
               Download Resume
             </button>
-            <button className="text-[#5A3FFF] text-sm font-medium hover:underline">
-              Change template
-            </button>
           </div>
         </div>
         <button

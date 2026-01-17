@@ -9,6 +9,8 @@ import AIEditSidebar from "../components/AIEditSidebar";
 import PlanForm from "../components/PlanForm";
 import TasksList from "../components/TasksList";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
@@ -46,6 +48,7 @@ function EditTaskContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get("planId");
   const taskId = searchParams.get("id");
+  const { toast, showToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,9 +127,12 @@ function EditTaskContent() {
         goal: planGoal,
         created_at: createdDate,
       });
+      setIsSaving(false);
+      showToast('success', 'Plan saved successfully!');
     } catch (error) {
       console.error("Failed to save plan:", error);
       setIsSaving(false);
+      showToast('error', 'Failed to save plan. Please try again.');
     }
   };
 
@@ -262,6 +268,9 @@ function EditTaskContent() {
           </div>
         </div>
       </main>
+
+      {/* Toast Notification */}
+      <Toast toast={toast} />
     </div>
   );
 }
