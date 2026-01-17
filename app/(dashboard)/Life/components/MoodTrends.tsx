@@ -11,27 +11,45 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface MoodTrendsProps {
-  onPeriodChange?: (period: string) => void;
+interface TrendData {
+  day: string;
+  mood1: number;
+  mood2: number;
 }
 
-export default function MoodTrends({ onPeriodChange }: MoodTrendsProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState("30");
+interface MoodTrendsProps {
+  data?: TrendData[];
+  onPeriodChange?: (period: string) => void;
+  selectedPeriod?: string;
+}
 
-  // Sample data matching the screenshot pattern
-  const moodData = [
-    { day: "MON", mood1: 25, mood2: 30 },
-    { day: "TUE", mood1: 50, mood2: 48 },
-    { day: "WED", mood1: 45, mood2: 50 },
-    { day: "THR", mood1: 70, mood2: 75 },
-    { day: "FRI", mood1: 75, mood2: 70 },
-    { day: "SAT", mood1: 35, mood2: 45 },
-    { day: "SUN", mood1: 50, mood2: 45 },
-  ];
+// Default data for when API hasn't loaded yet
+const defaultMoodData: TrendData[] = [
+  { day: "MON", mood1: 0, mood2: 0 },
+  { day: "TUE", mood1: 0, mood2: 0 },
+  { day: "WED", mood1: 0, mood2: 0 },
+  { day: "THU", mood1: 0, mood2: 0 },
+  { day: "FRI", mood1: 0, mood2: 0 },
+  { day: "SAT", mood1: 0, mood2: 0 },
+  { day: "SUN", mood1: 0, mood2: 0 },
+];
+
+export default function MoodTrends({
+  data,
+  onPeriodChange,
+  selectedPeriod: externalPeriod
+}: MoodTrendsProps) {
+  const [internalPeriod, setInternalPeriod] = useState("7");
+
+  // Use external period if provided, otherwise use internal state
+  const selectedPeriod = externalPeriod ?? internalPeriod;
+
+  // Use provided data or default to empty data
+  const moodData = data && data.length > 0 ? data : defaultMoodData;
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setSelectedPeriod(value);
+    setInternalPeriod(value);
     onPeriodChange?.(value);
   };
 
@@ -90,6 +108,10 @@ export default function MoodTrends({ onPeriodChange }: MoodTrendsProps) {
                 padding: "8px 12px",
               }}
               labelStyle={{ color: "#6B7280", fontWeight: 600 }}
+              formatter={(value: number, name: string) => [
+                value,
+                name === "mood1" ? "Mood" : "Energy"
+              ]}
             />
             <Area
               type="monotone"
@@ -97,6 +119,7 @@ export default function MoodTrends({ onPeriodChange }: MoodTrendsProps) {
               stroke="#3B82F6"
               strokeWidth={2.5}
               fill="url(#colorMood1)"
+              name="mood1"
             />
             <Area
               type="monotone"
@@ -104,6 +127,7 @@ export default function MoodTrends({ onPeriodChange }: MoodTrendsProps) {
               stroke="#EF4444"
               strokeWidth={2.5}
               fill="url(#colorMood2)"
+              name="mood2"
             />
           </AreaChart>
         </ResponsiveContainer>

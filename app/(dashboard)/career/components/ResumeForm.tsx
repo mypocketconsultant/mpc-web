@@ -316,8 +316,8 @@ export default function ResumeForm({
         console.log("[ResumeForm] Stage 2: Payload prepared", payload);
 
         // Check if updating existing resume or creating new one
-        const currentResumeId = typeof window !== 'undefined' ? localStorage.getItem('currentResumeId') : null;
-        console.log("[ResumeForm] Stage 2.5: currentResumeId from localStorage:", currentResumeId);
+        const currentResumeId = typeof window !== 'undefined' ? sessionStorage.getItem('currentResumeId') : null;
+        console.log("[ResumeForm] Stage 2.5: currentResumeId from sessionStorage:", currentResumeId);
 
         let apiUrl: string;
         if (currentResumeId) {

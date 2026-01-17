@@ -32,8 +32,8 @@ export default function FormSection4({
         
         <div className="mb-[0.5vh]">
           <CustomDropdown
-            options={["software engineer", "product manager", "designer", "other"]}
-            placeholder="Select your career"
+            options={["Career", "Life", "Study", "Business", "Finance"]}
+            placeholder="Select your preferred module"
             value={career}
             onChange={(value: any) => setCareer(value)}
           />

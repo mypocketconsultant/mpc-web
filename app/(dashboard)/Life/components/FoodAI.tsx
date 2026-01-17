@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
 import FileUploadModal from "@/app/components/FileUploadModal";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Message {
   id: string;
@@ -26,10 +27,9 @@ interface FoodAIProps {
 }
 
 export default function FoodAI({
-  title = "Edit with AI",
+  title = "Chat with AI",
   messages = [],
   onSend,
-  onModify,
   onAttach,
   onMicrophone,
   placeholder = "Ask me to modif...",
@@ -37,10 +37,11 @@ export default function FoodAI({
 }: FoodAIProps) {
   const [input, setInput] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
 
   const handleSubmit = () => {
-    if (input.trim()) {
-      onModify?.(input);
+    if (input.trim() && !isLoading) {
+      // onModify?.(input);
       onSend?.(input);
       setInput("");
     }
@@ -62,6 +63,13 @@ export default function FoodAI({
     console.log("File uploaded:", file);
   };
 
+  const handleMicrophoneClick = () => {
+    toggleRecording((text) => {
+      setInput(text);
+    });
+    onMicrophone?.();
+  };
+
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col">
       {/* Header */}
@@ -75,7 +83,7 @@ export default function FoodAI({
             <div className="flex justify-end">
               <div className="bg-white rounded-2xl p-2 border  border-gray-200 shadow-sm max-w-[80%]">
                 <p className="text-sm text-gray-700 text-right leading-relaxed">
-                  Can you put together a document that tells me of foods that make my mood better?
+                  Can you tell me about my mood trends?
                 </p>
               </div>
             </div>
@@ -84,7 +92,7 @@ export default function FoodAI({
             <div className="flex justify-start">
               <div className="bg-gray-50 rounded-2xl p-6 shadow-sm border border-gray-100 max-w-[90%]">
                 <p className="text-sm text-gray-600 text-center">
-                  Here's your document
+                  Your mood is higher during weekdays. You might thrive on routine and productivity.
                 </p>
               </div>
             </div>
@@ -143,50 +151,44 @@ export default function FoodAI({
           </div>
         )}
 
-        {/* Bottom Document Reference */}
-        {messages.length > 0 && (
-          <div className="flex items-center gap-2 pt-2">
-            <span className="text-sm font-semibold text-gray-900">
-              Remi Ladi Resume / CV
-            </span>
-            <div className="w-5 h-5 bg-blue-100 rounded flex items-center justify-center">
-              <FileText className="w-3 h-3 text-blue-600" />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-sm font-bold  text-black">
-            Foods for better moods
-          </p>
-          <span className="text-base">📄</span>
-        </div>
 
         <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 hover:border-gray-300 transition-colors">
           <button
             onClick={handleAttachClick}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+            disabled={isLoading}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Attach file"
           >
             <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
           </button>
-          
+
           <input
             type="text"
             placeholder={placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400"
+            disabled={isLoading}
+            className="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          
+
           <button
-            onClick={onMicrophone}
-            className="p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md"
-            style={{ backgroundColor: "#5A3FFF" }}
+            onClick={handleMicrophoneClick}
+            disabled={isLoading || isTranscribing}
+            className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording ? 'animate-pulse' : ''
+            }`}
+            style={{
+              backgroundColor: isRecording
+                ? '#EF4444'
+                : isLoading || isTranscribing
+                  ? '#B0A0FF'
+                  : '#5A3FFF'
+            }}
             aria-label="Voice input"
           >
             <Mic className="w-5 h-5 text-white" />

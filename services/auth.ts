@@ -55,9 +55,9 @@ export const signUpWithEmail = async (
 
 export const verifyAuth = async () => {
   try {
-    const response: any = await apiService.get("/v1/auth/me");
+    const response = await apiService.get("/v1/auth/me");
     return { response };
-  } catch (error: any) {
+  } catch (error) {
     return { error: error.message };
   }
 };

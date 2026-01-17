@@ -80,7 +80,7 @@ export default function CreatePlanPage() {
         .map((plan) => ({
           id: plan.id,
           title: plan.name,
-          time: "All day",
+          time: plan.plan_schedule,
           description: plan.goal || "",
         }));
 
@@ -133,105 +133,6 @@ export default function CreatePlanPage() {
     return "My Pocket Consultant";
   };
 
-  const handleSend = async (message: string, intent?: string) => {
-    if (!message.trim()) return;
-
-    // [Console 1] Log receipt of message with intent
-    console.log('[CreatePlan] Received message with intent', { message: message.substring(0, 50), intent });
-
-    // Add user message to UI
-    const newUserMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: message,
-    };
-
-    // Add loading bubble
-    const loadingBubbleId = (Date.now() + 1).toString();
-    const loadingBubble: Message = {
-      id: loadingBubbleId,
-      type: 'loading',
-      content: '',
-    };
-
-    setMessages((prev) => [...prev, newUserMessage, loadingBubble]);
-    setInputValue('');
-
-    try {
-      const payload = {
-        message,
-        intent: intent,
-        session_id: 'career-planner-1'
-      };
-
-      // [Console 2] Log payload before API call
-      console.log('[CreatePlan] Sending to API', { payload });
-
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/career/goal`,
-        payload,
-        { withCredentials: true }
-      );
-
-      // [Console 3] Log response intent
-      console.log('[CreatePlan] Response received with intent', { intent: response.data?.intent });
-
-      // Replace loading bubble with AI response
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === loadingBubbleId
-            ? {
-                id: msg.id,
-                type: 'assistant',
-                content: response.data?.message || 'No response',
-              }
-            : msg
-        )
-      );
-
-      // Refresh plans if a plan was created
-      if (response.data?.intent === 'planner_create') {
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error('[CreatePlan] Error sending message:', error);
-
-      const errorMessage =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : 'Failed to send message. Please try again.';
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === loadingBubbleId
-            ? {
-                id: msg.id,
-                type: 'assistant',
-                content: errorMessage,
-                isError: true,
-              }
-            : msg
-        )
-      );
-    }
-  };
-
-  const toggleMessageExpanded = (messageId: string) => {
-    setMessages((prev) =>
-      prev.map((msg) => {
-        if (msg.id === messageId) {
-          const fullContent = msg.fullContent || msg.content;
-          return {
-            ...msg,
-            isExpanded: !msg.isExpanded,
-            content: msg.isExpanded ? fullContent.substring(0, 200) + '...' : fullContent,
-          };
-        }
-        return msg;
-      })
-    );
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
@@ -251,9 +152,9 @@ export default function CreatePlanPage() {
 
           <hr className="my-10" />
 
-          <div className="grid grid-cols-12 gap-6">
+          <div className="gap-6">
             {/* Left Sidebar - AI Chat */}
-            <div className="col-span-5 sticky top-10 h-fit">
+            {/* <div className="col-span-5 sticky top-10 h-fit">
               <AIEditSidebar
                 title="Plan with AI"
                 messages={messages}
@@ -264,7 +165,7 @@ export default function CreatePlanPage() {
                 placeholder="Describe your career goal..."
                 intent="planner_create"
               />
-            </div>
+            </div> */}
 
             {/* Right Side - Timeline Widget */}
             <div className="col-span-7">

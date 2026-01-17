@@ -87,9 +87,9 @@ export default function MoodEntryPage() {
             </button>
           </Link>
 
-          <div className="grid grid-cols-2 mt-7 lg:grid-cols-3 gap-6">
-            {/* Left Sidebar - AI Edit */}
-            <div className="lg:col-span-1 lg:sticky lg:top-6 lg:self-start">
+          <div className="flex gap-6 mt-7">
+            {/* Left Sidebar - AI Edit (35%) */}
+            <div className="w-[35%] sticky top-6 self-start">
               <AIEditSidebar
                 title="Edit with AI"
                 messages={messages}
@@ -102,9 +102,10 @@ export default function MoodEntryPage() {
               />
             </div>
 
-            {/* Right Column - Mood Entry Form */}
-            
-            <MoodEntryForm />
+            {/* Right Column - Mood Entry Form (65%) */}
+            <div className="w-[65%] flex justify-center">
+              <MoodEntryForm />
+            </div>
           </div>
         </div>
       </main>

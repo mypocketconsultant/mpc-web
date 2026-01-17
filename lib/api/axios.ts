@@ -14,7 +14,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const workspaceId = localStorage.getItem("lastWorkspace");
+    const workspaceId = sessionStorage.getItem("lastWorkspace");
     if (workspaceId) {
       config.headers["X-Workspace-Id"] = workspaceId;
     }

@@ -1,49 +1,80 @@
 "use client";
 
-import React, { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { X, Plus, Trash2 } from "lucide-react";
 
-interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-  aiPrompt?: string;
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  due_date: string;
 }
 
 interface GoalFormProps {
   goalTitle: string;
-  goalDescription: string;
-  tasks: Task[];
-  reminderEnabled: boolean;
+  horizon: string;
+  domains: string[];
+  steps: Step[];
   onGoalTitleChange: (title: string) => void;
-  onGoalDescriptionChange: (description: string) => void;
-  onToggleTask: (id: number) => void;
-  onReminderToggle: (enabled: boolean) => void;
+  onHorizonChange: (horizon: string) => void;
+  onDomainsChange: (domains: string[]) => void;
+  onStepsChange: (steps: Step[]) => void;
   onPublish: () => void;
   onClose: () => void;
+  isPublishing?: boolean;
 }
+
+const DOMAIN_OPTIONS = ["health", "career", "relationships", "finance", "personal growth", "education"];
 
 export default function GoalForm({
   goalTitle,
-  goalDescription,
-  tasks,
-  reminderEnabled,
+  horizon,
+  domains,
+  steps,
   onGoalTitleChange,
-  onGoalDescriptionChange,
-  onToggleTask,
-  onReminderToggle,
+  onHorizonChange,
+  onDomainsChange,
+  onStepsChange,
   onPublish,
   onClose,
+  isPublishing = false,
 }: GoalFormProps) {
+  const toggleDomain = (domain: string) => {
+    if (domains.includes(domain)) {
+      onDomainsChange(domains.filter(d => d !== domain));
+    } else {
+      onDomainsChange([...domains, domain]);
+    }
+  };
+
+  const addStep = () => {
+    const newStep: Step = {
+      id: Date.now().toString(),
+      title: "",
+      description: "",
+      due_date: "",
+    };
+    onStepsChange([...steps, newStep]);
+  };
+
+  const updateStep = (id: string, field: keyof Step, value: string) => {
+    onStepsChange(steps.map(step =>
+      step.id === id ? { ...step, [field]: value } : step
+    ));
+  };
+
+  const removeStep = (id: string) => {
+    onStepsChange(steps.filter(step => step.id !== id));
+  };
   return (
     <div className="w-full  ">
       {/* Header */}
       <div className="flex items-center justify-between p-6  border-gray-100">
-        <button 
+        <button
           onClick={onPublish}
-          className="px-5 py-2 bg-[#5A3FFF] text-white text-sm font-semibold rounded-full hover:bg-[#4A2FEF] transition-colors"
+          disabled={isPublishing}
+          className="px-5 py-2 bg-[#5A3FFF] text-white text-sm font-semibold rounded-full hover:bg-[#4A2FEF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Publish
+          {isPublishing ? 'Publishing...' : 'Publish'}
         </button>
         <button 
           onClick={onClose}
@@ -54,77 +85,97 @@ export default function GoalForm({
       </div>
 
       {/* Content */}
-      <div className="p-8">
-        {/* Goal Title Input */}
-        <input
-          type="text"
-          value={goalTitle}
-          onChange={(e) => onGoalTitleChange(e.target.value)}
-          placeholder="Add goal title"
-          className="w-full text-2xl font-medium text-gray-900 placeholder:text-gray-300 border-none outline-none mb-6 focus:ring-0"
-        />
+      <div className="p-8 space-y-6">
+        {/* Goal Title */}
+        <div>
+          <input
+            type="text"
+            value={goalTitle}
+            onChange={(e) => onGoalTitleChange(e.target.value)}
+            placeholder="Add goal title"
+            className="w-full text-2xl font-medium text-gray-900 placeholder:text-gray-300 border-none outline-none focus:ring-0"
+          />
+        </div>
 
-        {/* Goal Description */}
-        <textarea
-          value={goalDescription}
-          onChange={(e) => onGoalDescriptionChange(e.target.value)}
-          placeholder="Add a description"
-          className="w-full h-36 text-sm text-gray-700 placeholder:text-gray-300 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent mb-6"
-        />
+        {/* Horizon */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Time horizon</label>
+          <input
+            type="text"
+            value={horizon}
+            onChange={(e) => onHorizonChange(e.target.value)}
+            placeholder="e.g., 3 months, 6 weeks, 1 year"
+            className="w-full px-4 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
+          />
+        </div>
 
-      {/* Tasks Checklist */}
-            <div className="space-y-4 mb-6">
-              {tasks.map((task) => (
-                <div key={task.id} className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => onToggleTask(task.id)}
-                    className="mt-1 w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer flex-shrink-0"
-                  />
-                  <div className="flex-1 flex items-start  gap-3">
-                    <span className={`text-sm leading-relaxed ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                      {task.text}
-                    </span>
-                    {task.aiPrompt && (
-                      <button className="flex-shrink-0 text-xs text-gray-700 hover:text-gray-900 font-medium flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>{task.aiPrompt}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Domains */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Focus areas</label>
+          <div className="flex flex-wrap gap-2">
+            {DOMAIN_OPTIONS.map(domain => (
+              <button
+                key={domain}
+                onClick={() => toggleDomain(domain)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  domains.includes(domain)
+                    ? 'bg-[#5A3FFF] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {domain}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Set Reminder */}
+        {/* Steps */}
         <div className="border-t border-gray-100 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-gray-700">Set reminder</span>
+            <label className="block text-sm font-medium text-gray-700">Steps</label>
             <button
-              onClick={() => onReminderToggle(!reminderEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                reminderEnabled ? 'bg-[#5A3FFF]' : 'bg-gray-200'
-              }`}
+              onClick={addStep}
+              className="flex items-center gap-1 text-xs text-[#5A3FFF] hover:text-[#4A2FEF] font-medium"
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  reminderEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
+              <Plus className="w-4 h-4" />
+              Add step
             </button>
           </div>
 
-          {/* Date/Time Selector (shown when reminder is enabled) */}
-          {reminderEnabled && (
-            <div className="mt-4">
-              <label className="block text-xs text-gray-500 mb-2">From</label>
-              <input
-                type="datetime-local"
-                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
-              />
-            </div>
-          )}
+          <div className="space-y-3">
+            {steps.map(step => (
+              <div key={step.id} className="p-4 border border-gray-200 rounded-2xl space-y-3">
+                <input
+                  type="text"
+                  value={step.title}
+                  onChange={(e) => updateStep(step.id, 'title', e.target.value)}
+                  placeholder="Step title"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
+                />
+                <textarea
+                  value={step.description}
+                  onChange={(e) => updateStep(step.id, 'description', e.target.value)}
+                  placeholder="Description (optional)"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
+                  rows={2}
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={step.due_date}
+                    onChange={(e) => updateStep(step.id, 'due_date', e.target.value)}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
+                  />
+                  <button
+                    onClick={() => removeStep(step.id)}
+                    className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

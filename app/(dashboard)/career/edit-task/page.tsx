@@ -30,6 +30,7 @@ interface Plan {
   created_at: string;
   horizon: string;
   status: string;
+  plan_schedule: string
 }
 
 interface Task {
@@ -50,6 +51,7 @@ function EditTaskContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [planName, setPlanName] = useState("");
   const [planGoal, setPlanGoal] = useState("");
+  const [planschedule, setPlanschedule] = useState("")
   const [createdDate, setCreatedDate] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -74,9 +76,11 @@ function EditTaskContent() {
       }>(`/v1/career/plans/${planId}/details`);
 
       const plan = response?.data?.plan;
+      console.log(plan, "check plan")
       if (plan) {
         setPlanName(plan.name || "");
         setPlanGoal(plan.goal || "");
+        setPlanschedule(plan.plan_schedule || "")
         setCreatedDate(plan.created_at?.split("T")[0] || "");
       }
 
@@ -242,6 +246,7 @@ function EditTaskContent() {
                     planName={planName}
                     onNameChange={setPlanName}
                     planGoal={planGoal}
+                    planSchedule={planschedule}
                     onGoalChange={setPlanGoal}
                     createdDate={createdDate}
                     onDateChange={setCreatedDate}

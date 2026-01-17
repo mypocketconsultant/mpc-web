@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, Paperclip, Mic } from "lucide-react";
 import Header from "@/app/components/header";
-import InputFooter from "@/app/components/InputFooter";
+import { apiService } from "@/lib/api/apiService";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Message {
   id: string;
@@ -17,44 +18,63 @@ interface Message {
 }
 
 export default function LifeChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "user",
-      content: "Can you put together a document that tells me of foods that make my mood better?",
-    },
-    {
-      id: "2",
-      type: "ai",
-      content: "Here's your document",
-      document: {
-        title: "Foods for better moods",
-        icon: "📄",
-      },
-    },
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [sessionId, setSessionId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
 
-  const handleSend = (message: string) => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        type: "user",
-        content: message,
+  // Generate session ID on mount
+  useEffect(() => {
+    const newSessionId = `life-chat-${Date.now()}`;
+    setSessionId(newSessionId);
+    console.log('[LifeChatPage] Session ID generated:', newSessionId);
+  }, []);
+
+  const handleSend = async (message: string) => {
+    if (!message.trim()) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: "user",
+      content: message,
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setInputValue("");
+    setIsLoading(true);
+
+    try {
+      const payload = {
+        message: message.trim(),
+        session_id: sessionId,
       };
-      setMessages([...messages, newMessage]);
-      setInputValue("");
 
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: "ai",
-          content: "I'm processing your request...",
-        };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+      console.log('[LifeChatPage] Sending to /v1/life/chat:', payload);
+
+      const response: any = await apiService.post('/v1/life/chat', payload);
+
+      console.log('[LifeChatPage] Response from /v1/life/chat:', response);
+
+      const aiMessage = response?.data?.message || response?.data?.data?.message || 'I received your message but could not generate a response.';
+
+      const aiResponse: Message = {
+        id: Date.now().toString(),
+        type: "ai",
+        content: aiMessage,
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('[LifeChatPage] Error calling chat API:', error);
+
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
+      const errorResponse: Message = {
+        id: Date.now().toString(),
+        type: "ai",
+        content: `Error: ${errorMessage}`,
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,7 +83,9 @@ export default function LifeChatPage() {
   };
 
   const handleMicrophone = () => {
-    console.log("Microphone clicked");
+    toggleRecording((text) => {
+      setInputValue(text);
+    });
   };
 
   return (
@@ -85,7 +107,14 @@ export default function LifeChatPage() {
 
           {/* Chat Messages */}
           <div className="space-y-6 mb-32">
-            {messages.map((message) => (
+            {messages.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">
+                  Start a conversation with your Life Coach
+                </p>
+              </div>
+            ) : (
+              messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
@@ -120,7 +149,17 @@ export default function LifeChatPage() {
                   </div>
                 )}
               </div>
-            ))}
+              ))
+            )}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[400px]">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <p className="text-sm text-gray-500">Thinking...</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -163,7 +202,14 @@ export default function LifeChatPage() {
 
             <button
               onClick={handleMicrophone}
-              className="flex-shrink-0 p-3 bg-[#5A3FFF] text-white rounded-full hover:bg-[#4A2FEF] transition-colors"
+              disabled={isTranscribing}
+              className={`flex-shrink-0 p-3 text-white rounded-full transition-colors ${
+                isRecording
+                  ? 'bg-red-500 animate-pulse'
+                  : isTranscribing
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[#5A3FFF] hover:bg-[#4A2FEF]'
+              }`}
             >
               <Mic className="w-5 h-5" />
             </button>

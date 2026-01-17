@@ -1,125 +1,31 @@
-import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-export default function PlannerCalendar() {
-  const [viewMode, setViewMode] = useState("week");
-  const [selectedFilter, setSelectedFilter] = useState("goals");
+export interface DayEntry {
+  id: number;
+  planId: string;
+  title: string;
+  time: string;
+  description: string;
+  type: 'mood' | 'goal';
+  leftBorder: string;
+}
 
-  const events = [
-    {
-      id: 1,
-      date: "Oct 21",
-      day: "21",
-      entries: [
-        {
-          id: 11,
-          title: "Feeling really sad",
-          time: "10:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "mood",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-        {
-          id: 12,
-          title: "Unmotivated",
-          time: "10:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "goal",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-      ],
-    },
-    {
-      id: 2,
-      date: "Oct 22",
-      day: "22",
-      entries: [
-        {
-          id: 21,
-          title: "Excited for Tech...",
-          time: "10:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "mood",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-      ],
-    },
-    {
-      id: 3,
-      date: "Oct 23",
-      day: "23",
-      entries: [
-        {
-          id: 31,
-          title: "Energy levels a...",
-          time: "10:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "mood",
-            leftBorder: "border-l-4 border-l-red-400",
-        },
-      ],
-    },
-    {
-      id: 4,
-      date: "Oct 24",
-      day: "24",
-      entries: [],
-    },
-    {
-      id: 5,
-      date: "Oct 25",
-      day: "25",
-      isToday: true,
-      entries: [
-        {
-          id: 51,
-          title: "My car develo...",
-          time: "12:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "mood",
-           leftBorder: "border-l-4 border-l-red-400",
-        },
-        {
-          id: 52,
-          title: "New hub has...",
-          time: "09:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "goal",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-      ],
-    },
-    {
-      id: 6,
-      date: "Oct 26",
-      day: "26",
-      entries: [],
-    },
-    {
-      id: 7,
-      date: "Oct 27",
-      day: "27",
-      entries: [
-        {
-          id: 71,
-          title: "Princess Fest...",
-          time: "12:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "mood",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-        {
-          id: 72,
-          title: "Encore Guides..",
-          time: "09:00",
-          description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-          type: "goal",
-          leftBorder: "border-l-4 border-l-red-400",
-        },
-      ],
-    },
-  ];
+export interface DayData {
+  id: number;
+  date: string;
+  day: string;
+  isToday?: boolean;
+  entries: DayEntry[];
+}
+
+interface PlannerCalendarProps {
+  events?: DayData[];
+  isLoading?: boolean;
+  onEntryClick?: (planId: string) => void;
+}
+
+export default function PlannerCalendar({ events = [], isLoading, onEntryClick }: PlannerCalendarProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -174,70 +80,89 @@ export default function PlannerCalendar() {
 
           {/* Calendar Grid */}
           <div className="space-y-6">
-            {events.map((day) => (
-              <div key={day.id} className="flex gap-6">
-                {/* Date Box */}
-                <div className="flex-shrink-0 w-20">
-                  <div
-                    className={`text-center py-3 px-4 rounded-2xl ${
-                      day.isToday
-                        ? "bg-gradient-to-br from-red-400 to-red-500 text-white shadow-md"
-                        : "bg-red-50 text-gray-700"
-                    }`}
-                  >
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <span className="ml-3 text-gray-500">Loading plans...</span>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <p className="text-gray-500 mb-4">No plans found</p>
+                <Link href="/Life/new-goal">
+                  <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Create your first goal
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              events.map((day) => (
+                <div key={day.id} className="flex gap-6">
+                  {/* Date Box */}
+                  <div className="flex-shrink-0 w-20">
                     <div
-                      className={`text-xs font-bold mb-1 ${
-                        day.isToday ? "text-white/90" : "text-gray-600"
+                      className={`text-center py-3 px-4 rounded-2xl ${
+                        day.isToday
+                          ? "bg-gradient-to-br from-red-400 to-red-500 text-white shadow-md"
+                          : "bg-red-50 text-gray-700"
                       }`}
                     >
-                      {day.date.split(" ")[0]}
-                    </div>
-                    <div
-                      className={`text-2xl font-bold ${
-                        day.isToday ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      {day.day}
+                      <div
+                        className={`text-xs font-bold mb-1 ${
+                          day.isToday ? "text-white/90" : "text-gray-600"
+                        }`}
+                      >
+                        {day.date.split(" ")[0]}
+                      </div>
+                      <div
+                        className={`text-2xl font-bold ${
+                          day.isToday ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {day.day}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Events List */}
-                <div className="flex-1">
-                  {day.entries.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {day.entries.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className={`bg-white border-gray-200 shadow-md flex flex-col rounded-2xl p-2 hover:shadow-lg transition-all cursor-pointer ${entry.leftBorder}`}
-                        >
-                          <div className="flex-row flex gap-3  mb-3">
-                            <div className="flex gap-3 items-center">
-                              <h3 className="font-semibold text-sm text-gray-900 flex-1">
-                                {entry.title}
-                              </h3>
-                              <span className="text-sm text-gray-500 ml-3">
-                                {entry.time}
-                              </span>
-                              <button className="text-sm text-black hover:text-indigo-700  font-medium">
-                                Click to edit
-                              </button>
+                  {/* Events List */}
+                  <div className="flex-1">
+                    {day.entries.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {day.entries.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className={`bg-white border-gray-200 shadow-md flex flex-col rounded-2xl p-2 hover:shadow-lg transition-all cursor-pointer ${entry.leftBorder}`}
+                          >
+                            <div className="flex-row flex gap-3  mb-3">
+                              <div className="flex gap-3 items-center">
+                                <h3 className="font-semibold text-sm text-gray-900 flex-1">
+                                  {entry.title}
+                                </h3>
+                                <span className="text-sm text-gray-500 ml-3">
+                                  {entry.time}
+                                </span>
+                                <button
+                                  onClick={() => onEntryClick?.(entry.planId)}
+                                  className="text-sm text-black hover:text-indigo-700 font-medium"
+                                >
+                                  Click to edit
+                                </button>
+                              </div>
                             </div>
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              {entry.description}
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {entry.description}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="h-full flex items-center">
-                      <p className="text-sm text-gray-400">No entries</p>
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center">
+                        <p className="text-sm text-gray-400">No entries</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

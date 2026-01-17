@@ -1,147 +1,118 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
-import InputFooter from "@/app/components/InputFooter";
-import AIEditSidebar from "../components/FoodAI";
-import PlannerCalendar from "../components/PlannerCalendar";
+import PlannerCalendar, { DayData, DayEntry } from "../components/PlannerCalendar";
+import { apiService } from "@/lib/api/apiService";
 
-interface Message {
+interface Plan {
   id: string;
-  type: 'user' | 'assistant';
-  content: string;
-}
-
-interface CalendarEvent {
-  id: number;
-  date: string;
-  day: number;
-  title: string;
-  time: string;
-  description: string;
-  clickToEdit: boolean;
-  status?: 'unresolved' | 'resolved';
-  color: string;
+  goal: string;
+  name?: string;
+  horizon: string;
+  domains: string[];
+  steps: Array<{
+    title: string;
+    description?: string;
+    order?: number;
+    due_date?: string;
+  }>;
+  status: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export default function LifePlannerPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'mood' | 'goals'>('all');
+  const router = useRouter();
+  const [events, setEvents] = useState<DayData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const events: CalendarEvent[] = [
-    {
-      id: 1,
-      date: "Oct 21",
-      day: 21,
-      title: "Feeling really sad",
-      time: "10:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      status: 'unresolved',
-      color: "bg-red-100 border-red-200"
-    },
-    {
-      id: 2,
-      date: "Oct 22",
-      day: 22,
-      title: "Excited for Tech...",
-      time: "10:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-red-100 border-red-200"
-    },
-    {
-      id: 3,
-      date: "Oct 23",
-      day: 23,
-      title: "Energy levels a...",
-      time: "10:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-red-200 border-red-300"
-    },
-    {
-      id: 4,
-      date: "Oct 25",
-      day: 25,
-      title: "My car develo...",
-      time: "12:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-red-300 border-red-400"
-    },
-    {
-      id: 5,
-      date: "Oct 25",
-      day: 25,
-      title: "Unresolved",
-      time: "10:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      status: 'unresolved',
-      color: "bg-gray-100 border-gray-200"
-    },
-    {
-      id: 6,
-      date: "Oct 25",
-      day: 25,
-      title: "New hub has...",
-      time: "09:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-gray-100 border-gray-200"
-    },
-    {
-      id: 7,
-      date: "Oct 27",
-      day: 27,
-      title: "Princess rest...",
-      time: "12:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-red-300 border-red-400"
-    },
-    {
-      id: 8,
-      date: "Oct 27",
-      day: 27,
-      title: "Encore Guides..",
-      time: "09:00",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-      clickToEdit: true,
-      color: "bg-gray-100 border-gray-200"
-    },
-  ];
+  const handleEntryClick = (planId: string) => {
+    console.log('[LifePlannerPage] Navigating to edit plan:', planId);
+    sessionStorage.setItem('currentGoalPlanId', planId);
+    router.push('/Life/new-goal');
+  };
 
-  const handleSend = (message: string) => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        type: 'user',
-        content: message,
-      };
-      setMessages([...messages, newMessage]);
-      
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: "I've updated your planner based on your input.",
+  useEffect(() => {
+    const fetchPlans = async () => {
+      console.log('[LifePlannerPage] Fetching plans...');
+      try {
+        const response: any = await apiService.get('/v1/life/plans');
+        console.log('[LifePlannerPage] Raw response:', response);
+
+        // Extract plans from response - handle nested data structure
+        let plans: Plan[] = response?.data?.items || response?.items || [];
+        if (!Array.isArray(plans)) {
+          plans = [];
+        }
+
+        console.log('[LifePlannerPage] Plans fetched:', plans.length, 'items');
+
+        // Transform plans to calendar events grouped by date
+        const calendarEvents = transformPlansToCalendarEvents(plans);
+        setEvents(calendarEvents);
+      } catch (error) {
+        console.error('[LifePlannerPage] Failed to fetch plans:', error);
+        setEvents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  const transformPlansToCalendarEvents = (plans: Plan[]): DayData[] => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Group plans by date
+    const groupedByDate: Record<string, { date: Date; entries: DayEntry[] }> = {};
+
+    plans.forEach((plan, index) => {
+      const createdDate = new Date(plan.created_at);
+      const dateKey = createdDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = {
+          date: createdDate,
+          entries: [],
         };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
-    }
-  };
+      }
 
-  const handleEventClick = (event: CalendarEvent) => {
-    console.log("Event clicked:", event);
-  };
+      const entry: DayEntry = {
+        id: index + 1,
+        planId: plan.id,
+        title: plan.goal || plan.name || 'Untitled Plan',
+        time: createdDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        description: plan.steps?.[0]?.description || `${plan.horizon} plan`,
+        type: 'goal',
+        leftBorder: plan.status === 'active' ? 'border-l-4 border-l-indigo-400' : 'border-l-4 border-l-gray-400',
+      };
 
-  const handleNewGoal = () => {
-    console.log("New goal clicked");
+      groupedByDate[dateKey].entries.push(entry);
+    });
+
+    // Convert to array and sort by date
+    const sortedDates = Object.keys(groupedByDate).sort();
+
+    return sortedDates.map((dateKey, index) => {
+      const { date, entries } = groupedByDate[dateKey];
+      const dayDate = new Date(date);
+      dayDate.setHours(0, 0, 0, 0);
+
+      return {
+        id: index + 1,
+        date: `${monthNames[date.getMonth()]} ${date.getDate()}`,
+        day: String(date.getDate()),
+        isToday: dayDate.getTime() === today.getTime(),
+        entries,
+      };
+    });
   };
 
   return (
@@ -158,37 +129,18 @@ export default function LifePlannerPage() {
             </button>
           </Link>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-            {/* Left Sidebar - AI Edit */}
-            <div className="lg:col-span-1 lg:sticky lg:top-6 lg:self-start">
-              <AIEditSidebar
-                title="Edit with AI"
-                messages={messages}
-                onSend={handleSend}
-                onModify={handleSend}
-                onAttach={() => console.log("Attach clicked")}
-                onMicrophone={() => console.log("Microphone clicked")}
-                placeholder="Ask me to modify a plan..."
-              />
-            </div>
-
+          <div className="gap-2">
             {/* Right Column - Calendar - Full Width */}
             <div className="lg:col-span-2">
               <PlannerCalendar
-              //@ts-ignore
-                viewMode={viewMode}
-                selectedFilter={selectedFilter}
                 events={events}
-                onViewModeChange={setViewMode}
-                onFilterChange={setSelectedFilter}
-                onNewGoalClick={handleNewGoal}
-                onEventClick={handleEventClick}
+                isLoading={isLoading}
+                onEntryClick={handleEntryClick}
               />
             </div>
           </div>
         </div>
       </main>
-
     </div>
   );
 }

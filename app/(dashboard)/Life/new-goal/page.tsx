@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, CheckCircle, AlertCircle } from "lucide-react";
 import Header from "@/app/components/header";
-import InputFooter from "@/app/components/InputFooter";
 import AIEditSidebar from "../components/FoodAI";
 import GoalForm from "../components/GoalForm";
+import { apiService } from "@/lib/api/apiService";
 
 interface Message {
   id: string;
@@ -18,59 +18,224 @@ interface Message {
   };
 }
 
-interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-  aiPrompt?: string;
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  due_date: string;
+}
+
+interface Toast {
+  id: string;
+  type: 'success' | 'error';
+  message: string;
 }
 
 export default function NewGoalPage() {
+  const [sessionId, setSessionId] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const [goalTitle, setGoalTitle] = useState("");
-  const [goalDescription, setGoalDescription] = useState("");
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, text: "Research the parts of the body", completed: false, aiPrompt: "Run AI prompt" },
-    { id: 2, text: "Gather insights on researches done over the past one year in Biology", completed: false, aiPrompt: "Run AI prompt" },
-    { id: 3, text: "Sumarize topic in one page", completed: false, aiPrompt: "Run AI prompt" },
-    { id: 4, text: "Create six bullet points of key area lacking research", completed: false },
-  ]);
+  const [horizon, setHorizon] = useState("");
+  const [domains, setDomains] = useState<string[]>([]);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  const handleSend = (message: string) => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        type: 'user',
-        content: message,
+  // Generate session ID on component mount
+  useEffect(() => {
+    const newSessionId = `life-goal-${Date.now()}`;
+    setSessionId(newSessionId);
+    console.log('[NewGoalPage] Session ID generated:', newSessionId);
+  }, []);
+
+  // Fetch and populate form from sessionStorage plan_id
+  const fetchPlanDetails = useCallback(async () => {
+    const planId = sessionStorage.getItem('currentGoalPlanId');
+
+    if (!planId) {
+      console.log('[NewGoalPage] No plan_id in sessionStorage, starting fresh');
+      return;
+    }
+
+    console.log('[NewGoalPage] Found plan_id in sessionStorage:', planId);
+
+    try {
+      const response: any = await apiService.get(`/v1/life/plans/${planId}`);
+      console.log('[NewGoalPage] Raw response from API:', JSON.stringify(response, null, 2));
+
+      // Extract plan data - could be in response.data or response.data.data
+      let planData = response?.data;
+
+      // If planData is the wrapper, check if there's a nested data property
+      if (planData && !planData.goal && planData.data) {
+        planData = planData.data;
+      }
+
+      console.log('[NewGoalPage] Extracted planData:', JSON.stringify(planData, null, 2));
+
+      if (planData) {
+        console.log('[NewGoalPage] Populating form with plan data:', {
+          goal: planData.goal,
+          horizon: planData.horizon,
+          domains: planData.domains,
+          stepsLength: (planData.steps || []).length,
+        });
+
+        setGoalTitle(planData.goal || '');
+        setHorizon(planData.horizon || '');
+        setDomains(planData.domains || []);
+
+        // Transform steps from API response to component format
+        const transformedSteps: Step[] = (planData.steps || []).map((step: any, index: number) => ({
+          id: `step-${index}-${Date.now()}`,
+          title: step.title || '',
+          description: step.description || '',
+          due_date: step.due_date || '',
+        }));
+        setSteps(transformedSteps);
+
+        console.log('[NewGoalPage] Form populated successfully', {
+          goal: planData.goal,
+          horizon: planData.horizon,
+          domains: planData.domains,
+          stepsCount: transformedSteps.length,
+        });
+      } else {
+        console.warn('[NewGoalPage] planData is null or undefined:', planData);
+      }
+    } catch (error) {
+      console.error('[NewGoalPage] Error fetching plan details:', error);
+      // Clear sessionStorage if fetch fails to prevent repeated errors
+      sessionStorage.removeItem('currentGoalPlanId');
+    }
+  }, []);
+
+  // Fetch plan details on mount
+  useEffect(() => {
+    fetchPlanDetails();
+  }, [fetchPlanDetails]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    const id = Date.now().toString();
+    setToast({ id, type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSend = async (message: string) => {
+    if (!message.trim()) return;
+
+    // Add user message to chat
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: message,
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Start loading
+    setIsChatLoading(true);
+
+    try {
+      const payload = {
+        message: message.trim(),
+        session_id: sessionId,
       };
-      setMessages([...messages, newMessage]);
-      
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: "I've updated your goal based on your input.",
-        };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+
+      console.log('[handleSend] Sending to /v1/life/chat with payload:', JSON.stringify(payload, null, 2));
+
+      const response: any = await apiService.post('/v1/life/chat', payload);
+
+      console.log('[handleSend] Response received from /v1/life/chat:', response);
+
+      // Extract the message from response
+      // Response structure: { statuscode, status, message, data: { module, intent, message, plan, actions, metadata } }
+      const aiMessage = response?.data?.message || 'I received your message but could not generate a response.';
+      const intent = response?.data?.intent || 'unknown';
+      const plan = response?.data?.plan || null;
+      const toolResults = response?.data?.metadata?.tool_results || {};
+
+      // Log the full response for debugging
+      console.log('[handleSend] Extracted data:', {
+        intent,
+        message: aiMessage,
+        plan,
+        toolResults,
+      });
+
+      // Check if AI created a plan and extract plan_id
+      const planId = toolResults?.['0_create_life_plan']?.plan_id;
+      if (planId) {
+        console.log('[handleSend] Plan created by AI, storing plan_id:', planId);
+        sessionStorage.setItem('currentGoalPlanId', planId);
+        // Fetch and populate the form with the new plan
+        await fetchPlanDetails();
+      }
+
+      // Add AI response to chat
+      const aiResponse: Message = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: aiMessage,
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('[handleSend] Error calling chat API:', error);
+
+      // Add error message to chat
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
+      const errorResponse: Message = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: `Error: ${errorMessage}`,
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
-  };
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const existingPlanId = sessionStorage.getItem('currentGoalPlanId');
 
-  const handlePublish = () => {
-    console.log("Publishing goal:", {
-      title: goalTitle,
-      description: goalDescription,
-      tasks,
-      reminderEnabled
-    });
+      const planData = {
+        goal: goalTitle,
+        horizon,
+        domains,
+        steps: steps.map(step => ({
+          title: step.title,
+          description: step.description,
+          due_date: step.due_date,
+        })),
+      };
+
+      if (existingPlanId) {
+        // Update existing plan
+        await apiService.patch(`/v1/life/plans/${existingPlanId}`, planData);
+        showToast('success', 'Goal updated successfully!');
+      } else {
+        // Create new plan
+        await apiService.post('/v1/life/plans', planData);
+        showToast('success', 'Goal created successfully!');
+        sessionStorage.removeItem('currentGoalPlanId');
+      console.log('[handlePublish] sessionStorage cleared, ready for new goal');
+
+      // Clear form
+      setGoalTitle("");
+      setHorizon("");
+      setDomains([]);
+      setSteps([]);
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save goal';
+      showToast('error', errorMessage);
+      console.error('[NewGoalPage] Publish error:', error);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -92,8 +257,9 @@ export default function NewGoalPage() {
             {/* Left Sidebar - AI Edit */}
             <div className="lg:col-span-1 lg:sticky lg:top-6 lg:self-start">
               <AIEditSidebar
-                title="Edit with AI"
+                title="Chat with AI"
                 messages={messages}
+                isLoading={isChatLoading}
                 onSend={handleSend}
                 onModify={handleSend}
                 onAttach={() => console.log("Attach clicked")}
@@ -106,22 +272,40 @@ export default function NewGoalPage() {
             <div className="lg:col-span-2">
               <GoalForm
                 goalTitle={goalTitle}
-                goalDescription={goalDescription}
-                tasks={tasks}
-                reminderEnabled={reminderEnabled}
+                horizon={horizon}
+                domains={domains}
+                steps={steps}
                 onGoalTitleChange={setGoalTitle}
-                onGoalDescriptionChange={setGoalDescription}
-                onToggleTask={toggleTask}
-                onReminderToggle={setReminderEnabled}
+                onHorizonChange={setHorizon}
+                onDomainsChange={setDomains}
+                onStepsChange={setSteps}
                 onPublish={handlePublish}
-                onClose={() => window.history.back()}
+                onClose={() => {
+                  sessionStorage.removeItem('currentGoalPlanId');
+                  window.history.back()
+                }}
+                isPublishing={isPublishing}
               />
             </div>
           </div>
         </div>
       </main>
 
-    
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-fade-in" style={{
+          backgroundColor: toast.type === 'success' ? '#D1FAE5' : '#FEE2E2',
+        }}>
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600" />
+          )}
+          <span style={{ color: toast.type === 'success' ? '#065F46' : '#7F1D1D' }} className="text-sm font-medium">
+            {toast.message}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

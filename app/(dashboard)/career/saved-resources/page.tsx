@@ -83,7 +83,7 @@ export default function SavedResourcesPage() {
   };
 
   const handleSeeChat = (resumeId: string) => {
-    localStorage.setItem('currentResumeId', resumeId);
+    sessionStorage.setItem('currentResumeId', resumeId);
     router.push('/career/resume-builder');
   };
 
@@ -233,6 +233,7 @@ export default function SavedResourcesPage() {
             placeholder="Ask me to optimize your LinkedIn..."
             onSend={(message) => console.log("Sent:", message)}
             onAttach={() => console.log("Attach clicked")}
+            context="career"
           />
         </div>
       </div>

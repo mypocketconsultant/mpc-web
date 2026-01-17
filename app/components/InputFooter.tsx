@@ -10,6 +10,7 @@ interface InputFooterProps {
   onSend?: (message: string) => void;
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
+  context: "career" | "life";
 }
 
 export default function InputFooter({
@@ -17,6 +18,7 @@ export default function InputFooter({
   onSend,
   onAttach,
   onMicrophone,
+  context,
 }: InputFooterProps) {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
@@ -38,7 +40,10 @@ export default function InputFooter({
   };
 
   const handleInputClick = () => {
-    router.push("/career/chat");
+    const chatUrl = context === "career"
+      ? "/career/chat?context=career"
+      : "/career/chat?context=life";
+    router.push(chatUrl);
   };
 
   const handleAttachClick = () => {

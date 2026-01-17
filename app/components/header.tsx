@@ -14,49 +14,26 @@ export default function Header({ title = "Home" }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      console.log("[Header] Starting logout process");
-
-      // Get currentResumeId from localStorage
-      const currentResumeId = typeof window !== "undefined" ? localStorage.getItem("currentResumeId") : null;
-      console.log("[Header] Current Resume ID from localStorage:", currentResumeId);
-
-      // Call logout endpoint
-      console.log("[Header] Calling logout endpoint");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/logout`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ currentResumeId }),
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-
-      console.log("[Header] Logout endpoint response received");
 
       // Sign out from Firebase
       const { auth } = await import("@/lib/firebase");
       const { signOut } = await import("firebase/auth");
       await signOut(auth);
-      console.log("[Header] Firebase sign out successful");
-
-      // Clear localStorage
-      localStorage.removeItem("currentResumeId");
-      console.log("[Header] Cleared localStorage");
-
-      // Redirect to login page
-      console.log("[Header] Redirecting to login page");
+      // Clear all sessionStorage items used by the app
+      sessionStorage.removeItem("currentResumeId");
+      sessionStorage.removeItem("currentGoalPlanId");
+      sessionStorage.removeItem("currentGoalId");
+      sessionStorage.removeItem("processingUploadId");
+      sessionStorage.removeItem("googleIdToken");
       router.push("/auth/log-in");
     } catch (error) {
       console.error("[Header] Logout error:", error);
       // Still redirect even if there's an error
-      localStorage.removeItem("currentResumeId");
+      sessionStorage.removeItem("currentResumeId");
+      sessionStorage.removeItem("currentGoalPlanId");
+      sessionStorage.removeItem("currentGoalId");
+      sessionStorage.removeItem("processingUploadId");
+      sessionStorage.removeItem("googleIdToken");
       router.push("/auth/log-in");
     } finally {
       setIsProfileDropdownOpen(false);

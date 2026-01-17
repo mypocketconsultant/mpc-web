@@ -23,54 +23,32 @@ interface MoodMetric {
   color: string;
 }
 
+interface TrendData {
+  day: string;
+  mood1: number;
+  mood2: number;
+}
+
 interface InsightsMainContentProps {
-  recentDocuments: Document[];
   moodMetrics: MoodMetric[];
+  moodTrends?: TrendData[];
+  selectedPeriod?: string;
   tipsIcon: StaticImageData;
   onDocumentClick?: (docId: number) => void;
   onPeriodChange?: (period: string) => void;
 }
 
 export default function InsightsMainContent({
-  recentDocuments,
   moodMetrics,
+  moodTrends,
+  selectedPeriod,
   tipsIcon,
-  onDocumentClick,
   onPeriodChange,
 }: InsightsMainContentProps) {
   return (
     <div className="col-span-2 space-y-6">
       {/* Recent Documents & Daily Tips Row */}
       <div className="grid grid-cols-2 gap-6 ">
-        {/* Recent Documents */}
-        <div className="">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Recent documents
-            </h2>
-            <span className="text-xs text-gray-500 cursor-pointer hover:text-[#5A3FFF]">
-              see all...
-            </span>
-          </div>
-          <div className=" rounded-xl p-6">
-            {recentDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                onClick={() => onDocumentClick?.(doc.id)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1 flex flex-row justify-between items-center">
-                  <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{doc.date}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Daily Tips */}
         <div className="bg-white rounded-2xl py-6 flex-col items-center shadow-md px-3 border w-[268px] border-gray-100 ">
           <div className="flex items-start gap-3">
@@ -135,7 +113,11 @@ export default function InsightsMainContent({
       </div>
 
       {/* Mood Trends */}
-      <MoodTrends onPeriodChange={onPeriodChange} />
+      <MoodTrends
+        data={moodTrends}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={onPeriodChange}
+      />
     </div>
   );
 }

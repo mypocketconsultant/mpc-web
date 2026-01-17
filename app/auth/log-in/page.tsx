@@ -40,34 +40,15 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      console.log("[Auth] Starting email login with:", email);
-
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log("[Auth] Firebase user logged in, UID:", result.user.uid);
-
       const idToken = await result.user.getIdToken();
-      console.log("[Auth] Got Firebase ID token");
 
-      // Send idToken to backend login endpoint
-      console.log("[Auth] Sending idToken to backend login endpoint");
-      const response = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
         { idToken },
         { withCredentials: true }
       );
 
-      console.log("[Auth] Backend login response:", response.data);
-
-      // Populate localStorage with currentResumeId if it exists
-      if (response.data?.data?.user?.currentResumeId) {
-        console.log("[Auth] Setting currentResumeId in localStorage:", response.data.data.user.currentResumeId);
-        localStorage.setItem("currentResumeId", response.data.data.user.currentResumeId);
-      } else {
-        console.log("[Auth] No currentResumeId in response, clearing localStorage");
-        localStorage.removeItem("currentResumeId");
-      }
-
-      console.log("[Auth] Login successful, redirecting to home");
       setValidationErrors({});
       router.push("/home");
     } catch (error: any) {
@@ -92,36 +73,19 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      console.log("[Auth] Starting Google login...");
       const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
       const provider = new GoogleAuthProvider();
 
       const result = await signInWithPopup(auth, provider);
-      console.log("[Auth] Google login successful, UID:", result.user.uid);
 
       const idToken = await result.user.getIdToken();
-      console.log("[Auth] Got Firebase ID token");
-
-      // Send idToken to backend login endpoint
-      console.log("[Auth] Sending idToken to backend login endpoint");
-      const response = await axios.post(
+  
+      await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
         { idToken },
         { withCredentials: true }
       );
 
-      console.log("[Auth] Backend login response:", response.data);
-
-      // Populate localStorage with currentResumeId if it exists
-      if (response.data?.data?.user?.currentResumeId) {
-        console.log("[Auth] Setting currentResumeId in localStorage:", response.data.data.user.currentResumeId);
-        localStorage.setItem("currentResumeId", response.data.data.user.currentResumeId);
-      } else {
-        console.log("[Auth] No currentResumeId in response, clearing localStorage");
-        localStorage.removeItem("currentResumeId");
-      }
-
-      console.log("[Auth] Google login successful, redirecting to home");
       setValidationErrors({});
       router.push("/home");
     } catch (error: any) {

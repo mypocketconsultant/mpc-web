@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { apiService } from "@/lib/api/apiService";
@@ -21,11 +21,11 @@ interface Message {
 
 export default function CreateGoalPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const [goalTitle, setGoalTitle] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("08:00 am");
-  const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -107,15 +107,13 @@ export default function CreateGoalPage() {
         }]);
       }
 
-      // Store plan_id in localStorage
+      // Store plan_id in sessionStorage
       if (response?.data?.plan_id) {
-        localStorage.setItem("currentGoalId", response.data.plan_id);
+        sessionStorage.setItem("currentGoalId", response.data.plan_id);
       }
 
-      // Clear form on success
-      setGoalTitle('');
-      setGoalDescription('');
-      setSelectedDate('');
+      // Navigate to create-plan page on success
+      router.push("/career/create-plan");
     } catch (error) {
       console.error('[handleCreateGoal] Error:', error);
       setMessages([...messages, {
@@ -147,9 +145,9 @@ export default function CreateGoalPage() {
 
           <hr  className="my-10" />
 
-          <div className="grid grid-cols-12 gap-8">
+          <div className="gap-8">
             {/* Left Sidebar - AI Editor */}
-            <div className="col-span-5 sticky top-8 h-fit">
+            {/* <div className="col-span-5 sticky top-8 h-fit">
               <AIEditSidebar
                 messages={messages}
                 inputValue={inputValue}
@@ -163,7 +161,7 @@ export default function CreateGoalPage() {
                   setInputValue('');
                 }}
               />
-            </div>
+            </div> */}
             {/* Right Content - Form */}
             <div className="col-span-7">
               <CreateGoalForm
@@ -178,7 +176,8 @@ export default function CreateGoalPage() {
                 reminderEnabled={reminderEnabled}
                 onReminderChange={setReminderEnabled}
                 onCreateGoal={handleCreateGoal}
-                onClose={() => window.location.href = "/career/create-plan"}
+                onClose={() => router.push("/career/create-plan")}
+                isLoading={isLoading}
               />
             </div>
           </div>

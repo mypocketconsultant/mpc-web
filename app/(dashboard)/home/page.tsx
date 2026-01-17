@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   Zap,
@@ -21,6 +21,7 @@ import QuickAction from "./components/QuickAction";
 
 export default function HomePage() {
   const pathname = usePathname();
+  const router = useRouter();
   const [inputValue, setInputValue] = useState("");
 
   // Map routes to titles
@@ -44,24 +45,24 @@ export default function HomePage() {
           <Greeting name="Remi" />
 
           {/* Career Advisory Section */}
-          <CareerAdvisory />
+          <CareerAdvisory onRunAudit={() => router.push("/career/resume-builder")} />
 
           <QuickAction
             items={[
               {
                 title: "Recent career docs",
                 image: "/tip.png",
-                onClick: () => console.log("Recent docs clicked"),
+                onClick: () => router.push("/career/saved-resources"),
               },
               {
                 title: "Career planner",
                 image: "/daily.png",
-                onClick: () => console.log("Career planner clicked"),
+                onClick: () => router.push("/career/create-plan"),
               },
               {
                 title: "AI career agent",
                 image: "/Robot.png",
-                onClick: () => console.log("AI agent clicked"),
+                onClick: () => router.push("/career/chat?context=career"),
               },
             ]}
           />
@@ -79,6 +80,7 @@ export default function HomePage() {
             placeholder="Ask me to optimize your LinkedIn..."
             onSend={(message) => console.log("Sent:", message)}
             onAttach={() => console.log("Attach clicked")}
+            context="career"
           />
         </div>
       </div>

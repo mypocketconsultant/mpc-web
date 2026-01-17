@@ -24,6 +24,7 @@ interface CreateGoalFormProps {
   onReminderChange: (value: boolean) => void;
   onCreateGoal: () => void;
   onClose?: () => void;
+  isLoading?: boolean;
 }
 
 export default function CreateGoalForm({
@@ -39,6 +40,7 @@ export default function CreateGoalForm({
   onReminderChange,
   onCreateGoal,
   onClose,
+  isLoading,
 }: CreateGoalFormProps) {
   return (
     <div className=" max-w-2xl mx-auto">
@@ -46,9 +48,17 @@ export default function CreateGoalForm({
       <div className="flex items-center justify-between p-6 border-b border-gray-100">
         <button
           onClick={onCreateGoal}
-          className="px-5 py-2 bg-[#5A3FFF] text-white rounded-full text-sm font-semibold hover:bg-[#4A2FEF] transition-all"
+          disabled={isLoading}
+          className="px-5 py-2 bg-[#5A3FFF] text-white rounded-full text-sm font-semibold hover:bg-[#4A2FEF] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Publish
+          {isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            "Publish"
+          )}
         </button>
         <button
           onClick={onClose}
@@ -108,9 +118,19 @@ export default function CreateGoalForm({
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-2">
-                From
+                Set Target Date
               </label>
-              <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
+            </div>
+
+            <div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => onDateChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-sm font-medium text-gray-900"
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer">
                 <span className="text-sm font-bold text-gray-900">
                   {selectedDate
                     ? new Date(selectedDate).toLocaleDateString("en-US", {
@@ -118,7 +138,11 @@ export default function CreateGoalForm({
                         day: "numeric",
                         month: "long",
                       })
-                    : "Monday, 17. October"}
+                    : new Date().toLocaleDateString("en-US", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      })}
                 </span>
                 <div className="flex items-center gap-3">
                   <input
@@ -130,19 +154,6 @@ export default function CreateGoalForm({
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-2">
-                To
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => onDateChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-sm font-medium text-gray-900"
-              />
-            </div>
           </div>
         )}
       </div>

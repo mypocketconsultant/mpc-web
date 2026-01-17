@@ -55,7 +55,7 @@ export default function HomePage() {
       title: "CV Builder",
       icon: <Image src={cvIcon} alt="CV" width={36} height={36} />,
       color: "from-[#E6E4FF] to-[#E6E4FF]",
-      href: "#",
+      href: "/career/resume-builder",
     },
     {
       id: "career",
@@ -142,6 +142,7 @@ export default function HomePage() {
         placeholder="Ask me to optimize your LinkedIn..."
         onSend={(message) => console.log("Sent:", message)}
         onAttach={() => console.log("Attach clicked")}
+        context="career"
       />
     </div>
   );

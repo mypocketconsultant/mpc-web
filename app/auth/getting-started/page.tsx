@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import FormSection from "@/components/getting-started/step1";
 import FormSection2 from "@/components/getting-started/step2";
@@ -8,7 +8,11 @@ import FormSection4 from "@/components/getting-started/step4";
 import { verifyAuth } from "@/services/auth";
 
 function SignupContent() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const authType = searchParams.get('authType');
+
+  // For Google auth, start at step 3 (skip email/password and name steps)
+  const [currentStep, setCurrentStep] = useState(authType === 'google' ? 3 : 1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstname, setFirstname] = useState("");
@@ -19,8 +23,16 @@ function SignupContent() {
   const [validationErrors, setValidationErrors] = useState({});
   const [idToken, setIdToken] = useState("");
 
-  const searchParams = useSearchParams();
-  const authType = searchParams.get('authType');
+  // For Google auth, retrieve the idToken from sessionStorage
+  useEffect(() => {
+    if (authType === 'google') {
+      const storedToken = sessionStorage.getItem("googleIdToken");
+      if (storedToken) {
+        setIdToken(storedToken);
+        console.log("[Auth] Retrieved Google ID token from sessionStorage");
+      }
+    }
+  }, [authType]);
 
   const clearError = (fieldName: string) => {
     setValidationErrors((prev) => {
@@ -101,11 +113,11 @@ function SignupContent() {
   const handleSignupCompletion = async () => {
     setIsLoading(true);
     try {
-      if (authType === 'email') {
-        // Send all collected data to backend
-        const apiService = (await import("@/lib/api/apiService")).apiService;
+      const apiService = (await import("@/lib/api/apiService")).apiService;
 
-        console.log("[Auth] Sending complete signup to backend with:", {
+      if (authType === 'email') {
+        // Send all collected data to backend for email signup
+        console.log("[Auth] Sending complete email signup to backend with:", {
           idToken,
           email,
           firstName: firstname,
@@ -123,27 +135,35 @@ function SignupContent() {
         });
 
         console.log("[Auth] Backend signup response:", response);
+      } else if (authType === 'google') {
+        // Send Google auth data to backend
+        console.log("[Auth] Sending Google authentication to backend with:", {
+          idToken,
+          country,
+          preferredModule: career,
+        });
 
-        // Verify auth with the backend
-        const verifyResult = await verifyAuth();
-        if (verifyResult.error) {
-          setValidationErrors({ submit: "Authentication verification failed" });
-          setIsLoading(false);
-          return;
-        }
-        setValidationErrors({});
-        router.push("/home");
-      } else {
-        // For other auth types (Google, etc.)
-        const verifyResult = await verifyAuth();
-        if (verifyResult.error) {
-          setValidationErrors({ submit: "Authentication verification failed" });
-          setIsLoading(false);
-          return;
-        }
-        setValidationErrors({});
-        router.push("/home");
+        const response = await apiService.post("/v1/auth/google-authentication", {
+          idToken,
+          country,
+          preferredModule: career,
+        });
+
+        console.log("[Auth] Backend Google auth response:", response);
+
+        // Clear the stored token from sessionStorage
+        sessionStorage.removeItem("googleIdToken");
       }
+
+      // Verify auth with the backend
+      const verifyResult = await verifyAuth();
+      if (verifyResult.error) {
+        setValidationErrors({ submit: "Authentication verification failed" });
+        setIsLoading(false);
+        return;
+      }
+      setValidationErrors({});
+      router.push("/home");
     } catch (error: any) {
       console.error("[Auth] Signup completion error:", error);
       setValidationErrors({ submit: error.message });
@@ -167,7 +187,9 @@ function SignupContent() {
 
   const handleBack = () => {
     setValidationErrors({});
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    // For Google auth, minimum step is 3 (can't go back to email/name steps)
+    const minStep = authType === 'google' ? 3 : 1;
+    setCurrentStep((prev) => Math.max(prev - 1, minStep));
   };
 
   return (

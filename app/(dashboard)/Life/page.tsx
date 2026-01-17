@@ -135,6 +135,7 @@ export default function LifeAdvisorPage() {
         placeholder="Ask me to create a plan to boost my mood..."
         onSend={(message) => console.log("Sent:", message)}
         onAttach={() => console.log("Attach clicked")}
+        context="life"
       />
     </div>
   );

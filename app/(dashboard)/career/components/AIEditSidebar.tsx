@@ -5,6 +5,7 @@ import { Mic, Paperclip, FileText } from "lucide-react";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import ResumePdfModal from "./ResumePdfModal";
 import AnalysisMessageComponent from "./AnalysisMessageComponent";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Section {
   name: string;
@@ -71,6 +72,7 @@ export default function AIEditSidebar({
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [selectedResumeTitle, setSelectedResumeTitle] = useState<string>("");
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
 
   const handleResumeLinkClick = (e: React.MouseEvent, message: Message) => {
     e.preventDefault();
@@ -122,6 +124,13 @@ export default function AIEditSidebar({
       }
     }
     onAttach?.();
+  };
+
+  const handleMicrophoneClick = () => {
+    toggleRecording((text) => {
+      onInputChange?.(text);
+    });
+    onMicrophone?.();
   };
 
 
@@ -338,9 +347,18 @@ export default function AIEditSidebar({
           />
 
           <button
-            onClick={onMicrophone}
-            className="p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md"
-            style={{ backgroundColor: "#5A3FFF" }}
+            onClick={handleMicrophoneClick}
+            disabled={isTranscribing}
+            className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording ? 'animate-pulse' : ''
+            }`}
+            style={{
+              backgroundColor: isRecording
+                ? '#EF4444'
+                : isTranscribing
+                  ? '#B0A0FF'
+                  : '#5A3FFF'
+            }}
             aria-label="Voice input"
           >
             <Mic className="w-5 h-5 text-white" />

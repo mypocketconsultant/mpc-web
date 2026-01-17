@@ -88,15 +88,15 @@ export default function ResumeBuilder() {
   // PDF modal state
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
-  // Initialize resumeId and processing state from localStorage on mount
+  // Initialize resumeId and processing state from sessionStorage on mount
   useEffect(() => {
-    const savedResumeId = localStorage.getItem('currentResumeId');
+    const savedResumeId = sessionStorage.getItem('currentResumeId');
     if (savedResumeId) {
       setResumeId(savedResumeId);
     }
 
     // Restore processing state if page was reloaded during upload
-    const savedUploadId = localStorage.getItem('processingUploadId');
+    const savedUploadId = sessionStorage.getItem('processingUploadId');
     if (savedUploadId) {
       console.log('[ResumeBuilder] Restoring processing state for uploadId:', savedUploadId);
       setProcessingUploadId(savedUploadId);
@@ -104,22 +104,22 @@ export default function ResumeBuilder() {
     }
   }, []);
 
-  // Save resumeId to localStorage whenever it changes
+  // Save resumeId to sessionStorage whenever it changes
   useEffect(() => {
     if (resumeId) {
-      localStorage.setItem('currentResumeId', resumeId);
+      sessionStorage.setItem('currentResumeId', resumeId);
     }
   }, [resumeId]);
 
-  // Save processing state to localStorage whenever it changes
+  // Save processing state to sessionStorage whenever it changes
   useEffect(() => {
     if (isProcessingResume && processingUploadId) {
-      console.log('[ResumeBuilder] Saving processing state to localStorage:', processingUploadId);
-      localStorage.setItem('processingUploadId', processingUploadId);
+      console.log('[ResumeBuilder] Saving processing state to sessionStorage:', processingUploadId);
+      sessionStorage.setItem('processingUploadId', processingUploadId);
     } else if (!isProcessingResume) {
       // Clear processing state when complete
-      console.log('[ResumeBuilder] Clearing processing state from localStorage');
-      localStorage.removeItem('processingUploadId');
+      console.log('[ResumeBuilder] Clearing processing state from sessionStorage');
+      sessionStorage.removeItem('processingUploadId');
     }
   }, [isProcessingResume, processingUploadId]);
 
@@ -152,7 +152,7 @@ export default function ResumeBuilder() {
         // This is the MongoDB document ID that should be used for all subsequent calls
         if (parsedDocId) {
           setResumeId(parsedDocId);
-          localStorage.setItem('currentResumeId', parsedDocId);
+          sessionStorage.setItem('currentResumeId', parsedDocId);
           console.log('[ResumeBuilder] Set resumeId to parsed_doc_id:', parsedDocId);
         }
 
@@ -226,8 +226,8 @@ export default function ResumeBuilder() {
 
   // Handle new resume - reset all state
   const handleNewResume = () => {
-    // Clear localStorage
-    localStorage.removeItem('currentResumeId');
+    // Clear sessionStorage
+    sessionStorage.removeItem('currentResumeId');
 
     // Stop any active polling
     if (pollingIntervalRef.current) {
@@ -398,6 +398,21 @@ export default function ResumeBuilder() {
       setMessages(responseData.messages);
     }
 
+    // Populate form state from the response's formData (sections parsed back to form format)
+    if (responseData?.formData) {
+      console.log('[ResumeBuilder] Populating form with formData from API response:', {
+        documentTitle: responseData.formData.documentTitle,
+        educationCount: responseData.formData.educations?.length,
+        experienceCount: responseData.formData.experience?.length,
+        skillsCount: responseData.formData.skills?.length,
+      });
+      if (responseData.formData.documentTitle) setDocumentTitle(responseData.formData.documentTitle);
+      if (responseData.formData.profile) setProfile(responseData.formData.profile);
+      if (responseData.formData.educations) setEducations(responseData.formData.educations);
+      if (responseData.formData.experience) setExperience(responseData.formData.experience);
+      if (responseData.formData.skills) setSkills(responseData.formData.skills);
+    }
+
     // Trigger form reset to step 1 while keeping all data
     setResetFormTrigger(Date.now());
     console.log('[ResumeBuilder] Triggered form reset to step 1');
@@ -470,15 +485,13 @@ export default function ResumeBuilder() {
     }
   };
 
-  const handleSend = async (message: string, mode: 'chat' | 'edit' = 'chat', sectionName?: string) => {
-    console.log('[ResumeBuilder] handleSend called with message:', message, 'mode:', mode);
+  const handleSend = async (message: string) => {
+    console.log('[ResumeBuilder] handleSend called with message:', message);
 
     if (!resumeId) {
       console.error('[ResumeBuilder] Error: No resume ID available');
       return;
     }
-
-    console.log('[ResumeBuilder] Stage 1: Resume ID confirmed:', resumeId);
 
     // Add user message to UI immediately
     const newUserMessage = {
@@ -495,83 +508,32 @@ export default function ResumeBuilder() {
       content: ''
     };
 
-    console.log('[ResumeBuilder] Stage 2: Adding user message and loading bubble to UI');
+    console.log('[ResumeBuilder] Adding user message and loading bubble to UI');
     setMessages([...messages, newUserMessage, loadingBubble]);
     setInputValue('');
 
     try {
-      let apiUrl: string;
-      let payload: any;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/chat`;
+      const payload = {
+        resumeId,
+        message
+      };
 
-      if (mode === 'edit' && sectionName) {
-        // Edit mode: call /v1/agent/career/resume/edit
-        console.log('[ResumeBuilder] Stage 3: Edit mode - extracting bullets from section:', sectionName);
-
-        let bullets: string[] = [];
-        let sectionContext: string | undefined;
-
-        if (sectionName.toLowerCase() === 'experience') {
-          // Use selected experience item or first item
-          const selectedIdx = selectedExperienceIndex ?? 0;
-          if (selectedIdx < experience.length) {
-            const exp = experience[selectedIdx];
-            bullets = [exp.descriptionExperience].filter(Boolean);
-            sectionContext = `Company: ${exp.company} | Role: ${exp.role} | Location: ${exp.location} | Date: ${exp.date} | Description: ${exp.descriptionExperience}`;
-            console.log('[ResumeBuilder] Stage 3.1: Using experience entry at index:', selectedIdx);
-          }
-        } else if (sectionName.toLowerCase() === 'skills') {
-          bullets = skills;
-          sectionContext = `Skills: ${skills.join(', ')}`;
-        } else if (sectionName.toLowerCase() === 'education') {
-          // Use selected education item or first item
-          const selectedIdx = selectedEducationIndex ?? 0;
-          if (selectedIdx < educations.length) {
-            const edu = educations[selectedIdx];
-            bullets = [edu.descriptionGraduation].filter(Boolean);
-            sectionContext = `School: ${edu.nameOfSchool} | Field of Study: ${edu.fieldOfStudy} | Certification: ${edu.certification} | Year: ${edu.year} | Description: ${edu.descriptionGraduation}`;
-            console.log('[ResumeBuilder] Stage 3.1: Using education entry at index:', selectedIdx);
-          }
-        }
-
-        apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/edit`;
-        payload = {
-          resumeId,
-          targetRole: targetRole || 'Not specified',
-          sectionName,
-          bullets,
-          sectionContext,
-          extraNotes: message
-        };
-        console.log('[ResumeBuilder] Stage 3: Edit mode payload:', payload);
-      } else {
-        // Chat mode: call /v1/resume-builder/chat
-        apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/chat`;
-        payload = {
-          resumeId,
-          message
-        };
-        console.log('[ResumeBuilder] Stage 3: Chat mode payload:', payload);
-      }
-
-      console.log('[ResumeBuilder] Stage 4: Making POST request to:', apiUrl);
-      console.log('[ResumeBuilder] Stage 4.1: Full payload being sent:', JSON.stringify(payload, null, 2));
+      console.log('[ResumeBuilder] Making POST request to:', apiUrl);
+      console.log('[ResumeBuilder] Payload:', JSON.stringify(payload, null, 2));
 
       const response = await axios.post(apiUrl, payload, {
         withCredentials: true,
       });
 
-      console.log('[ResumeBuilder] Stage 5: API response received:', response.data);
+      console.log('[ResumeBuilder] API response received:', response.data);
 
       // Use the full messages array from the API response
       if (response.data?.data?.messages && Array.isArray(response.data.data.messages)) {
-        console.log('[ResumeBuilder] Stage 6: Replacing loading bubble with full messages array');
-        console.log('[ResumeBuilder] Total messages from API:', response.data.data.messages.length);
-
+        console.log('[ResumeBuilder] Setting messages from API response:', response.data.data.messages.length);
         setMessages(response.data.data.messages);
       } else if (response.data?.data?.message) {
-        console.log('[ResumeBuilder] Stage 6: Falling back to single message response');
-        console.log('[ResumeBuilder] AI Response:', response.data.data.message);
-
+        console.log('[ResumeBuilder] Falling back to single message response');
         setMessages(prev => prev.map(msg =>
           msg.id === loadingBubbleId
             ? {
@@ -582,48 +544,18 @@ export default function ResumeBuilder() {
             : msg
         ));
       } else {
-        console.warn('[ResumeBuilder] Stage 6: No message or messages in API response');
-      }
-
-      // If edit mode, update form data with the response
-      if (mode === 'edit') {
-        console.log('[ResumeBuilder] Stage 7: Edit successful, updating form data from response');
-        if (response.data?.data?.formData) {
-          const updatedFormData = response.data.data.formData;
-          console.log('[ResumeBuilder] Stage 7.5: Form data received from API:', {
-            documentTitle: updatedFormData.documentTitle,
-            educationCount: updatedFormData.educations?.length,
-            experienceCount: updatedFormData.experience?.length,
-            skillsCount: updatedFormData.skills?.length,
-          });
-
-          // Update form state with the edited resume data
-          if (updatedFormData.documentTitle) setDocumentTitle(updatedFormData.documentTitle);
-          if (updatedFormData.profile) setProfile(updatedFormData.profile);
-          if (updatedFormData.educations) setEducations(updatedFormData.educations);
-          if (updatedFormData.experience) setExperience(updatedFormData.experience);
-          if (updatedFormData.skills) setSkills(updatedFormData.skills);
-
-          console.log('[ResumeBuilder] Stage 7.6: Form state updated with API response');
-        } else {
-          // Fallback to fetching chat history if formData is not in response
-          console.log('[ResumeBuilder] Stage 7.5: No formData in response, refetching via chat history');
-          await fetchChatHistory();
-        }
+        console.warn('[ResumeBuilder] No message or messages in API response');
       }
     } catch (error) {
-      console.error('[ResumeBuilder] Stage 5: Error during API call:', error);
+      console.error('[ResumeBuilder] Error during API call:', error);
       if (axios.isAxiosError(error)) {
         console.error('[ResumeBuilder] Error response status:', error.response?.status);
         console.error('[ResumeBuilder] Error response data:', error.response?.data);
-        console.error('[ResumeBuilder] Error message:', error.message);
       }
 
       const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
         ? error.response.data.message
         : 'AI could not respond to this. Please try again.';
-
-      console.log('[ResumeBuilder] Stage 6: Replacing loading bubble with error message:', errorMessage);
 
       setMessages(prev => prev.map(msg =>
         msg.id === loadingBubbleId

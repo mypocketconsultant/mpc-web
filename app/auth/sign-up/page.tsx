@@ -1,10 +1,40 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleSignUp = async () => {
+    setIsLoading(true);
+    try {
+      console.log("[Auth] Starting Google sign-up...");
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("[Auth] Google sign-in successful, UID:", result.user.uid);
+
+      const idToken = await result.user.getIdToken();
+      console.log("[Auth] Got Firebase ID token");
+
+      // Store the idToken in sessionStorage so it can be retrieved in getting-started page
+      sessionStorage.setItem("googleIdToken", idToken);
+
+      // Navigate to getting-started with authType=google
+      router.push("/auth/getting-started?authType=google");
+    } catch (error: any) {
+      console.error("[Auth] Google sign-up error:", error);
+      // Handle specific errors
+      if (error.code === "auth/popup-closed-by-user") {
+        console.log("[Auth] User closed the popup");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
@@ -48,13 +78,17 @@ export default function SignupPage() {
           >
             Get started
           </button>
-          <button className="bg-white text-[#6549CC] font-bold font-railway text-[0.8rem] rounded-lg shadow-xl hover:bg-gray-100 opacity-100 gap-2 px-3 py-4 w-[14.06vw] h-[5.01vh] flex items-center">
+          <button
+            className="bg-white text-[#6549CC] font-bold font-railway text-[0.8rem] rounded-lg shadow-xl hover:bg-gray-100 opacity-100 gap-2 px-3 py-4 w-[14.06vw] h-[5.01vh] flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleGoogleSignUp}
+            disabled={isLoading}
+          >
             <img
               src="/google-button.svg"
               alt="Google Icon"
               className="w-4 h-4 mt-0.5"
             />
-            Continue with Google
+            {isLoading ? "Loading..." : "Continue with Google"}
           </button>
         </div>
       </div>

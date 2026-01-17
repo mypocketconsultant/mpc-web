@@ -17,66 +17,69 @@ interface Insight {
   description: string;
 }
 
-export default function AIPoweredInsights() {
-  const insights: Insight[] = [
-    {
-      id: "upward-momentum",
-      iconImage: mood1Icon,
-      iconBg: "bg-red-400",
-      cardBg: "bg-[#FDEDED]",
-      title: "Upward Momentum",
-      titleColor: "text-red-500",
-      description:
-        "Your mood has been steadily improving over the past week, with a 15% increase in positive emotions.",
-    },
-    {
-      id: "weekend-peak",
-      iconImage: mood2Icon,
-      iconBg: "bg-purple-500",
-      cardBg: "bg-[#FCFCFC]",
-      title: "Weekend Peak",
-      titleColor: "text-purple-700",
-      description:
-        "You consistently experience higher mood levels on weekends, particularly Fridays and Saturdays.",
-    },
-    {
-      id: "energy-correlation",
-      iconImage: mood3Icon,
-      iconBg: "bg-yellow-400",
-      cardBg: "bg-[#FCFCFC]",
-      title: "Energy Correlation",
-      titleColor: "text-red-700",
-      description:
-        "Your energy levels closely track with your mood, suggestinstrong mind-body connection.",
-    },
-    {
-      id: "mid-week-dip",
-      iconImage: mode4Icon,
-      iconBg: "bg-indigo-500",
-      cardBg: "bg-[#FDEDED]",
-      title: "Mid-Week Dip",
-      titleColor: "text-red-600",
-      description:
-        "Wednesdays show slightly lower mood scores. Consider scheduling self-care activities midweek.",
-    },
-  ];
+interface AIPoweredInsightsProps {
+  insights?: Insight[];
+  isLoading?: boolean;
+}
+
+// Default insights when no data is available
+const defaultInsights: Insight[] = [
+  {
+    id: "keep-tracking",
+    iconImage: mood1Icon,
+    iconBg: "bg-blue-400",
+    cardBg: "bg-[#FCFCFC]",
+    title: "Keep Tracking",
+    titleColor: "text-blue-600",
+    description:
+      "Continue logging your mood to unlock personalized insights. The more data we have, the better patterns we can identify.",
+  },
+];
+
+export default function AIPoweredInsights({
+  insights,
+  isLoading = false
+}: AIPoweredInsightsProps) {
+  // Use provided insights or default
+  const displayInsights = insights && insights.length > 0 ? insights : defaultInsights;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 mt-14">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Ai-Powered Insights
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-gray-100 rounded-2xl p-5 shadow-sm animate-pulse"
+            >
+              <div className="w-7 h-7 bg-gray-200 rounded-full" />
+              <div className="h-5 bg-gray-200 rounded mt-4 w-32" />
+              <div className="h-4 bg-gray-200 rounded mt-3 w-full" />
+              <div className="h-4 bg-gray-200 rounded mt-2 w-3/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 mt-14 ">
+    <div className="space-y-4 mt-14">
       <h2 className="text-xl font-semibold text-gray-900">
         Ai-Powered Insights
       </h2>
 
-      <div className="grid grid-cols-1  md:grid-cols-2 gap-5">
-        {insights.map((insight) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {displayInsights.map((insight) => (
           <div
             key={insight.id}
             className={`${insight.cardBg} rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
           >
             {/* Icon */}
-            <div
-              className={``}
-            >
+            <div>
               <Image
                 src={insight.iconImage}
                 alt={insight.title}

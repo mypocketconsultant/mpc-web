@@ -13,6 +13,7 @@ interface PlanFormProps {
   onSave: () => void;
   onClose?: () => void;
   isSaving?: boolean;
+  planSchedule: string
 }
 
 export default function PlanForm({
@@ -21,6 +22,7 @@ export default function PlanForm({
   planGoal,
   onGoalChange,
   createdDate,
+  planSchedule,
   onDateChange,
   onSave,
   onClose,
@@ -80,6 +82,18 @@ export default function PlanForm({
             className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-sm font-medium text-gray-900"
           />
         </div>
+
+        {/* <div className="mb-6">
+          <label className="block text-xs font-medium text-gray-500 mb-2">
+            Scheduled for
+          </label>
+          <input
+            type="date"
+            value={planSchedule}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-sm font-medium text-gray-900"
+          />
+        </div> */}
       </div>
     </div>
   );
