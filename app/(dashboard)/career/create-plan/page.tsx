@@ -82,7 +82,7 @@ export default function CreatePlanPage() {
         .map((plan) => ({
           id: plan.id,
           title: plan.name,
-          time: plan.plan_schedule,
+          time: plan.plan_schedule || "",
           description: plan.goal || "",
         }));
 
@@ -164,6 +164,7 @@ export default function CreatePlanPage() {
                 inputValue={inputValue}
                 onInputChange={setInputValue}
                 onSend={handleSend}
+                emptyStateMessage="Ask me to help create your career plan for the week or month..."
                 onToggleExpanded={toggleMessageExpanded}
                 placeholder="Describe your career goal..."
                 intent="planner_create"

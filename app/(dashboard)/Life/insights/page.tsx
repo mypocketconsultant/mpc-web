@@ -283,6 +283,7 @@ export default function InsightsPage() {
                 onAttach={() => console.log("Attach clicked")}
                 onMicrophone={() => console.log("Microphone clicked")}
                 placeholder="Ask about your mood insights..."
+                emptyStateMessage="Ask me about your mood trends and insights..."
               />
             </div>
 

@@ -255,6 +255,7 @@ export default function NewGoalPage() {
                 onAttach={() => console.log("Attach clicked")}
                 onMicrophone={() => console.log("Microphone clicked")}
                 placeholder="Ask me to modify a plan..."
+                emptyStateMessage="Ask me to help create a meaningful life goal..."
               />
             </div>
 

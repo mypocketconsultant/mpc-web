@@ -24,6 +24,7 @@ interface FoodAIProps {
   onMicrophone?: () => void;
   placeholder?: string;
   isLoading?: boolean;
+  emptyStateMessage?: string;
 }
 
 export default function FoodAI({
@@ -34,6 +35,7 @@ export default function FoodAI({
   onMicrophone,
   placeholder = "Ask me to modif...",
   isLoading = false,
+  emptyStateMessage = "Start a conversation",
 }: FoodAIProps) {
   const [input, setInput] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,24 +80,10 @@ export default function FoodAI({
       {/* Scrollable Chat Area */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-6 min-h-0">
         {messages.length === 0 ? (
-          <div className="space-y-4">
-            {/* User Question Bubble */}
-            <div className="flex justify-end">
-              <div className="bg-white rounded-2xl p-2 border  border-gray-200 shadow-sm max-w-[80%]">
-                <p className="text-sm text-gray-700 text-right leading-relaxed">
-                  Can you tell me about my mood trends?
-                </p>
-              </div>
-            </div>
-
-            {/* AI Response Bubble */}
-            <div className="flex justify-start">
-              <div className="bg-gray-50 rounded-2xl p-6 shadow-sm border border-gray-100 max-w-[90%]">
-                <p className="text-sm text-gray-600 text-center">
-                  Your mood is higher during weekdays. You might thrive on routine and productivity.
-                </p>
-              </div>
-            </div>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-gray-400 text-center">
+              {emptyStateMessage}
+            </p>
           </div>
         ) : (
           messages.map((message) => (

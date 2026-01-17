@@ -89,7 +89,7 @@ export default function MoodEntryPage() {
             {/* Left Sidebar - AI Edit (35%) */}
             <div className="w-[35%] sticky top-6 self-start">
               <AIEditSidebar
-                title="Edit with AI"
+                title="Chat with AI"
                 messages={messages}
                 onSend={handleSend}
                 onModify={handleSend}
@@ -97,6 +97,7 @@ export default function MoodEntryPage() {
                 onMicrophone={() => console.log("Microphone clicked")}
                 placeholder="Ask me to modify a plan..."
                 isLoading={isLoading}
+                emptyStateMessage="Tell me how you're feeling and I'll help you track your mood..."
               />
             </div>
 

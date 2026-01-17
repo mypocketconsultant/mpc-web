@@ -231,6 +231,7 @@ function EditTaskContent() {
                 onSend={handleSend}
                 onToggleExpanded={toggleMessageExpanded}
                 placeholder="Ask me to help refine this plan..."
+                emptyStateMessage="Ask me to help edit and refine your career plan..."
               />
             </div>
 

@@ -58,6 +58,6 @@ export const verifyAuth = async () => {
     const response = await apiService.get("/v1/auth/me");
     return { response };
   } catch (error) {
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : String(error) };
   }
 };

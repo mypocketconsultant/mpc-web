@@ -28,18 +28,7 @@ export default function CreateGoalPage() {
   const [goalDescription, setGoalDescription] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("08:00 am");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'user',
-      content: 'Help me create a goal for this week',
-    },
-    {
-      id: '2',
-      type: 'assistant',
-      content: "I can help you create an actionable goal. What would you like to focus on?"
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { toast, showToast } = useToast();
@@ -161,6 +150,7 @@ export default function CreateGoalPage() {
                   }]);
                   setInputValue('');
                 }}
+                emptyStateMessage="Ask me to help create an actionable career goal..."
               />
             </div> */}
             {/* Right Content - Form */}

@@ -52,6 +52,7 @@ interface AIEditSidebarProps {
   onToggleExpanded?: (messageId: string) => void;
   onFileUpload?: (file: File) => Promise<void>;
   intent?: 'resume-builder' | 'career-advisor' | 'planner_create';
+  emptyStateMessage?: string;
 }
 
 export default function AIEditSidebar({
@@ -66,6 +67,7 @@ export default function AIEditSidebar({
   onToggleExpanded,
   onFileUpload,
   intent,
+  emptyStateMessage = "Start a conversation",
 }: AIEditSidebarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function AIEditSidebar({
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-gray-400 text-center">
-              Start a conversation
+              {emptyStateMessage}
             </p>
           </div>
         ) : (

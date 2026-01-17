@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -40,7 +40,7 @@ interface AgentResponse {
   metadata?: Record<string, unknown>;
 }
 
-export default function ChatPage() {
+function ChatPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -313,5 +313,13 @@ export default function ChatPage() {
 
       <Toast toast={toast} />
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatPageContent />
+    </Suspense>
   );
 }

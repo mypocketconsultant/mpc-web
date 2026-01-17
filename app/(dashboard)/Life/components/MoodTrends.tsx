@@ -108,7 +108,7 @@ export default function MoodTrends({
                 padding: "8px 12px",
               }}
               labelStyle={{ color: "#6B7280", fontWeight: 600 }}
-              formatter={(value: number, name: string) => [
+              formatter={(value: number | undefined, name: string | undefined) => [
                 value,
                 name === "mood1" ? "Mood" : "Energy"
               ]}

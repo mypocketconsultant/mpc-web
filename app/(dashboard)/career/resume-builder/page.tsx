@@ -613,6 +613,7 @@ export default function ResumeBuilder() {
                 onToggleExpanded={toggleMessageExpanded}
                 onFileUpload={handleFileUpload}
                 intent="resume-builder"
+                emptyStateMessage="Upload your resume or ask me to help optimize and improve it..."
               />
             </div>
 
