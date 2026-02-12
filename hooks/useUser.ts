@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { apiService } from '@/lib/api/apiService';
+import { useState, useEffect } from "react";
+import { apiService } from "@/lib/api/apiService";
 
 interface User {
   id: string;
@@ -22,12 +22,13 @@ export function useUser() {
     async function fetchUser() {
       try {
         setLoading(true);
-        const response = await apiService.get<{ data: { user: User } }>('/v1/auth/me');
+        const response = await apiService.get<{ data: { user: User } }>(
+          "/v1/auth/me",
+        );
         setUser(response.data.user);
         setError(null);
       } catch (err: any) {
-        console.error('[useUser] Failed to fetch user:', err);
-        setError(err.message || 'Failed to load user data');
+        setError(err.message || "Failed to load user data");
         setUser(null);
       } finally {
         setLoading(false);

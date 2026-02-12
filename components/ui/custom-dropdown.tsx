@@ -19,7 +19,10 @@ export default function CustomDropdown({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -32,13 +35,13 @@ export default function CustomDropdown({
   return (
     <div
       ref={dropdownRef}
-      className="relative w-[20.72vw] h-[3.0rem] mb-[2vh] font-railway border border-[#79747E] text-[#A1A1A1] text-[14.5px] rounded-[0.25rem] opacity-100 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="relative w-full md:w-[20.72vw] md:min-w-[280px] h-12 md:h-[3.0rem] mb-2 md:mb-[2vh] font-railway border border-[#79747E] text-[#A1A1A1] text-sm md:text-[14.5px] rounded-[0.25rem] opacity-100 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
       onClick={() => setIsOpen(!isOpen)}
     >
       <div className="flex justify-between items-center cursor-pointer text-[#49454F]">
-        <span>{value || placeholder}</span>
+        <span className="truncate">{value || placeholder}</span>
         <span
-          className={`transform transition-transform ${
+          className={`transform transition-transform flex-shrink-0 ml-2 ${
             isOpen ? "rotate-180" : "rotate-0"
           }`}
         >
@@ -60,11 +63,11 @@ export default function CustomDropdown({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 w-full bg-white border border-[#79747E] rounded-[0.25rem] shadow-lg z-10">
+        <div className="absolute top-full left-0 w-full bg-white border border-[#79747E] rounded-[0.25rem] shadow-lg z-10 max-h-60 overflow-y-auto">
           {options.map((option) => (
             <div
               key={option}
-              className="px-4 py-2 hover:bg-[#F3F3F3] cursor-pointer text-[#49454F]"
+              className="px-4 py-2 hover:bg-[#F3F3F3] cursor-pointer text-[#49454F] text-sm md:text-base"
               onClick={() => {
                 onChange(option);
                 setIsOpen(false);

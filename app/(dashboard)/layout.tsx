@@ -1,15 +1,17 @@
-"use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+"use client";
 import { RiMenuFold2Line } from "react-icons/ri";
-import React, { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { 
-  Home, 
-  Wrench, 
-  BookOpen, 
-  Settings, 
-  LifeBuoy, 
-  Briefcase, 
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  Wrench,
+  BookOpen,
+  Settings,
+  LifeBuoy,
+  Briefcase,
   Users,
   Target,
   DollarSign,
@@ -17,37 +19,45 @@ import {
   HelpCircle,
   Menu,
   X,
-} from "lucide-react"
+} from "lucide-react";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
     { icon: Wrench, label: "Tools", href: "/tools" },
-  ]
+  ];
 
   const modules = [
     { icon: LifeBuoy, label: "Life Advisor", href: "/Life" },
     { icon: Briefcase, label: "Career Consulting", href: "/career" },
-    { icon: Users, label: "Business Consultancy", href: "/modules/business-consultancy" },
-    { icon: BookOpen, label: "Study Support", href: "/modules/study-support" },
-    { icon: DollarSign, label: "Financial Literacy", href: "/modules/financial-literacy" },
+    {
+      icon: Users,
+      label: "Business Consultancy",
+      href: "/modules/business-consultancy",
+    },
+    { icon: BookOpen, label: "Study Support", href: "/study" },
+    {
+      icon: DollarSign,
+      label: "Financial Literacy",
+      href: "/financial-literacy",
+    },
     { icon: Heart, label: "Faith (opt-in)", href: "/modules/faith" },
     { icon: Target, label: "Social Impact", href: "/modules/social-impact" },
-  ]
+  ];
 
   const settings = [
     { icon: Users, label: "User", href: "/settings/user" },
     { icon: Settings, label: "Security", href: "/settings/security" },
     { icon: DollarSign, label: "Pricing", href: "/settings/pricing" },
     { icon: HelpCircle, label: "Help Center", href: "/settings/help" },
-  ]
+  ];
 
   const NavLink = ({ icon: Icon, label, href, active = false }: any) => (
     <Link
@@ -57,33 +67,39 @@ export default function DashboardLayout({
           ? "bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg"
           : "text-gray-700 hover:bg-gray-100"
       }`}
-      style={active ? { backgroundColor: '#5A3FFF' } : {}}
+      style={active ? { backgroundColor: "#5A3FFF" } : {}}
     >
       <Icon className="h-[17px] w-[17px] flex-shrink-0" />
       {sidebarOpen && <span className="text-sm">{label}</span>}
     </Link>
-  )
+  );
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 bg-white shadow-lg border-r border-gray-200 overflow-y-auto transition-all duration-300 ease-in-out md:static md:translate-x-0 ${
-          sidebarOpen ? "w-64 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"
+          sidebarOpen
+            ? "w-64 translate-x-0"
+            : "w-20 -translate-x-full md:translate-x-0"
         }`}
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Header */}
         <div className="flex flex-col gap-8 px-4 pt-6 pb-2">
-          <button 
+          <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="self-start p-2 mb-2 hover:bg-gray-100 rounded-lg transition-colors" 
+            className="self-start p-2 mb-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Menu"
           >
             {/* Hamburger icon SVG */}
-           <RiMenuFold2Line className="text-2xl" />
+            <RiMenuFold2Line className="text-2xl" />
           </button>
-          <img src="/LogoSqu.png" alt="My Pocket Consultant" className="w-32 h-auto mx-auto" />
+          <img
+            src="/LogoSqu.png"
+            alt="My Pocket Consultant"
+            className="w-32 h-auto mx-auto"
+          />
         </div>
 
         {/* Navigation */}
@@ -91,7 +107,11 @@ export default function DashboardLayout({
           {/* Main Menu */}
           <div className="space-y-2">
             {menuItems.map((item) => (
-              <NavLink key={item.href} {...item} active={pathname === item.href} />
+              <NavLink
+                key={item.href}
+                {...item}
+                active={pathname === item.href}
+              />
             ))}
           </div>
 
@@ -104,10 +124,13 @@ export default function DashboardLayout({
             )}
             <div className="space-y-2">
               {modules.map((item) => (
-                <NavLink 
-                  key={item.href} 
-                  {...item} 
-                  active={pathname === item.href || pathname.startsWith(item.href + '/')} 
+                <NavLink
+                  key={item.href}
+                  {...item}
+                  active={
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/")
+                  }
                 />
               ))}
             </div>
@@ -125,7 +148,11 @@ export default function DashboardLayout({
             )}
             <div className="space-y-2">
               {settings.map((item) => (
-                <NavLink key={item.href} {...item} active={pathname === item.href} />
+                <NavLink
+                  key={item.href}
+                  {...item}
+                  active={pathname === item.href}
+                />
               ))}
             </div>
           </div>
@@ -148,21 +175,30 @@ export default function DashboardLayout({
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
           <span className="text-sm font-semibold text-gray-900">MyPocket</span>
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <main
+          className="flex-1 overflow-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {children}
         </main>
 
         {/* Footer */}
         <div className="bg-white border-t border-gray-200 px-6 py-4">
-          <h1 className="text-center text-sm text-gray-600">My Pocket Consultant v 1.0</h1>
+          <h1 className="text-center text-sm text-gray-600">
+            My Pocket Consultant v 1.0
+          </h1>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -36,7 +36,10 @@ export default function SavedResourcesPage() {
     return "My Pocket Consultant";
   };
 
-  const fetchResumes = async (currentOffset: number = 0, append: boolean = false) => {
+  const fetchResumes = async (
+    currentOffset: number = 0,
+    append: boolean = false,
+  ) => {
     try {
       if (append) {
         setIsLoadingMore(true);
@@ -50,7 +53,7 @@ export default function SavedResourcesPage() {
           total: number;
           limit: number;
           offset: number;
-        }
+        };
       }>(`/v1/resume-builder?limit=${INITIAL_LIMIT}&offset=${currentOffset}`);
 
       const resumes = response?.data?.items || [];
@@ -64,7 +67,6 @@ export default function SavedResourcesPage() {
       setTotal(totalCount);
       setOffset(currentOffset + resumes.length);
     } catch (error) {
-      console.error("Failed to fetch resumes:", error);
       if (!append) {
         setDocuments([]);
       }
@@ -83,8 +85,8 @@ export default function SavedResourcesPage() {
   };
 
   const handleSeeChat = (resumeId: string) => {
-    sessionStorage.setItem('currentResumeId', resumeId);
-    router.push('/career/resume-builder');
+    sessionStorage.setItem("currentResumeId", resumeId);
+    router.push("/career/resume-builder");
   };
 
   const hasMore = documents.length < total;
@@ -231,8 +233,8 @@ export default function SavedResourcesPage() {
         <div className="max-w-7xl mx-auto">
           <InputFooter
             placeholder="Ask me to optimize your LinkedIn..."
-            onSend={(message) => console.log("Sent:", message)}
-            onAttach={() => console.log("Attach clicked")}
+            onSend={() => {}}
+            onAttach={() => {}}
             context="career"
           />
         </div>

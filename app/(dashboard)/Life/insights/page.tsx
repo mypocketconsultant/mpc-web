@@ -20,7 +20,7 @@ import { Toast } from "@/components/Toast";
 // Type definitions
 interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   content: string;
 }
 
@@ -53,9 +53,21 @@ interface InsightData {
 
 // API response types
 interface ApiMetrics {
-  avg_mood: { value: number; change: number; changeType: "positive" | "negative" };
-  stability: { value: number; change: number; changeType: "positive" | "negative" };
-  energy: { value: number; change: number; changeType: "positive" | "negative" };
+  avg_mood: {
+    value: number;
+    change: number;
+    changeType: "positive" | "negative";
+  };
+  stability: {
+    value: number;
+    change: number;
+    changeType: "positive" | "negative";
+  };
+  energy: {
+    value: number;
+    change: number;
+    changeType: "positive" | "negative";
+  };
 }
 
 interface ApiInsight {
@@ -118,82 +130,153 @@ export default function InsightsPage() {
   }, []);
 
   // Transform API insights to component format
-  const transformInsights = useCallback((insights: ApiInsight[]): InsightData[] => {
-    // Map insight types to styling
-    const styleMap: Record<string, { iconImage: StaticImageData; iconBg: string; cardBg: string; titleColor: string }> = {
-      "upward-momentum": { iconImage: mood1Icon, iconBg: "bg-red-400", cardBg: "bg-[#FDEDED]", titleColor: "text-red-500" },
-      "downward-trend": { iconImage: mood1Icon, iconBg: "bg-red-400", cardBg: "bg-[#FDEDED]", titleColor: "text-red-500" },
-      "stable-mood": { iconImage: mood1Icon, iconBg: "bg-green-400", cardBg: "bg-[#FCFCFC]", titleColor: "text-green-600" },
-      "weekend-peak": { iconImage: mood2Icon, iconBg: "bg-purple-500", cardBg: "bg-[#FCFCFC]", titleColor: "text-purple-700" },
-      "weekday-warrior": { iconImage: mood2Icon, iconBg: "bg-purple-500", cardBg: "bg-[#FCFCFC]", titleColor: "text-purple-700" },
-      "energy-correlation": { iconImage: mood3Icon, iconBg: "bg-yellow-400", cardBg: "bg-[#FCFCFC]", titleColor: "text-red-700" },
-      "day-pattern": { iconImage: mode4Icon, iconBg: "bg-indigo-500", cardBg: "bg-[#FDEDED]", titleColor: "text-red-600" },
-      "keep-tracking": { iconImage: mood1Icon, iconBg: "bg-blue-400", cardBg: "bg-[#FCFCFC]", titleColor: "text-blue-600" },
-    };
-
-    // Default styles for unknown insight types
-    const defaultStyles = [
-      { iconImage: mood1Icon, iconBg: "bg-red-400", cardBg: "bg-[#FDEDED]", titleColor: "text-red-500" },
-      { iconImage: mood2Icon, iconBg: "bg-purple-500", cardBg: "bg-[#FCFCFC]", titleColor: "text-purple-700" },
-      { iconImage: mood3Icon, iconBg: "bg-yellow-400", cardBg: "bg-[#FCFCFC]", titleColor: "text-red-700" },
-      { iconImage: mode4Icon, iconBg: "bg-indigo-500", cardBg: "bg-[#FDEDED]", titleColor: "text-red-600" },
-    ];
-
-    return insights.map((insight, index) => {
-      const styles = styleMap[insight.id] || defaultStyles[index % defaultStyles.length];
-      return {
-        id: insight.id,
-        title: insight.title,
-        description: insight.description,
-        ...styles,
+  const transformInsights = useCallback(
+    (insights: ApiInsight[]): InsightData[] => {
+      // Map insight types to styling
+      const styleMap: Record<
+        string,
+        {
+          iconImage: StaticImageData;
+          iconBg: string;
+          cardBg: string;
+          titleColor: string;
+        }
+      > = {
+        "upward-momentum": {
+          iconImage: mood1Icon,
+          iconBg: "bg-red-400",
+          cardBg: "bg-[#FDEDED]",
+          titleColor: "text-red-500",
+        },
+        "downward-trend": {
+          iconImage: mood1Icon,
+          iconBg: "bg-red-400",
+          cardBg: "bg-[#FDEDED]",
+          titleColor: "text-red-500",
+        },
+        "stable-mood": {
+          iconImage: mood1Icon,
+          iconBg: "bg-green-400",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-green-600",
+        },
+        "weekend-peak": {
+          iconImage: mood2Icon,
+          iconBg: "bg-purple-500",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-purple-700",
+        },
+        "weekday-warrior": {
+          iconImage: mood2Icon,
+          iconBg: "bg-purple-500",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-purple-700",
+        },
+        "energy-correlation": {
+          iconImage: mood3Icon,
+          iconBg: "bg-yellow-400",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-red-700",
+        },
+        "day-pattern": {
+          iconImage: mode4Icon,
+          iconBg: "bg-indigo-500",
+          cardBg: "bg-[#FDEDED]",
+          titleColor: "text-red-600",
+        },
+        "keep-tracking": {
+          iconImage: mood1Icon,
+          iconBg: "bg-blue-400",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-blue-600",
+        },
       };
-    });
-  }, []);
+
+      // Default styles for unknown insight types
+      const defaultStyles = [
+        {
+          iconImage: mood1Icon,
+          iconBg: "bg-red-400",
+          cardBg: "bg-[#FDEDED]",
+          titleColor: "text-red-500",
+        },
+        {
+          iconImage: mood2Icon,
+          iconBg: "bg-purple-500",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-purple-700",
+        },
+        {
+          iconImage: mood3Icon,
+          iconBg: "bg-yellow-400",
+          cardBg: "bg-[#FCFCFC]",
+          titleColor: "text-red-700",
+        },
+        {
+          iconImage: mode4Icon,
+          iconBg: "bg-indigo-500",
+          cardBg: "bg-[#FDEDED]",
+          titleColor: "text-red-600",
+        },
+      ];
+
+      return insights.map((insight, index) => {
+        const styles =
+          styleMap[insight.id] || defaultStyles[index % defaultStyles.length];
+        return {
+          id: insight.id,
+          title: insight.title,
+          description: insight.description,
+          ...styles,
+        };
+      });
+    },
+    [],
+  );
 
   // Fetch insights data
-  const fetchInsights = useCallback(async (period: string) => {
-    setIsLoading(true);
-    try {
-      const window = `${period}d`;
-      console.log('[InsightsPage] Fetching insights with window:', window);
+  const fetchInsights = useCallback(
+    async (period: string) => {
+      setIsLoading(true);
+      try {
+        const window = `${period}d`;
 
-      const response: any = await apiService.get(`/v1/life/insights?window=${window}`);
-      console.log('[InsightsPage] API Response:', response);
+        const response: any = await apiService.get(
+          `/v1/life/insights?window=${window}`,
+        );
 
-      // Extract data from response (could be response.data or response.data.data)
-      let data = response?.data;
-      if (data && !data.metrics && data.data) {
-        data = data.data;
+        // Extract data from response (could be response.data or response.data.data)
+        let data = response?.data;
+        if (data && !data.metrics && data.data) {
+          data = data.data;
+        }
+
+        if (data) {
+          // Transform and set metrics
+          if (data.metrics) {
+            const transformedMetrics = transformMetrics(data.metrics);
+            setMoodMetrics(transformedMetrics);
+          }
+
+          // Set trends directly (API format matches component format)
+          if (data.trends) {
+            setMoodTrends(data.trends);
+          }
+
+          // Transform and set insights
+          if (data.insights) {
+            const transformedInsights = transformInsights(data.insights);
+            setAiInsights(transformedInsights);
+          }
+        }
+      } catch (error) {
+        showToast("error", "Failed to load insights");
+      } finally {
+        setIsLoading(false);
       }
-
-      if (data) {
-        // Transform and set metrics
-        if (data.metrics) {
-          const transformedMetrics = transformMetrics(data.metrics);
-          setMoodMetrics(transformedMetrics);
-          console.log('[InsightsPage] Transformed metrics:', transformedMetrics);
-        }
-
-        // Set trends directly (API format matches component format)
-        if (data.trends) {
-          setMoodTrends(data.trends);
-          console.log('[InsightsPage] Trends:', data.trends);
-        }
-
-        // Transform and set insights
-        if (data.insights) {
-          const transformedInsights = transformInsights(data.insights);
-          setAiInsights(transformedInsights);
-          console.log('[InsightsPage] Transformed insights:', transformedInsights);
-        }
-      }
-    } catch (error) {
-      console.error('[InsightsPage] Error fetching insights:', error);
-      showToast('error', 'Failed to load insights');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [transformMetrics, transformInsights, showToast]);
+    },
+    [transformMetrics, transformInsights, showToast],
+  );
 
   // Fetch on mount and when period changes
   useEffect(() => {
@@ -204,7 +287,6 @@ export default function InsightsPage() {
   useEffect(() => {
     const newSessionId = `life-insights-${Date.now()}`;
     setSessionId(newSessionId);
-    console.log('[InsightsPage] Session ID generated:', newSessionId);
   }, []);
 
   // Handle chat message send
@@ -214,10 +296,10 @@ export default function InsightsPage() {
     // Add user message to chat
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user',
+      type: "user",
       content: message,
     };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
 
     setIsChatLoading(true);
 
@@ -227,32 +309,30 @@ export default function InsightsPage() {
         session_id: sessionId,
       };
 
-      console.log('[InsightsPage] Sending to /v1/life/chat:', payload);
+      const response: any = await apiService.post("/v1/life/chat", payload);
 
-      const response: any = await apiService.post('/v1/life/chat', payload);
-
-      console.log('[InsightsPage] Response from /v1/life/chat:', response);
-
-      const aiMessage = response?.data?.message || response?.data?.data?.message || 'I received your message but could not generate a response.';
+      const aiMessage =
+        response?.data?.message ||
+        response?.data?.data?.message ||
+        "I received your message but could not generate a response.";
 
       // Add AI response to chat
       const aiResponse: Message = {
         id: Date.now().toString(),
-        type: 'assistant',
+        type: "assistant",
         content: aiMessage,
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
-      console.error('[InsightsPage] Error calling chat API:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
-      showToast('error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to get AI response";
+      showToast("error", errorMessage);
     } finally {
       setIsChatLoading(false);
     }
   };
 
   const handlePeriodChange = (period: string) => {
-    console.log('[InsightsPage] Period changed to:', period);
     setSelectedPeriod(period);
   };
 
@@ -280,8 +360,8 @@ export default function InsightsPage() {
                 isLoading={isChatLoading}
                 onSend={handleSend}
                 onModify={handleSend}
-                onAttach={() => console.log("Attach clicked")}
-                onMicrophone={() => console.log("Microphone clicked")}
+                onAttach={() => {}}
+                onMicrophone={() => {}}
                 placeholder="Ask about your mood insights..."
                 emptyStateMessage="Ask me about your mood trends and insights..."
               />
@@ -295,7 +375,6 @@ export default function InsightsPage() {
                 selectedPeriod={selectedPeriod}
                 tipsIcon={tipsIcon}
                 onDocumentClick={(docId) => {
-                  console.log("Document clicked:", docId);
                   setSelectedDocument(docId.toString());
                 }}
                 onPeriodChange={handlePeriodChange}

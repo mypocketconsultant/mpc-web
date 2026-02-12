@@ -140,8 +140,8 @@ export default function HomePage() {
       {/* Chat Input Footer */}
       <InputFooter
         placeholder="Ask me to optimize your LinkedIn..."
-        onSend={(message) => console.log("Sent:", message)}
-        onAttach={() => console.log("Attach clicked")}
+        onSend={() => {}}
+        onAttach={() => {}}
         context="career"
       />
     </div>

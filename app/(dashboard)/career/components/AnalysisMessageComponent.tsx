@@ -30,15 +30,6 @@ export default function AnalysisMessageComponent({
   isExpanded,
   onToggleExpanded,
 }: AnalysisMessageComponentProps) {
-  // Debug logging
-  console.log('[AnalysisMessageComponent] Rendering with:', {
-    contentPreview: content?.substring(0, 50),
-    targetRole: analysisPlan?.target_role,
-    sectionsCount: analysisPlan?.sections?.length,
-    sections: analysisPlan?.sections,
-    isExpanded
-  });
-
   return (
     <div className="space-y-3">
       {/* Opening Content Message - Always show full content */}
@@ -87,7 +78,9 @@ export default function AnalysisMessageComponent({
             className="bg-white rounded-lg p-4 border border-blue-100 hover:border-blue-300 transition-colors"
           >
             {/* Section Header with Score - Always visible */}
-            <div className={`flex items-center justify-between ${isExpanded ? 'mb-3 pb-2 border-b border-blue-50' : ''}`}>
+            <div
+              className={`flex items-center justify-between ${isExpanded ? "mb-3 pb-2 border-b border-blue-50" : ""}`}
+            >
               <h4 className="text-sm font-bold text-gray-900">
                 {section.name}
               </h4>
@@ -155,14 +148,9 @@ export default function AnalysisMessageComponent({
           onClick={onToggleExpanded}
           className="text-blue-600 text-xs font-semibold hover:underline cursor-pointer transition-colors mt-2 w-full text-left"
         >
-          {isExpanded ? (
-            <>Hide details</>
-          ) : (
-            <>See issues & recommendations</>
-          )}
+          {isExpanded ? <>Hide details</> : <>See issues & recommendations</>}
         </button>
       )}
     </div>
   );
 }
-

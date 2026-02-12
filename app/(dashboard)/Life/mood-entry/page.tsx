@@ -12,7 +12,7 @@ import { Toast } from "@/components/Toast";
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   content: string;
   file?: {
     name: string;
@@ -43,27 +43,32 @@ export default function MoodEntryPage() {
     if (message.trim() && !isLoading) {
       const newMessage: Message = {
         id: Date.now().toString(),
-        type: 'user',
+        type: "user",
         content: message,
       };
-      setMessages(prev => [...prev, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
       setIsLoading(true);
 
       try {
-        const response = await apiService.post<LifeChatResponse>('/v1/life/chat', {
-          message,
-          session_id: sessionId,
-        });
+        const response = await apiService.post<LifeChatResponse>(
+          "/v1/life/chat",
+          {
+            message,
+            session_id: sessionId,
+          },
+        );
 
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          type: 'assistant',
+          type: "assistant",
           content: response.data?.message || "I've processed your request.",
         };
-        setMessages(prev => [...prev, aiResponse]);
+        setMessages((prev) => [...prev, aiResponse]);
       } catch (error) {
-        console.error('[MoodEntryPage] Chat error:', error);
-        showToast('error', "Sorry, I couldn't process your request. Please try again.");
+        showToast(
+          "error",
+          "Sorry, I couldn't process your request. Please try again.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -93,8 +98,8 @@ export default function MoodEntryPage() {
                 messages={messages}
                 onSend={handleSend}
                 onModify={handleSend}
-                onAttach={() => console.log("Attach clicked")}
-                onMicrophone={() => console.log("Microphone clicked")}
+                onAttach={() => {}}
+                onMicrophone={() => {}}
                 placeholder="Ask me to modify a plan..."
                 isLoading={isLoading}
                 emptyStateMessage="Tell me how you're feeling and I'll help you track your mood..."

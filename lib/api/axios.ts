@@ -23,17 +23,14 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -41,15 +38,14 @@ axiosInstance.interceptors.response.use(
         // const { logout } = await import('@/services/auth');
         // await logout();
       } catch (logoutError) {
-        console.error('Logout failed:', logoutError);
         window.location.href = "/auth/sign-in";
       }
-      
+
       return Promise.reject(error);
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

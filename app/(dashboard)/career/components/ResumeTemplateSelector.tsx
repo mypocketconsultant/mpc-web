@@ -70,8 +70,6 @@ export default function ResumeTemplateSelector({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      console.log("[ResumeTemplateSelector] Downloading PDF with template:", selectedId);
-
       // Call API with template parameter
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${resumeId}/export-pdf`,
@@ -81,10 +79,8 @@ export default function ResumeTemplateSelector({
           },
           responseType: "blob",
           withCredentials: true,
-        }
+        },
       );
-
-      console.log("[ResumeTemplateSelector] PDF received, size:", response.data.size);
 
       // Create download link
       const pdfBlob = response.data as Blob;
@@ -100,7 +96,6 @@ export default function ResumeTemplateSelector({
       // Close modal after successful download
       onClose();
     } catch (error) {
-      console.error("[ResumeTemplateSelector] Error downloading PDF:", error);
       alert("Failed to download resume. Please try again.");
     } finally {
       setIsDownloading(false);
@@ -216,14 +211,21 @@ function TemplatePreview({
               {educations.slice(0, 2).map((edu, idx) => (
                 <div key={idx} className="space-y-1 mb-2">
                   <div className="flex justify-between text-[9px]">
-                    <p className="font-semibold">{edu.nameOfSchool || "University Name"}</p>
+                    <p className="font-semibold">
+                      {edu.nameOfSchool || "University Name"}
+                    </p>
                     <p>{edu.year || "Year"}</p>
                   </div>
                   <div className="flex justify-between text-[8px] text-gray-600">
-                    <p>{edu.certification || "Degree"}, {edu.fieldOfStudy || "Field of Study"}</p>
+                    <p>
+                      {edu.certification || "Degree"},{" "}
+                      {edu.fieldOfStudy || "Field of Study"}
+                    </p>
                   </div>
                   {edu.descriptionGraduation && (
-                    <p className="text-[8px] text-gray-600 truncate">{edu.descriptionGraduation}</p>
+                    <p className="text-[8px] text-gray-600 truncate">
+                      {edu.descriptionGraduation}
+                    </p>
                   )}
                 </div>
               ))}
@@ -245,7 +247,9 @@ function TemplatePreview({
                     <p className="italic">{exp.date || "Date"}</p>
                   </div>
                   {exp.descriptionExperience && (
-                    <p className="text-[7px] text-gray-600 line-clamp-2">{exp.descriptionExperience}</p>
+                    <p className="text-[7px] text-gray-600 line-clamp-2">
+                      {exp.descriptionExperience}
+                    </p>
                   )}
                 </div>
               ))}
@@ -281,20 +285,29 @@ function TemplatePreview({
         {/* Education */}
         {educations.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">EDUCATION</h4>
+            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">
+              EDUCATION
+            </h4>
             {educations.slice(0, 2).map((edu, idx) => (
               <div key={idx} className="space-y-1 mb-2">
                 <div className="flex justify-between text-[9px]">
                   <div>
-                    <p className="font-semibold">{edu.nameOfSchool || "University Name"}</p>
-                    <p className="text-gray-600">{edu.certification || "Degree"}, {edu.fieldOfStudy || "Field"}</p>
+                    <p className="font-semibold">
+                      {edu.nameOfSchool || "University Name"}
+                    </p>
+                    <p className="text-gray-600">
+                      {edu.certification || "Degree"},{" "}
+                      {edu.fieldOfStudy || "Field"}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p>{edu.year || "Year"}</p>
                   </div>
                 </div>
                 {edu.descriptionGraduation && (
-                  <p className="text-[8px] text-gray-600 truncate">{edu.descriptionGraduation}</p>
+                  <p className="text-[8px] text-gray-600 truncate">
+                    {edu.descriptionGraduation}
+                  </p>
                 )}
               </div>
             ))}
@@ -304,7 +317,9 @@ function TemplatePreview({
         {/* Experience */}
         {experience.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">EXPERIENCE</h4>
+            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">
+              EXPERIENCE
+            </h4>
             {experience.slice(0, 2).map((exp, idx) => (
               <div key={idx} className="mb-2">
                 <div className="flex justify-between text-[9px] mb-1">
@@ -328,7 +343,9 @@ function TemplatePreview({
         {/* Skills */}
         {skills.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-1 pb-1">SKILLS</h4>
+            <h4 className="text-xs font-bold border-b border-gray-300 mb-1 pb-1">
+              SKILLS
+            </h4>
             <p className="text-[8px] text-gray-600">{skills.join(", ")}</p>
           </div>
         )}

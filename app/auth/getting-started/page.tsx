@@ -8,38 +8,67 @@ import FormSection4 from "@/components/getting-started/step4";
 import { verifyAuth } from "@/services/auth";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
+import { useSignupStore } from "@/stores/useSignupStore";
 
 function SignupContent() {
   const searchParams = useSearchParams();
-  const authType = searchParams.get('authType');
-
-  // For Google auth, start at step 3 (skip email/password and name steps)
-  const [currentStep, setCurrentStep] = useState(authType === 'google' ? 3 : 1);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [firstname, setFirstname] = useState("");
-  const [lastname, setLastname] = useState("");
-  const [country, setCountry] = useState("");
-  const [career, setCareer] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [validationErrors, setValidationErrors] = useState({});
-  const [idToken, setIdToken] = useState("");
+  const authType = searchParams.get("authType") as "email" | "google" | null;
+  const router = useRouter();
   const { toast, showToast } = useToast();
 
-  // For Google auth, retrieve the idToken from sessionStorage
+  // Zustand store
+  const {
+    currentStep,
+    email,
+    password,
+    confirmPassword,
+    firstname,
+    lastname,
+    country,
+    career,
+    idToken,
+    authType: storedAuthType,
+    setField,
+    setStep,
+    reset,
+    clearSensitiveData,
+  } = useSignupStore();
+
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string;
+  }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Handle hydration - wait for store to be ready
   useEffect(() => {
-    if (authType === 'google') {
-      const storedToken = sessionStorage.getItem("googleIdToken");
-      if (storedToken) {
-        setIdToken(storedToken);
-        console.log("[Auth] Retrieved Google ID token from sessionStorage");
+    setIsHydrated(true);
+  }, []);
+
+  // Handle auth type from URL params
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (authType && authType !== storedAuthType) {
+      setField("authType", authType);
+
+      // For Google auth, start at step 3 (skip email/password and name steps)
+      if (authType === "google") {
+        setStep(3);
+        // Retrieve the idToken from sessionStorage for Google auth
+        const storedToken = sessionStorage.getItem("googleIdToken");
+        if (storedToken) {
+          setField("idToken", storedToken);
+        }
+      } else if (currentStep === 0) {
+        setStep(1);
       }
     }
-  }, [authType]);
+  }, [authType, storedAuthType, isHydrated, currentStep, setField, setStep]);
 
   const clearError = (fieldName: string) => {
     setValidationErrors((prev) => {
-      const newErrors : any = { ...prev };
+      const newErrors = { ...prev };
       delete newErrors[fieldName];
       return newErrors;
     });
@@ -52,7 +81,9 @@ function SignupContent() {
         errors.email = "Invalid email";
       }
       if (
-        !/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)
+        !/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+          password,
+        )
       ) {
         errors.password =
           "Password must be at least 8 characters, include an uppercase letter, a number, and a special character";
@@ -80,35 +111,37 @@ function SignupContent() {
     return Object.keys(errors).length === 0;
   };
 
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleEmailAuth = async () => {
     setIsLoading(true);
     try {
       // Only create Firebase user and get idToken, don't send to backend yet
       const { auth } = await import("@/lib/firebase");
-      const { createUserWithEmailAndPassword, sendEmailVerification } = await import("firebase/auth");
+      const { createUserWithEmailAndPassword, sendEmailVerification } =
+        await import("firebase/auth");
 
-      console.log("[Auth] Creating Firebase user with email:", email);
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("[Auth] Firebase user created, UID:", result.user.uid);
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
 
       const token = await result.user.getIdToken();
-      console.log("[Auth] Got Firebase ID token");
 
-      setIdToken(token);
+      setField("idToken", token);
 
       // Send email verification
       await sendEmailVerification(result.user);
-      console.log("[Auth] Email verification sent");
 
       setValidationErrors({});
-      showToast('success', 'Account created! Please check your email for verification.');
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
-    } catch (error: any) {
-      console.error("[Auth] Email auth error:", error);
-      showToast('error', error.message);
+      showToast(
+        "success",
+        "Account created! Please check your email for verification.",
+      );
+      setStep(currentStep + 1);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -118,42 +151,24 @@ function SignupContent() {
     setIsLoading(true);
     try {
       const apiService = (await import("@/lib/api/apiService")).apiService;
+      const effectiveAuthType = storedAuthType || authType;
 
-      if (authType === 'email') {
+      if (effectiveAuthType === "email") {
         // Send all collected data to backend for email signup
-        console.log("[Auth] Sending complete email signup to backend with:", {
-          idToken,
-          email,
-          firstName: firstname,
-          lastName: lastname,
-          country,
-          preferredModule: career,
-        });
-
-        const response = await apiService.post("/v1/auth/signup", {
+        await apiService.post("/v1/auth/signup", {
           idToken,
           firstName: firstname,
           lastName: lastname,
           country,
           preferredModule: career,
         });
-
-        console.log("[Auth] Backend signup response:", response);
-      } else if (authType === 'google') {
+      } else if (effectiveAuthType === "google") {
         // Send Google auth data to backend
-        console.log("[Auth] Sending Google authentication to backend with:", {
+        await apiService.post("/v1/auth/google-authentication", {
           idToken,
           country,
           preferredModule: career,
         });
-
-        const response = await apiService.post("/v1/auth/google-authentication", {
-          idToken,
-          country,
-          preferredModule: career,
-        });
-
-        console.log("[Auth] Backend Google auth response:", response);
 
         // Clear the stored token from sessionStorage
         sessionStorage.removeItem("googleIdToken");
@@ -162,16 +177,28 @@ function SignupContent() {
       // Verify auth with the backend
       const verifyResult = await verifyAuth();
       if (verifyResult.error) {
-        showToast('error', 'Authentication verification failed');
+        showToast("error", "Authentication verification failed");
         setIsLoading(false);
         return;
       }
+
       setValidationErrors({});
-      showToast('success', authType === 'email' ? 'Account setup complete!' : 'Google account linked successfully!');
+      showToast(
+        "success",
+        effectiveAuthType === "email"
+          ? "Account setup complete!"
+          : "Google account linked successfully!",
+      );
+
+      // Clear sensitive data and reset the store
+      clearSensitiveData();
+      reset();
+
       router.push("/home");
-    } catch (error: any) {
-      console.error("[Auth] Signup completion error:", error);
-      showToast('error', error.message);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -179,27 +206,38 @@ function SignupContent() {
 
   const handleNext = () => {
     if (validateStep()) {
-      if (authType === 'email' && currentStep === 1) {
+      const effectiveAuthType = storedAuthType || authType;
+      if (effectiveAuthType === "email" && currentStep === 1) {
         handleEmailAuth();
       } else if (currentStep === 4) {
         handleSignupCompletion();
       } else {
         setValidationErrors({});
-        setCurrentStep((prev) => Math.min(prev + 1, 4));
+        setStep(Math.min(currentStep + 1, 4));
       }
     }
   };
 
   const handleBack = () => {
     setValidationErrors({});
+    const effectiveAuthType = storedAuthType || authType;
     // For Google auth, minimum step is 3 (can't go back to email/name steps)
-    const minStep = authType === 'google' ? 3 : 1;
-    setCurrentStep((prev) => Math.max(prev - 1, minStep));
+    const minStep = effectiveAuthType === "google" ? 3 : 1;
+    setStep(Math.max(currentStep - 1, minStep));
   };
+
+  // Show loading state while hydrating
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-pulse text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center bg-white"
+      className="min-h-screen flex flex-col items-center bg-white px-4 pb-24 sm:pb-28 md:pb-32"
       style={{
         backgroundImage: "url('/background.svg')",
         backgroundRepeat: "no-repeat",
@@ -207,37 +245,40 @@ function SignupContent() {
         backgroundPosition: "center",
       }}
     >
+      {/* Logo - responsive sizing and positioning */}
       <img
         src="/logo.svg"
         alt="Logo"
-        className="absolute w-[4.75vw] h-[7.34vh] top-[6.15vh] left-[6.31vw] transform rotate-0 opacity-100"
+        className="absolute w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[4.75vw] lg:h-[7.34vh] top-4 left-4 sm:top-6 sm:left-6 lg:top-[6.15vh] lg:left-[6.31vw]"
       />
 
-      <div className="flex items-center justify-center w-[32.75vw] h-[0.4vh] bg-gray-300 relative mt-[20.8vh] rounded-full">
+      {/* Progress bar - responsive width */}
+      <div className="flex items-center justify-center w-[80%] sm:w-[60%] md:w-[45%] lg:w-[32.75vw] h-1 sm:h-1.5 bg-gray-300 relative mt-20 sm:mt-24 md:mt-28 lg:mt-[20.8vh] rounded-full">
         <div
-          className="absolute top-0 left-0 h-full bg-[#A393FF] rounded-full"
+          className="absolute top-0 left-0 h-full bg-[#A393FF] rounded-full transition-all duration-300"
           style={{
             width: `${(currentStep / 4) * 100}%`,
           }}
         ></div>
       </div>
 
-      <div className="flex mt-20 ml-[-80px]">
+      {/* Form sections - responsive container */}
+      <div className="flex flex-col items-center justify-center w-full mt-8 sm:mt-12 md:mt-16 lg:mt-20 px-4 sm:px-6 md:px-8">
         {currentStep === 1 && (
           <FormSection
             email={email}
             password={password}
             setEmail={(value) => {
-              setEmail(value);
+              setField("email", value);
               clearError("email");
             }}
             setPassword={(value) => {
-              setPassword(value);
+              setField("password", value);
               clearError("password");
             }}
             confirmPassword={confirmPassword}
             setConfirmPassword={(value) => {
-              setConfirmPassword(value);
+              setField("confirmPassword", value);
               clearError("confirmPassword");
             }}
             validationErrors={validationErrors}
@@ -246,13 +287,13 @@ function SignupContent() {
         {currentStep === 2 && (
           <FormSection2
             setFirstname={(value) => {
-              setFirstname(value);
+              setField("firstname", value);
               clearError("firstname");
             }}
             firstname={firstname}
             lastname={lastname}
             setLastname={(value) => {
-              setLastname(value);
+              setField("lastname", value);
               clearError("lastname");
             }}
             validationErrors={validationErrors}
@@ -262,7 +303,7 @@ function SignupContent() {
           <FormSection3
             country={country}
             setCountry={(value) => {
-              setCountry(value);
+              setField("country", value);
               clearError("country");
             }}
             validationErrors={validationErrors}
@@ -272,7 +313,7 @@ function SignupContent() {
           <FormSection4
             career={career}
             setCareer={(value) => {
-              setCareer(value);
+              setField("career", value);
               clearError("career");
             }}
             validationErrors={validationErrors}
@@ -280,15 +321,16 @@ function SignupContent() {
         )}
       </div>
 
-      <div className="flex justify-between w-full px-40 mt-[24.06vh] fixed bottom-20">
+      {/* Navigation buttons - responsive positioning */}
+      <div className="fixed bottom-0 left-0 right-0 flex justify-between w-full px-4 sm:px-8 md:px-16 lg:px-40 py-4 sm:py-6 bg-white/80 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none">
         <button
-          className="bg-white shadow-xl text-[#6549CC] px-4 py-2 rounded-[16px] font-bold font-railway text-[13px] border border-[#6549CC]"
+          className="bg-white shadow-xl text-[#6549CC] px-4 sm:px-6 py-2 sm:py-3 rounded-[16px] font-bold font-railway text-xs sm:text-sm border border-[#6549CC] hover:bg-gray-50 transition-colors"
           onClick={handleBack}
         >
           Back
         </button>
         <button
-          className="bg-[#6549CC] shadow-xl text-[#FFE5DF] px-4 py-2 rounded-[16px] font-bold font-railway text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#6549CC] shadow-xl text-[#FFE5DF] px-4 sm:px-6 py-2 sm:py-3 rounded-[16px] font-bold font-railway text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5a3fc2] transition-colors"
           onClick={handleNext}
           disabled={isLoading}
         >

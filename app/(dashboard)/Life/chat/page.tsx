@@ -31,7 +31,6 @@ export default function LifeChatPage() {
   useEffect(() => {
     const newSessionId = `life-chat-${Date.now()}`;
     setSessionId(newSessionId);
-    console.log('[LifeChatPage] Session ID generated:', newSessionId);
   }, []);
 
   const handleSend = async (message: string) => {
@@ -42,7 +41,7 @@ export default function LifeChatPage() {
       type: "user",
       content: message,
     };
-    setMessages(prev => [...prev, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
     setInputValue("");
     setIsLoading(true);
 
@@ -52,31 +51,30 @@ export default function LifeChatPage() {
         session_id: sessionId,
       };
 
-      console.log('[LifeChatPage] Sending to /v1/life/chat:', payload);
+      const response: any = await apiService.post("/v1/life/chat", payload);
 
-      const response: any = await apiService.post('/v1/life/chat', payload);
-
-      console.log('[LifeChatPage] Response from /v1/life/chat:', response);
-
-      const aiMessage = response?.data?.message || response?.data?.data?.message || 'I received your message but could not generate a response.';
+      const aiMessage =
+        response?.data?.message ||
+        response?.data?.data?.message ||
+        "I received your message but could not generate a response.";
 
       const aiResponse: Message = {
         id: Date.now().toString(),
         type: "ai",
         content: aiMessage,
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
-      console.error('[LifeChatPage] Error calling chat API:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
-      showToast('error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to get AI response";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleAttach = () => {
-    console.log("Attach file clicked");
+    // TODO: Implement file attachment
   };
 
   const handleMicrophone = () => {
@@ -112,40 +110,42 @@ export default function LifeChatPage() {
               </div>
             ) : (
               messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.type === "ai" ? (
-                  <div className="max-w-[400px]">
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                      <p className="text-sm text-gray-700 mb-4">
-                        {message.content}
-                      </p>
-                      {message.document && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">{message.document.icon}</span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              {message.document.title}
-                            </span>
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.type === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.type === "ai" ? (
+                    <div className="max-w-[400px]">
+                      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-700 mb-4">
+                          {message.content}
+                        </p>
+                        {message.document && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">
+                                {message.document.icon}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                {message.document.title}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="max-w-[500px]">
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                      <p className="text-sm text-gray-800">
-                        {message.content}
-                      </p>
+                  ) : (
+                    <div className="max-w-[500px]">
+                      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-800">
+                          {message.content}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
               ))
             )}
             {isLoading && (
@@ -165,10 +165,12 @@ export default function LifeChatPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
         <div className="max-w-[900px] mx-auto px-8 py-6">
           {/* Document Info */}
-          {messages.some(m => m.document) && (
+          {messages.some((m) => m.document) && (
             <div className="mb-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-gray-900">Foods for better moods</span>
+                <span className="font-semibold text-gray-900">
+                  Foods for better moods
+                </span>
                 <span className="text-gray-400">📄</span>
               </div>
             </div>
@@ -202,10 +204,10 @@ export default function LifeChatPage() {
               disabled={isTranscribing}
               className={`flex-shrink-0 p-3 text-white rounded-full transition-colors ${
                 isRecording
-                  ? 'bg-red-500 animate-pulse'
+                  ? "bg-red-500 animate-pulse"
                   : isTranscribing
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[#5A3FFF] hover:bg-[#4A2FEF]'
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
               }`}
             >
               <Mic className="w-5 h-5" />

@@ -7,7 +7,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   content: string;
   file?: {
     name: string;
@@ -62,7 +62,7 @@ export default function FoodAI({
 
   const handleFileUpload = (file: File) => {
     onAttach?.();
-    console.log("File uploaded:", file);
+    // File upload handled by parent component
   };
 
   const handleMicrophoneClick = () => {
@@ -88,7 +88,7 @@ export default function FoodAI({
         ) : (
           messages.map((message) => (
             <div key={message.id}>
-              {message.type === 'user' ? (
+              {message.type === "user" ? (
                 /* User Message Bubble */
                 <div className="flex justify-end mb-4">
                   <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 max-w-[85%]">
@@ -116,9 +116,7 @@ export default function FoodAI({
                 /* Assistant Message Bubble */
                 <div className="flex justify-start mb-4">
                   <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
-                    <p className="text-sm text-gray-800">
-                      {message.content}
-                    </p>
+                    <p className="text-sm text-gray-800">{message.content}</p>
                   </div>
                 </div>
               )}
@@ -131,19 +129,26 @@ export default function FoodAI({
           <div className="flex justify-start mb-4">
             <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                />
               </div>
             </div>
           </div>
         )}
-
       </div>
 
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
-
         <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 hover:border-gray-300 transition-colors">
           <button
             onClick={handleAttachClick}
@@ -168,14 +173,14 @@ export default function FoodAI({
             onClick={handleMicrophoneClick}
             disabled={isLoading || isTranscribing}
             className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-              isRecording ? 'animate-pulse' : ''
+              isRecording ? "animate-pulse" : ""
             }`}
             style={{
               backgroundColor: isRecording
-                ? '#EF4444'
+                ? "#EF4444"
                 : isLoading || isTranscribing
-                  ? '#B0A0FF'
-                  : '#5A3FFF'
+                  ? "#B0A0FF"
+                  : "#5A3FFF",
             }}
             aria-label="Voice input"
           >

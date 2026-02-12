@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import Image from "next/image";
@@ -16,12 +18,9 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
-      console.log("[Auth] Starting Google sign-up...");
       const result = await signInWithPopup(auth, googleProvider);
-      console.log("[Auth] Google sign-in successful, UID:", result.user.uid);
 
       const idToken = await result.user.getIdToken();
-      console.log("[Auth] Got Firebase ID token");
 
       // Try to login first to check if user exists
       try {
@@ -29,15 +28,13 @@ export default function SignupPage() {
         await apiService.post("/v1/auth/login", { idToken });
 
         // User exists! Login successful - redirect to home
-        console.log("[Auth] User already exists, logging in directly");
-        showToast('success', 'Welcome back! Login successful.');
+        showToast("success", "Welcome back! Login successful.");
         router.push("/home");
         return;
       } catch (loginError: any) {
         // Check if it's a 404 (user not found)
         if (loginError.response?.status === 404) {
           // User doesn't exist - proceed with signup
-          console.log("[Auth] User doesn't exist, proceeding with signup flow");
           sessionStorage.setItem("googleIdToken", idToken);
           router.push("/auth/getting-started?authType=google");
         } else {
@@ -46,13 +43,13 @@ export default function SignupPage() {
         }
       }
     } catch (error: any) {
-      console.error("[Auth] Google sign-up error:", error);
       // Handle specific errors
       if (error.code === "auth/popup-closed-by-user") {
-        console.log("[Auth] User closed the popup");
+        // User closed the popup - no action needed
       } else {
-        const errorMessage = error.response?.data?.message || 'Google authentication failed';
-        showToast('error', errorMessage);
+        const errorMessage =
+          error.response?.data?.message || "Google authentication failed";
+        showToast("error", errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -61,7 +58,7 @@ export default function SignupPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-white"
+      className="min-h-screen flex items-center justify-center bg-white px-4 py-8"
       style={{
         backgroundImage: "url('/background.svg')",
         backgroundRepeat: "no-repeat",
@@ -69,50 +66,73 @@ export default function SignupPage() {
         backgroundPosition: "center",
       }}
     >
-      <div className="flex items-center justify-between w-full max-w-4xl">
+      <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-between w-full max-w-4xl gap-8 lg:gap-4 lg:px-8">
+        {/* Left side - Logo and tagline */}
         <div className="flex flex-col items-center">
           <Image
             src="/logo.svg"
             alt="Logo"
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-[17vw] lg:h-[27vh]"
             style={{
               borderRadius: "4rem",
-              width: `${(299 / 1728) * 100}vw`,
-              height: `${(299 / 1117) * 100}vh`,
             }}
             width={299}
             height={299}
           />
-          <p className="text-center font-display font-semibold text-[3rem] leading-[3rem] tracking-normal text-[#5A3FFF]">
+          <p className="text-center font-display font-semibold text-xl sm:text-2xl md:text-3xl lg:text-[3rem] lg:leading-[3rem] tracking-normal text-[#5A3FFF] mt-4">
             Intelligent Counsel, <br /> Anytime, Anywhere.
           </p>
         </div>
 
-        <div className="flex flex-col items-center space-y-4">
+        {/* Right side - Sign up options */}
+        <div className="flex flex-col items-center space-y-4 sm:space-y-6 w-full max-w-sm px-4 sm:px-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#5A3FFF] font-railway">
+            Sign Up
+          </h2>
+
+          {/* Get started with email button */}
           <button
-            className="bg-[#5A3FFF] text-[#FFD0C5] text-sm font-bold font-railway rounded-xl shadow-xl"
-            style={{
-              width: `${(133 / 1728) * 100}vw`,
-              height: `${(54 / 1117) * 100}vh`,
-              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
-            }}
+            className="w-full bg-[#5A3FFF] text-[#FFD0C5] font-bold font-railway rounded-xl py-3 hover:bg-[#4a2fe8] transition-colors shadow-lg text-sm sm:text-base"
             onClick={() => {
               router.push("/auth/getting-started?authType=email");
             }}
           >
-            Get started
+            Get started with Email
           </button>
+
+          {/* Divider */}
+          <div className="w-full flex items-center gap-3">
+            <hr className="flex-1 border-gray-300" />
+            <span className="text-xs text-gray-500">Or</span>
+            <hr className="flex-1 border-gray-300" />
+          </div>
+
+          {/* Google sign up button */}
           <button
-            className="bg-white text-[#6549CC] font-bold font-railway text-[0.8rem] rounded-lg shadow-xl hover:bg-gray-100 opacity-100 gap-2 px-3 py-4 w-[14.06vw] h-[5.01vh] flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleGoogleSignUp}
             disabled={isLoading}
+            className="w-full bg-white text-[#6549CC] font-bold font-railway text-sm rounded-lg shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-4 py-3 flex items-center justify-center gap-2 border border-gray-200"
           >
-            <img
+            <Image
               src="/google-button.svg"
               alt="Google Icon"
-              className="w-4 h-4 mt-0.5"
+              className="w-4 h-4"
+              width={16}
+              height={16}
             />
             {isLoading ? "Loading..." : "Continue with Google"}
           </button>
+
+          {/* Login link */}
+          <p className="text-sm text-gray-600 text-center">
+            Already have an account?{" "}
+            <button
+              onClick={() => router.push("/auth/log-in")}
+              className="text-[#5A3FFF] font-bold hover:underline"
+            >
+              Log in
+            </button>
+          </p>
         </div>
       </div>
 

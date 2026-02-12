@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,12 +22,14 @@ interface QuickLinksSectionProps {
   quickLinks: QuickLink[];
   dailyTip: DailyTip;
   tipsIcon: any;
+  tipsTitle?: string;
 }
 
 export default function QuickLinksSection({
   quickLinks,
   dailyTip,
   tipsIcon,
+  tipsTitle,
 }: QuickLinksSectionProps) {
   return (
     <section className="mb-12">
@@ -46,7 +50,9 @@ export default function QuickLinksSection({
                     {link.icon}
                   </div>
                 </div>
-                <h3 className="font-semibold text-[#5B0A12] text-base">{link.title}</h3>
+                <h3 className="font-semibold text-[#5B0A12] text-base">
+                  {link.title}
+                </h3>
                 {/* Decorative element */}
                 <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-3xl" />
               </Link>
@@ -55,7 +61,7 @@ export default function QuickLinksSection({
         </div>
 
         {/* Daily Tips Card - Right Side */}
-        <DailyTips dailyTip={dailyTip} tipsIcon={tipsIcon} />
+        <DailyTips dailyTip={dailyTip} tipsIcon={tipsIcon} title={tipsTitle} />
       </div>
     </section>
   );

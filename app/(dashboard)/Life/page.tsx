@@ -3,12 +3,7 @@
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  ChevronLeft,
-
-  Settings as SettingsIcon,
-
-} from "lucide-react";
+import { ChevronLeft, Settings as SettingsIcon } from "lucide-react";
 import Image from "next/image";
 import resumeIcon from "@/public/Talk.png";
 import chatIcon from "@/public/Robot.png";
@@ -98,7 +93,8 @@ export default function LifeAdvisorPage() {
             </button>
           </Link>
           <h2 className="text-xl  font-medium text-gray-900 mb-8">
-            How are you feeling today{user?.firstName ? `, ${user.firstName}` : ''}?
+            How are you feeling today
+            {user?.firstName ? `, ${user.firstName}` : ""}?
           </h2>
           {/* Mood Question */}
           <div className="mb-8">
@@ -135,8 +131,8 @@ export default function LifeAdvisorPage() {
       {/* Chat Input Footer */}
       <InputFooter
         placeholder="Ask me to create a plan to boost my mood..."
-        onSend={(message) => console.log("Sent:", message)}
-        onAttach={() => console.log("Attach clicked")}
+        onSend={() => {}}
+        onAttach={() => {}}
         context="life"
       />
     </div>

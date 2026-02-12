@@ -88,7 +88,6 @@ function ChatPageContent() {
       }
 
       if (!endpoint) {
-        console.error("Invalid context:", context);
         return null;
       }
 
@@ -101,7 +100,6 @@ function ChatPageContent() {
       // Extract the agent response from the HTTP response wrapper
       return httpResponse.data;
     } catch (error) {
-      console.error("Agent call failed:", error);
       return null;
     }
   };
@@ -120,20 +118,6 @@ function ChatPageContent() {
       // Call the appropriate agent
       const response = await callAgent(message);
 
-      console.log("=== AGENT RESPONSE ===");
-      console.log("Full Response Object:", response);
-      console.log("Response Type:", typeof response);
-      console.log("Response Keys:", response ? Object.keys(response) : "null");
-      if (response) {
-        console.log("module:", response.module);
-        console.log("intent:", response.intent);
-        console.log("message:", response.message);
-        console.log("plan:", response.plan);
-        console.log("actions:", response.actions);
-        console.log("metadata:", response.metadata);
-      }
-      console.log("=====================");
-
       if (response) {
         // Add AI response
         const aiMessage: Message = {
@@ -147,7 +131,9 @@ function ChatPageContent() {
           const action = response.actions[0];
           if (action.type === "view_plan" || action.type === "view_document") {
             aiMessage.link = {
-              text: (action.payload as Record<string, string>)?.text || "View Details",
+              text:
+                (action.payload as Record<string, string>)?.text ||
+                "View Details",
               url: (action.payload as Record<string, string>)?.url || "#",
             };
           }
@@ -156,22 +142,24 @@ function ChatPageContent() {
         setMessages((prev) => [...prev, aiMessage]);
       } else {
         // Show error toast
-        showToast('error', "Sorry, I couldn't process your request. Please try again.");
+        showToast(
+          "error",
+          "Sorry, I couldn't process your request. Please try again.",
+        );
       }
     } catch (error) {
-      console.error("Error in handleSend:", error);
-      showToast('error', "An error occurred. Please try again.");
+      showToast("error", "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleAttach = () => {
-    console.log("Attach file clicked");
+    // TODO: Implement file attachment
   };
 
   const handleMicrophone = () => {
-    console.log("Microphone clicked");
+    // TODO: Implement voice input
   };
 
   return (
@@ -287,8 +275,14 @@ function ChatPageContent() {
                   <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.4s" }}
+                      ></div>
                     </div>
                   </div>
                 </div>
