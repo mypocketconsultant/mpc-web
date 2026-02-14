@@ -122,9 +122,8 @@ function SignupContent() {
 
       // Success — backend set the auth_token cookie
       showToast("success", "Account created successfully!");
-      clearSensitiveData();
-      reset();
-      router.push("/home");
+      localStorage.removeItem("signup-storage");
+      window.location.href = "/home";
     } catch (error: unknown) {
       const err = error as any;
       const errorMessage =
@@ -157,8 +156,8 @@ function SignupContent() {
       // Success — backend set the auth_token cookie
       sessionStorage.removeItem("googleIdToken");
       showToast("success", "Account created successfully!");
-      reset();
-      router.push("/home");
+      localStorage.removeItem("signup-storage");
+      window.location.href = "/home";
     } catch (error: unknown) {
       const err = error as any;
       const errorMessage =

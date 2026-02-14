@@ -51,7 +51,7 @@ export default function LoginPage() {
       const idToken = await result.user.getIdToken();
 
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}v1/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
         { idToken },
         { withCredentials: true },
       );

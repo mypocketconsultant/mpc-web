@@ -30,16 +30,23 @@ export default function Header({ title = "Home" }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      // Sign out from Firebase
+      // Step 1: Call backend logout endpoint to clear auth_token cookie
+      const apiService = (await import("@/lib/api/apiService")).apiService;
+      await apiService.post("/v1/auth/logout", {});
+
+      // Step 2: Sign out from Firebase
       const { auth } = await import("@/lib/firebase");
       const { signOut } = await import("firebase/auth");
       await signOut(auth);
-      // Clear all sessionStorage items used by the app
+
+      // Step 3: Clear all sessionStorage items used by the app
       sessionStorage.removeItem("currentResumeId");
       sessionStorage.removeItem("currentGoalPlanId");
       sessionStorage.removeItem("currentGoalId");
       sessionStorage.removeItem("processingUploadId");
       sessionStorage.removeItem("googleIdToken");
+
+      // Step 4: Redirect to login
       router.push("/auth/log-in");
     } catch (error) {
       // Still redirect even if there's an error
