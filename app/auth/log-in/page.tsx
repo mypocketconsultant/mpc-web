@@ -84,19 +84,33 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
 
       const result = await signInWithPopup(auth, provider);
-
       const idToken = await result.user.getIdToken();
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
+      // Call unified /google endpoint
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/google`,
         { idToken },
         { withCredentials: true },
       );
 
+      // Check if profile is required (new user)
+      if (response.data?.profileRequired) {
+        // New user — redirect to getting-started
+        sessionStorage.setItem("googleIdToken", idToken);
+        router.push("/auth/getting-started?authType=google");
+        return;
+      }
+
+      // Existing user — logged in successfully
       setValidationErrors({});
       showToast("success", "Login successful!");
       router.push("/home");
     } catch (error: any) {
+      if (error.code === "auth/popup-closed-by-user") {
+        // User closed the popup - no action needed
+        return;
+      }
+
       let errorMessage = "Google login failed";
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.message || errorMessage;

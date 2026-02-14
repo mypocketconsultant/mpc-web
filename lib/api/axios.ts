@@ -34,11 +34,14 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Import and call logout function
-        // const { logout } = await import('@/services/auth');
-        // await logout();
+        // Sign out from Firebase
+        const { auth } = await import("@/lib/firebase");
+        await auth.signOut();
       } catch (logoutError) {
-        window.location.href = "/auth/sign-in";
+        // Ignore logout errors
+      } finally {
+        // Always redirect to login on 401
+        window.location.href = "/auth/log-in";
       }
 
       return Promise.reject(error);

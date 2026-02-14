@@ -18,39 +18,34 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
+      // Step 1: Google popup
       const result = await signInWithPopup(auth, googleProvider);
-
       const idToken = await result.user.getIdToken();
 
-      // Try to login first to check if user exists
-      try {
-        const apiService = (await import("@/lib/api/apiService")).apiService;
-        await apiService.post("/v1/auth/login", { idToken });
+      // Step 2: Call unified /google endpoint
+      const apiService = (await import("@/lib/api/apiService")).apiService;
+      const response = await apiService.post("/v1/auth/google", { idToken });
 
-        // User exists! Login successful - redirect to home
+      // Step 3: Check if profile is needed
+      if (response.data?.profileRequired) {
+        // New user — store token and redirect to getting-started
+        sessionStorage.setItem("googleIdToken", idToken);
+        router.push("/auth/getting-started?authType=google");
+      } else {
+        // Existing user — logged in successfully
         showToast("success", "Welcome back! Login successful.");
         router.push("/home");
-        return;
-      } catch (loginError: any) {
-        // Check if it's a 404 (user not found)
-        if (loginError.response?.status === 404) {
-          // User doesn't exist - proceed with signup
-          sessionStorage.setItem("googleIdToken", idToken);
-          router.push("/auth/getting-started?authType=google");
-        } else {
-          // Other error - throw to be caught by outer catch block
-          throw loginError;
-        }
       }
     } catch (error: any) {
       // Handle specific errors
       if (error.code === "auth/popup-closed-by-user") {
         // User closed the popup - no action needed
-      } else {
-        const errorMessage =
-          error.response?.data?.message || "Google authentication failed";
-        showToast("error", errorMessage);
+        return;
       }
+
+      const errorMessage =
+        error.response?.data?.message || "Google authentication failed";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }

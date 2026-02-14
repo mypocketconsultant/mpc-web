@@ -5,7 +5,6 @@ import FormSection from "@/components/getting-started/step1";
 import FormSection2 from "@/components/getting-started/step2";
 import FormSection3 from "@/components/getting-started/step3";
 import FormSection4 from "@/components/getting-started/step4";
-import { verifyAuth } from "@/services/auth";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
 import { useSignupStore } from "@/stores/useSignupStore";
@@ -16,7 +15,7 @@ function SignupContent() {
   const router = useRouter();
   const { toast, showToast } = useToast();
 
-  // Zustand store
+  // Zustand store — note: no idToken anymore
   const {
     currentStep,
     email,
@@ -26,7 +25,6 @@ function SignupContent() {
     lastname,
     country,
     career,
-    idToken,
     authType: storedAuthType,
     setField,
     setStep,
@@ -40,26 +38,21 @@ function SignupContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Handle hydration - wait for store to be ready
+  // Handle hydration — wait for Zustand persist to rehydrate from localStorage
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // Handle auth type from URL params
+  // Sync authType from URL into store
   useEffect(() => {
     if (!isHydrated) return;
 
     if (authType && authType !== storedAuthType) {
       setField("authType", authType);
 
-      // For Google auth, start at step 3 (skip email/password and name steps)
       if (authType === "google") {
+        // Google users skip steps 1 (email/password) and 2 (name) — start at step 3 (country)
         setStep(3);
-        // Retrieve the idToken from sessionStorage for Google auth
-        const storedToken = sessionStorage.getItem("googleIdToken");
-        if (storedToken) {
-          setField("idToken", storedToken);
-        }
       } else if (currentStep === 0) {
         setStep(1);
       }
@@ -81,7 +74,7 @@ function SignupContent() {
         errors.email = "Invalid email";
       }
       if (
-        !/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+        !/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^_\-~])[A-Za-z\d@$!%*?&#^_\-~]{8,}$/.test(
           password,
         )
       ) {
@@ -111,93 +104,65 @@ function SignupContent() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleEmailAuth = async () => {
+  // Email signup — sends raw credentials + profile to backend
+  // Backend creates Firebase user + DB user atomically
+  const handleEmailSignup = async () => {
     setIsLoading(true);
     try {
-      // Only create Firebase user and get idToken, don't send to backend yet
-      const { auth } = await import("@/lib/firebase");
-      const { createUserWithEmailAndPassword, sendEmailVerification } =
-        await import("firebase/auth");
+      const apiService = (await import("@/lib/api/apiService")).apiService;
 
-      const result = await createUserWithEmailAndPassword(
-        auth,
+      await apiService.post("/v1/auth/signup", {
         email,
         password,
-      );
+        firstName: firstname,
+        lastName: lastname,
+        country,
+        preferredModule: career,
+      });
 
-      const token = await result.user.getIdToken();
-
-      setField("idToken", token);
-
-      // Send email verification
-      await sendEmailVerification(result.user);
-
-      setValidationErrors({});
-      showToast(
-        "success",
-        "Account created! Please check your email for verification.",
-      );
-      setStep(currentStep + 1);
+      // Success — backend set the auth_token cookie
+      showToast("success", "Account created successfully!");
+      clearSensitiveData();
+      reset();
+      router.push("/home");
     } catch (error: unknown) {
+      const err = error as any;
       const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
+        err?.response?.data?.message || (error instanceof Error ? error.message : "An error occurred");
       showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignupCompletion = async () => {
+  // Google signup — sends idToken + profile to backend
+  const handleGoogleSignup = async () => {
     setIsLoading(true);
     try {
       const apiService = (await import("@/lib/api/apiService")).apiService;
-      const effectiveAuthType = storedAuthType || authType;
+      const idToken = sessionStorage.getItem("googleIdToken");
 
-      if (effectiveAuthType === "email") {
-        // Send all collected data to backend for email signup
-        await apiService.post("/v1/auth/signup", {
-          idToken,
-          firstName: firstname,
-          lastName: lastname,
-          country,
-          preferredModule: career,
-        });
-      } else if (effectiveAuthType === "google") {
-        // Send Google auth data to backend
-        await apiService.post("/v1/auth/google-authentication", {
-          idToken,
-          country,
-          preferredModule: career,
-        });
-
-        // Clear the stored token from sessionStorage
-        sessionStorage.removeItem("googleIdToken");
-      }
-
-      // Verify auth with the backend
-      const verifyResult = await verifyAuth();
-      if (verifyResult.error) {
-        showToast("error", "Authentication verification failed");
-        setIsLoading(false);
+      if (!idToken) {
+        showToast("error", "Google authentication expired. Please try again.");
+        router.push("/auth/sign-up");
         return;
       }
 
-      setValidationErrors({});
-      showToast(
-        "success",
-        effectiveAuthType === "email"
-          ? "Account setup complete!"
-          : "Google account linked successfully!",
-      );
+      await apiService.post("/v1/auth/google", {
+        idToken,
+        country,
+        preferredModule: career,
+      });
 
-      // Clear sensitive data and reset the store
-      clearSensitiveData();
+      // Success — backend set the auth_token cookie
+      sessionStorage.removeItem("googleIdToken");
+      showToast("success", "Account created successfully!");
       reset();
-
       router.push("/home");
     } catch (error: unknown) {
+      const err = error as any;
       const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
+        err?.response?.data?.message || (error instanceof Error ? error.message : "An error occurred");
       showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
@@ -207,11 +172,16 @@ function SignupContent() {
   const handleNext = () => {
     if (validateStep()) {
       const effectiveAuthType = storedAuthType || authType;
-      if (effectiveAuthType === "email" && currentStep === 1) {
-        handleEmailAuth();
-      } else if (currentStep === 4) {
-        handleSignupCompletion();
+
+      if (currentStep === 4) {
+        // Final step — submit to backend
+        if (effectiveAuthType === "google") {
+          handleGoogleSignup();
+        } else {
+          handleEmailSignup();
+        }
       } else {
+        // Not final step — just advance
         setValidationErrors({});
         setStep(Math.min(currentStep + 1, 4));
       }
@@ -221,12 +191,10 @@ function SignupContent() {
   const handleBack = () => {
     setValidationErrors({});
     const effectiveAuthType = storedAuthType || authType;
-    // For Google auth, minimum step is 3 (can't go back to email/name steps)
     const minStep = effectiveAuthType === "google" ? 3 : 1;
     setStep(Math.max(currentStep - 1, minStep));
   };
 
-  // Show loading state while hydrating
   if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -245,14 +213,12 @@ function SignupContent() {
         backgroundPosition: "center",
       }}
     >
-      {/* Logo - responsive sizing and positioning */}
       <img
         src="/logo.svg"
         alt="Logo"
         className="absolute w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[4.75vw] lg:h-[7.34vh] top-4 left-4 sm:top-6 sm:left-6 lg:top-[6.15vh] lg:left-[6.31vw]"
       />
 
-      {/* Progress bar - responsive width */}
       <div className="flex items-center justify-center w-[80%] sm:w-[60%] md:w-[45%] lg:w-[32.75vw] h-1 sm:h-1.5 bg-gray-300 relative mt-20 sm:mt-24 md:mt-28 lg:mt-[20.8vh] rounded-full">
         <div
           className="absolute top-0 left-0 h-full bg-[#A393FF] rounded-full transition-all duration-300"
@@ -262,7 +228,6 @@ function SignupContent() {
         ></div>
       </div>
 
-      {/* Form sections - responsive container */}
       <div className="flex flex-col items-center justify-center w-full mt-8 sm:mt-12 md:mt-16 lg:mt-20 px-4 sm:px-6 md:px-8">
         {currentStep === 1 && (
           <FormSection
@@ -321,7 +286,6 @@ function SignupContent() {
         )}
       </div>
 
-      {/* Navigation buttons - responsive positioning */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-between w-full px-4 sm:px-8 md:px-16 lg:px-40 py-4 sm:py-6 bg-white/80 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none">
         <button
           className="bg-white shadow-xl text-[#6549CC] px-4 sm:px-6 py-2 sm:py-3 rounded-[16px] font-bold font-railway text-xs sm:text-sm border border-[#6549CC] hover:bg-gray-50 transition-colors"

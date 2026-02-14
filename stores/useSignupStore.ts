@@ -21,7 +21,6 @@ export interface SignupState {
   career: string;
 
   // Auth related
-  idToken: string;
   authType: "email" | "google" | null;
 
   // Actions
@@ -43,7 +42,6 @@ const initialState = {
   lastname: "",
   country: "",
   career: "",
-  idToken: "",
   authType: null as "email" | "google" | null,
 };
 
@@ -72,7 +70,6 @@ export const useSignupStore = create<SignupState>()(
           ...state,
           password: "",
           confirmPassword: "",
-          idToken: "",
         })),
     }),
     {
