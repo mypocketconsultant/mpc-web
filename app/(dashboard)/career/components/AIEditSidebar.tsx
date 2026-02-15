@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
+import FormattedMessage from "@/components/FormattedMessage";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import ResumePdfModal from "./ResumePdfModal";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -206,9 +207,7 @@ export default function AIEditSidebar({
                         </button>
 
                         {/* Main AI Message Content */}
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                          {nextMessage.content}
-                        </p>
+                        <FormattedMessage content={nextMessage.content} variant="light" />
 
                         {/* If analysisPlan exists, show it */}
                         {analysisPlan && (
@@ -308,21 +307,21 @@ export default function AIEditSidebar({
                   {message.type === "user" ? (
                     /* User Message Bubble */
                     <div className="flex justify-end mb-4">
-                      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 max-w-[85%]">
-                        <p className="text-sm text-gray-700 text-right mb-3">
-                          {message.content}
-                        </p>
+                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 max-w-[85%]">
+                        <div className="text-right mb-3">
+                          <FormattedMessage content={message.content} variant="dark" />
+                        </div>
                         {message.file && (
-                          <div className="flex items-center justify-between gap-3 mt-3">
+                          <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/20">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-3.5 h-3.5 text-blue-600" />
+                              <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-3.5 h-3.5 text-white" />
                               </div>
-                              <span className="text-sm font-semibold text-[#5A3FFF]">
+                              <span className="text-sm font-semibold text-white">
                                 {message.file.name}
                               </span>
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-white/80">
                               {message.file.size}
                             </span>
                           </div>
@@ -348,26 +347,26 @@ export default function AIEditSidebar({
                       </button>
                     </div>
                   ) : message.type === "loading" ? (
-                    /* Loading Bubble */
+                    /* Thinking Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
+                      <div className="bg-gradient-to-br from-[#F8F7FF] to-[#FEFEFF] rounded-2xl p-5 max-w-[85%] shadow-sm border border-[#E8E4FF]">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0ms" }}
+                              className="w-2 h-2 bg-[#5A3FFF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0s" }}
                             />
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "150ms" }}
+                              className="w-2 h-2 bg-[#7B61FF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0.2s" }}
                             />
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "300ms" }}
+                              className="w-2 h-2 bg-[#9B7FFF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0.4s" }}
                             />
                           </div>
-                          <span className="text-sm text-gray-600">
-                            AI is responding...
+                          <span className="text-sm font-medium text-[#5A3FFF] animate-pulse">
+                            Thinking...
                           </span>
                         </div>
                       </div>
@@ -385,16 +384,14 @@ export default function AIEditSidebar({
                     /* Assistant Message Bubble */
                     <div className="flex justify-start mb-4">
                       <div
-                        className={`rounded-2xl p-5 max-w-[85%] ${
+                        className={`rounded-2xl p-5 max-w-[85%] shadow-sm hover:shadow-lg transition-shadow ${
                           message.analysisPlan
                             ? "bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100"
-                            : "bg-gray-50"
+                            : "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF]"
                         }`}
                       >
                         {/* Always show content */}
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                          {message.content}
-                        </p>
+                        <FormattedMessage content={message.content} variant="light" />
 
                         {/* If analysisPlan exists, show it */}
                         {message.analysisPlan && (
@@ -495,13 +492,15 @@ export default function AIEditSidebar({
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
         <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 transition-colors hover:border-gray-300">
-          <button
-            onClick={handleAttachClick}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-            aria-label="Attach file"
-          >
-            <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
-          </button>
+          {onFileUpload && (
+            <button
+              onClick={handleAttachClick}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              aria-label="Attach file"
+            >
+              <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
+            </button>
+          )}
 
           <input
             type="text"

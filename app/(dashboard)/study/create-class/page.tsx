@@ -13,6 +13,9 @@ import {
   Trash2,
 } from "lucide-react";
 import Header from "@/app/components/header";
+import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
 
 interface ClassSchedule {
   id: string;
@@ -52,6 +55,7 @@ const colorOptions = [
 
 export default function CreateClassPage() {
   const router = useRouter();
+  const { toast, showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -145,13 +149,25 @@ export default function CreateClassPage() {
 
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await apiService.post("/v1/study/classes", {
+        title: formData.name,
+        subject: formData.subject || undefined,
+        description: formData.description || undefined,
+        instructor: formData.instructor || undefined,
+        location: formData.location || undefined,
+        color: formData.color,
+        schedules: formData.schedules.map((s) => ({
+          day: s.day,
+          startTime: s.startTime,
+          endTime: s.endTime,
+        })),
+      });
 
-      // Navigate back to study page on success
-      router.push("/study");
+      showToast("success", "Class created successfully!");
+      setTimeout(() => router.push("/study"), 1000);
     } catch (error) {
       console.error("Error creating class:", error);
+      showToast("error", "Failed to create class. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +175,7 @@ export default function CreateClassPage() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
+      <Toast toast={toast} />
       <Header title="Study Support / Create Class" />
 
       {/* Main Content */}

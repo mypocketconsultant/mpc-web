@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
+import chatIcon from "@/public/Robot.png";
 import SuggestedPrompts from "../career/components/SuggestedPrompts";
 import QuickLinksSection, {
   QuickLink,
@@ -15,6 +16,7 @@ import { useUser } from "@/hooks/useUser";
 
 export default function StudySupportPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const { user } = useUser();
 
@@ -89,27 +91,11 @@ export default function StudySupportPage() {
       href: "/study/saved-resources",
     },
     {
-      id: "create-plan",
-      title: "Create a study plan",
-      icon: (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A3FFF]">
-          <svg
-            className="h-5 w-5 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-            />
-          </svg>
-        </div>
-      ),
+      id: "chat",
+      title: "Chat with me",
+      icon: <Image src={chatIcon} alt="Chat" width={36} height={36} />,
       color: "from-[#E6E4FF] to-[#D4D0FF]",
-      href: "/study/create-plan",
+      href: "/study/chat?context=study",
     },
   ];
 
@@ -179,7 +165,13 @@ export default function StudySupportPage() {
           <SuggestedPrompts
             prompts={suggestedPrompts}
             selectedPrompt={selectedPrompt}
-            onSelect={(id) => setSelectedPrompt(id)}
+            onSelect={(id) => {
+              const prompt = suggestedPrompts.find((p) => p.id === id);
+              if (prompt) {
+                const encodedPrompt = encodeURIComponent(prompt.title);
+                router.push(`/study/chat?context=study&prompt=${encodedPrompt}`);
+              }
+            }}
           />
         </div>
       </main>
@@ -187,7 +179,10 @@ export default function StudySupportPage() {
       {/* Chat Input Footer */}
       <InputFooter
         placeholder="What will you like to..."
-        onSend={() => {}}
+        onSend={(message) => {
+          const encodedPrompt = encodeURIComponent(message);
+          router.push(`/study/chat?context=study&prompt=${encodedPrompt}`);
+        }}
         onAttach={() => {}}
         context="study"
       />

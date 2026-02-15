@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react";
 import Image from "next/image";
@@ -22,6 +22,7 @@ import MoodSelector from "./components/MoodSelector";
 import { useUser } from "@/hooks/useUser";
 
 export default function LifeAdvisorPage() {
+  const router = useRouter();
   const pathname = usePathname();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -79,6 +80,14 @@ export default function LifeAdvisorPage() {
     },
   ];
 
+  const handlePromptSelect = (promptId: string) => {
+    const prompt = suggestedPrompts.find(p => p.id.toString() === promptId);
+    if (prompt) {
+      const encodedPrompt = encodeURIComponent(prompt.title);
+      router.push(`/Life/chat?context=life&prompt=${encodedPrompt}`);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <Header title="Life Advisor" />
@@ -123,7 +132,7 @@ export default function LifeAdvisorPage() {
               iconColor: "text-2xl",
             }))}
             selectedPrompt={selectedPrompt}
-            onSelect={(id) => setSelectedPrompt(id)}
+            onSelect={handlePromptSelect}
           />
         </div>
       </main>

@@ -494,17 +494,27 @@ export default function ResumeBuilder() {
   const handleSend = async (message: string) => {
     console.log('[ResumeBuilder] handleSend called with message:', message);
 
-    if (!resumeId) {
-      console.error('[ResumeBuilder] Error: No resume ID available');
-      return;
-    }
-
     // Add user message to UI immediately
     const newUserMessage = {
       id: Date.now().toString(),
       type: 'user' as const,
       content: message
     };
+
+    // If no resumeId, show helpful guidance message
+    if (!resumeId) {
+      console.log('[ResumeBuilder] No resume ID available - showing guidance message');
+
+      const guidanceMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant' as const,
+        content: `I'd love to help you build a resume! To get started, you have two options:\n\n1. **Upload an existing resume** - Click the paperclip icon and upload your current resume PDF. I'll analyze it and help you improve it.\n\n2. **Start from scratch** - Fill out the form on the right to create a new resume. Once you complete the basic information, I can help you optimize and enhance it.\n\nWhich would you prefer?`
+      };
+
+      setMessages([...messages, newUserMessage, guidanceMessage]);
+      setInputValue('');
+      return;
+    }
 
     // Add loading bubble
     const loadingBubbleId = (Date.now() + 1).toString();

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { Paperclip, Mic } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Paperclip, Mic, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import FileUploadModal from "./FileUploadModal";
 
@@ -11,6 +11,11 @@ interface InputFooterProps {
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
   context: "career" | "life" | "study";
+  initialValue?: string;
+  isRecording?: boolean;
+  isTranscribing?: boolean;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
 export default function InputFooter({
@@ -19,11 +24,27 @@ export default function InputFooter({
   onAttach,
   onMicrophone,
   context,
+  initialValue = "",
+  isRecording = false,
+  isTranscribing = false,
+  value,
+  onValueChange,
 }: InputFooterProps) {
   const router = useRouter();
-  const [inputValue, setInputValue] = useState("");
+  const [internalValue, setInternalValue] = useState(initialValue);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use controlled value if provided, otherwise use internal state
+  const inputValue = value !== undefined ? value : internalValue;
+  const setInputValue = onValueChange || setInternalValue;
+
+  // Update input value when initialValue changes
+  useEffect(() => {
+    if (initialValue && value === undefined) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, value]);
 
   const handleSend = () => {
     if (inputValue.trim()) {
@@ -79,10 +100,34 @@ export default function InputFooter({
           />
           <button
             onClick={onMicrophone}
-            className="flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-800"
-            aria-label="Voice input"
+            disabled={isTranscribing}
+            className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+              isRecording
+                ? "bg-red-500"
+                : isTranscribing
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-br from-purple-600 to-purple-800"
+            }`}
+            style={
+              isRecording
+                ? {
+                    animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                  }
+                : undefined
+            }
+            aria-label={
+              isRecording
+                ? "Stop recording"
+                : isTranscribing
+                ? "Transcribing..."
+                : "Voice input"
+            }
           >
-            <Mic className="h-5 w-5" />
+            {isTranscribing ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
@@ -78,6 +79,7 @@ interface ApiInsight {
 }
 
 export default function InsightsPage() {
+  const router = useRouter();
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("7");
   const [isLoading, setIsLoading] = useState(true);
@@ -91,7 +93,7 @@ export default function InsightsPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const { toast, showToast } = useToast();
+  const { toast, showToast, hideToast } = useToast();
 
   // Transform API metrics to component format
   const transformMetrics = useCallback((metrics: ApiMetrics): MoodMetric[] => {
@@ -323,6 +325,30 @@ export default function InsightsPage() {
         content: aiMessage,
       };
       setMessages((prev) => [...prev, aiResponse]);
+
+      // Check if a life plan was created
+      const toolResults = response?.data?.metadata?.tool_results || response?.data?.data?.metadata?.tool_results;
+      if (toolResults) {
+        // Look for create_life_plan action
+        const planCreationKey = Object.keys(toolResults).find(key => key.includes('create_life_plan'));
+        if (planCreationKey) {
+          const planId = toolResults[planCreationKey]?.plan_id;
+          if (planId) {
+            // Store plan ID in sessionStorage and show toast with navigation
+            sessionStorage.setItem("currentGoalPlanId", planId);
+            showToast(
+              "success",
+              "A Life Plan was created!",
+              {
+                label: "View Details",
+                onClick: () => {
+                  router.push("/Life/new-goal");
+                }
+              }
+            );
+          }
+        }
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to get AI response";
@@ -387,7 +413,7 @@ export default function InsightsPage() {
         </div>
       </main>
 
-      <Toast toast={toast} />
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mic, Paperclip } from "lucide-react";
+import { ChevronLeft, Mic, Paperclip, Loader2 } from "lucide-react";
 import Header from "@/app/components/header";
 import ChatMessage, { Message } from "../components/ChatMessage";
 import ClassSelectionSidebar, {
@@ -14,28 +14,32 @@ import {
   getFileType,
   formatFileSize,
 } from "../components/FileAttachment";
-
-const sampleClasses: StudyClass[] = [
-  { id: "1", name: "Biology class" },
-  { id: "2", name: "Chemistry class" },
-  { id: "3", name: "Physics class" },
-  { id: "4", name: "Mathematics class" },
-  { id: "5", name: "General studies class" },
-];
+import { apiService } from "@/lib/api/apiService";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
+import ThinkingBubble from "@/components/ThinkingBubble";
 
 function StudyChatContent() {
   const searchParams = useSearchParams();
   const context = searchParams.get("context") || "study";
   const classParam = searchParams.get("class");
+  const promptParam = searchParams.get("prompt");
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(promptParam || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
-  const [classes, setClasses] = useState<StudyClass[]>(sampleClasses);
+  const [classes, setClasses] = useState<StudyClass[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(
-    classParam || sampleClasses[0]?.id || null,
+    classParam || null,
   );
+  const [sessionId, setSessionId] = useState<string>("");
+
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
+  const { toast, showToast, hideToast } = useToast();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +58,72 @@ function StudyChatContent() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Fetch classes on mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  // Load messages when a class is selected
+  useEffect(() => {
+    if (selectedClassId) {
+      loadClassMessages(selectedClassId);
+    }
+  }, [selectedClassId]);
+
+  const fetchClasses = async () => {
+    setIsLoadingClasses(true);
+    try {
+      const response: any = await apiService.get("/v1/study/classes");
+      const data = response?.data || response;
+      const classList = Array.isArray(data) ? data : data?.classes || [];
+
+      // Map backend shape (title) to sidebar shape (name)
+      const mapped: StudyClass[] = classList.map((c: any) => ({
+        id: c._id || c.id,
+        name: c.title || c.name,
+        subject: c.subject,
+        color: c.color,
+      }));
+
+      setClasses(mapped);
+
+      // Auto-select first class if none selected
+      if (!selectedClassId && mapped.length > 0) {
+        setSelectedClassId(mapped[0].id);
+      }
+    } catch (error) {
+      showToast("error", "Failed to load classes.");
+    } finally {
+      setIsLoadingClasses(false);
+    }
+  };
+
+  const loadClassMessages = async (classId: string) => {
+    setIsLoadingMessages(true);
+    setMessages([]);
+    setSessionId("");
+    try {
+      const response: any = await apiService.get(
+        `/v1/study/classes/${classId}/messages`,
+      );
+      const data = response?.data || response;
+      const msgList = Array.isArray(data) ? data : data?.messages || [];
+
+      const loaded: Message[] = msgList.map((msg: any, idx: number) => ({
+        id: msg._id || `loaded_${idx}`,
+        type: msg.role === "user" ? "user" : "ai",
+        content: msg.content || "",
+        timestamp: new Date(msg.created_at || Date.now()),
+      }));
+
+      setMessages(loaded);
+    } catch {
+      // Class may have no messages yet — that's fine
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,62 +152,56 @@ function StudyChatContent() {
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && !attachedFile) || isLoading) return;
 
+    const messageText = inputValue.trim() || "Please process this file";
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       type: "user",
-      content: inputValue.trim() || "Please process this file",
+      content: messageText,
       timestamp: new Date(),
       attachment: attachedFile || undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    const sentFile = attachedFile;
     handleRemoveFile();
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const payload: any = {
+        message: messageText,
+        class_id: selectedClassId || undefined,
+        session_id: sessionId || undefined,
+      };
 
-      // Generate AI response based on attachment
-      let responseContent =
-        "I understand your request. Let me help you with that.";
-      let downloadableFile: AttachedFile | undefined;
+      const response: any = await apiService.post("/v1/study/chat", payload);
 
-      if (sentFile) {
-        if (sentFile.type === "audio") {
-          responseContent =
-            "Here's the one-page summary of the recording of your Biology class.";
-          downloadableFile = {
-            id: `download-${Date.now()}`,
-            name: "One page summary of Biology class.pdf",
-            size: "245KB",
-            type: "document",
-            url: "#",
-          };
-        } else if (sentFile.type === "document") {
-          responseContent =
-            "I've analyzed the document and created a summary for you.";
-          downloadableFile = {
-            id: `download-${Date.now()}`,
-            name: `Summary of ${sentFile.name}`,
-            size: "128KB",
-            type: "document",
-            url: "#",
-          };
-        }
+      // Extract session_id from response if available
+      const returnedSessionId =
+        response?.data?.metadata?.session_id ||
+        response?.data?.data?.metadata?.session_id;
+      if (returnedSessionId && returnedSessionId !== sessionId) {
+        setSessionId(returnedSessionId);
       }
+
+      const aiContent =
+        response?.data?.message ||
+        response?.data?.data?.message ||
+        "I received your message but could not generate a response.";
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         type: "ai",
-        content: responseContent,
+        content: aiContent,
         timestamp: new Date(),
-        downloadableFile,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
+      const errorText =
+        error instanceof Error ? error.message : "Failed to get AI response";
+      showToast("error", errorText);
+
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         type: "ai",
@@ -160,21 +224,67 @@ function StudyChatContent() {
 
   const handleSelectClass = (classItem: StudyClass) => {
     setSelectedClassId(classItem.id);
-    setMessages([]);
   };
 
-  const handleAddClass = (className: string) => {
-    const newClass: StudyClass = {
-      id: `class-${Date.now()}`,
-      name: className,
-    };
-    setClasses((prev) => [...prev, newClass]);
-    setSelectedClassId(newClass.id);
-    setMessages([]);
+  const handleAddClass = async (className: string) => {
+    try {
+      const response: any = await apiService.post("/v1/study/classes", {
+        title: className,
+      });
+
+      const created = response?.data || response;
+      const newClass: StudyClass = {
+        id: created._id || created.id || `class-${Date.now()}`,
+        name: created.title || className,
+        subject: created.subject,
+        color: created.color,
+      };
+
+      setClasses((prev) => [...prev, newClass]);
+      setSelectedClassId(newClass.id);
+      setMessages([]);
+      setSessionId("");
+      showToast("success", "Class created successfully!");
+    } catch (error) {
+      showToast("error", "Failed to create class. Please try again.");
+    }
+  };
+
+  const handleDeleteClass = async (classId: string) => {
+    try {
+      await apiService.delete(`/v1/study/classes/${classId}`);
+
+      setClasses((prev) => {
+        const updated = prev.filter((c) => c.id !== classId);
+
+        // If the deleted class was selected, select the next available or clear
+        if (selectedClassId === classId) {
+          if (updated.length > 0) {
+            setSelectedClassId(updated[0].id);
+          } else {
+            setSelectedClassId(null);
+            setMessages([]);
+            setSessionId("");
+          }
+        }
+
+        return updated;
+      });
+
+      showToast("success", "Class deleted successfully!");
+    } catch (error) {
+      showToast("error", "Failed to delete class. Please try again.");
+    }
   };
 
   const handleAttachClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleMicrophone = () => {
+    toggleRecording((text) => {
+      setInputValue(text);
+    });
   };
 
   const breadcrumbTitle = selectedClass
@@ -200,19 +310,30 @@ function StudyChatContent() {
           <div className="flex-1 flex gap-6 overflow-hidden">
             {/* Left column - Class selection */}
             <div className="w-64 flex-shrink-0">
-              <ClassSelectionSidebar
-                classes={classes}
-                selectedClassId={selectedClassId}
-                onSelectClass={handleSelectClass}
-                onAddClass={handleAddClass}
-              />
+              {isLoadingClasses ? (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-[#5A3FFF] animate-spin" />
+                </div>
+              ) : (
+                <ClassSelectionSidebar
+                  classes={classes}
+                  selectedClassId={selectedClassId}
+                  onSelectClass={handleSelectClass}
+                  onAddClass={handleAddClass}
+                  onDeleteClass={handleDeleteClass}
+                />
+              )}
             </div>
 
             {/* Right column - Chat */}
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Chat Area */}
               <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
-                {messages.length === 0 ? (
+                {isLoadingMessages ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-6 h-6 text-[#5A3FFF] animate-spin" />
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#E8E0FF] to-[#F3F0FF] flex items-center justify-center mb-4">
                       <svg
@@ -246,38 +367,7 @@ function StudyChatContent() {
                     ))}
 
                     {/* Loading indicator */}
-                    {isLoading && (
-                      <div className="flex gap-3 justify-start mb-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                        <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                            <span
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.1s" }}
-                            />
-                            <span
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.2s" }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {isLoading && <ThinkingBubble />}
 
                     <div ref={messagesEndRef} />
                   </div>
@@ -328,17 +418,41 @@ function StudyChatContent() {
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="What will you like to"
+                    onKeyDown={handleKeyPress}
+                    placeholder={
+                      selectedClass
+                        ? `Ask about ${selectedClass.name.toLowerCase()}...`
+                        : "Ask a study question..."
+                    }
                     className="flex-1 bg-gray-50 rounded-full px-5 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
                     disabled={isLoading}
                   />
 
                   <button
-                    className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+                    onClick={handleMicrophone}
+                    disabled={isTranscribing}
+                    className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                      isRecording
+                        ? "bg-red-500"
+                        : isTranscribing
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-br from-[#5A3FFF] to-[#300878]"
+                    }`}
+                    style={
+                      isRecording
+                        ? {
+                            animation:
+                              "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          }
+                        : undefined
+                    }
                     aria-label="Voice input"
                   >
-                    <Mic className="h-5 w-5" />
+                    {isTranscribing ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -346,6 +460,8 @@ function StudyChatContent() {
           </div>
         </div>
       </main>
+
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   );
 }

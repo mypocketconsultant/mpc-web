@@ -6,6 +6,7 @@ import {
   DownloadableFile,
   AttachedFile,
 } from "./FileAttachment";
+import FormattedMessage from "@/components/FormattedMessage";
 
 export interface Message {
   id: string;
@@ -48,14 +49,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       <div
         className={`max-w-[80%] ${
           isAI
-            ? "bg-white border border-gray-200 rounded-2xl rounded-tl-md"
-            : "bg-gradient-to-br from-[#E8E0FF] to-[#F3F0FF] rounded-2xl rounded-tr-md"
+            ? "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF] rounded-2xl rounded-tl-md"
+            : "bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl rounded-tr-md"
         } px-4 py-3 shadow-sm`}
       >
         {/* Message content */}
-        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
-          {message.content}
-        </p>
+        <FormattedMessage
+          content={message.content}
+          variant={isAI ? "light" : "dark"}
+        />
 
         {/* User message attachment */}
         {!isAI && message.attachment && (
@@ -68,7 +70,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         )}
 
         {/* Timestamp */}
-        <span className="text-[10px] text-gray-400 mt-2 block">
+        <span className={`text-[10px] mt-2 block ${isAI ? "text-gray-400" : "text-white/60"}`}>
           {message.timestamp.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

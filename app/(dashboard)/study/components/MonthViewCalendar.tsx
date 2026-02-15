@@ -6,6 +6,7 @@ import { StudyTask } from "./StudyPlanCard";
 
 interface MonthViewCalendarProps {
   tasks: StudyTask[];
+  planTitles?: Record<string, string>;
   onEditTask?: (task: StudyTask) => void;
   onCreatePlan?: () => void;
   loading?: boolean;
@@ -24,6 +25,7 @@ const statusDotColor: Record<string, string> = {
 
 export default function MonthViewCalendar({
   tasks,
+  planTitles = {},
   onEditTask,
   onCreatePlan,
   loading = false,
@@ -63,7 +65,7 @@ export default function MonthViewCalendar({
     return days;
   }, [monthStart, monthEnd, currentDate]);
 
-  // Group tasks by date using due_at
+  // Group tasks by date using due_at, deduplicating by plan_id per day
   const tasksByDate = useMemo(() => {
     const grouped: Record<string, StudyTask[]> = {};
     tasks.forEach((task) => {
@@ -71,7 +73,13 @@ export default function MonthViewCalendar({
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
-      grouped[dateKey].push(task);
+      // Only add one task per plan per day (use plan title as label)
+      const alreadyHasPlan = grouped[dateKey].some(
+        (t) => t.plan_id && t.plan_id === task.plan_id
+      );
+      if (!alreadyHasPlan) {
+        grouped[dateKey].push(task);
+      }
     });
     return grouped;
   }, [tasks]);
@@ -265,7 +273,7 @@ export default function MonthViewCalendar({
                                       statusDotColor.todo
                                     }`}
                                   />
-                                  <span className="truncate">{task.title}</span>
+                                  <span className="truncate">{planTitles[task.plan_id] || task.title}</span>
                                 </div>
                               ))}
                               {dayTasks.length > 3 && (

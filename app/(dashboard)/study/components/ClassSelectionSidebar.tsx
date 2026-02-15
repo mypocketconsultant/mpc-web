@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 export interface StudyClass {
   id: string;
@@ -15,6 +15,7 @@ interface ClassSelectionSidebarProps {
   selectedClassId: string | null;
   onSelectClass: (classItem: StudyClass) => void;
   onAddClass: (className: string) => void;
+  onDeleteClass?: (classId: string) => void;
 }
 
 export default function ClassSelectionSidebar({
@@ -22,9 +23,11 @@ export default function ClassSelectionSidebar({
   selectedClassId,
   onSelectClass,
   onAddClass,
+  onDeleteClass,
 }: ClassSelectionSidebarProps) {
   const [newClassName, setNewClassName] = useState("");
   const [isAddingClass, setIsAddingClass] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleAddClass = () => {
     if (newClassName.trim()) {
@@ -43,6 +46,24 @@ export default function ClassSelectionSidebar({
       setIsAddingClass(false);
       setNewClassName("");
     }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, classId: string) => {
+    e.stopPropagation();
+    setConfirmDeleteId(classId);
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirmDeleteId) {
+      onDeleteClass?.(confirmDeleteId);
+      setConfirmDeleteId(null);
+    }
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDeleteId(null);
   };
 
   return (
@@ -123,18 +144,62 @@ export default function ClassSelectionSidebar({
           <div className="space-y-1">
             {classes.map((classItem) => {
               const isSelected = selectedClassId === classItem.id;
+              const isConfirming = confirmDeleteId === classItem.id;
+
+              if (isConfirming) {
+                return (
+                  <div
+                    key={classItem.id}
+                    className="px-3 py-2.5 rounded-xl bg-red-50 border border-red-200"
+                  >
+                    <p className="text-xs text-red-700 mb-2">
+                      Delete <strong>{classItem.name}</strong> and all its messages?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleConfirmDelete}
+                        className="flex-1 py-1 text-xs font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={handleCancelDelete}
+                        className="flex-1 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <button
+                <div
                   key={classItem.id}
-                  onClick={() => onSelectClass(classItem)}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`group flex items-center rounded-xl transition-all ${
                     isSelected
-                      ? "bg-[#E8E0FF] text-[#5A3FFF] border-l-4 border-l-[#5A3FFF]"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-[#E8E0FF] border-l-4 border-l-[#5A3FFF]"
+                      : "hover:bg-gray-50"
                   }`}
                 >
-                  {classItem.name}
-                </button>
+                  <button
+                    onClick={() => onSelectClass(classItem)}
+                    className={`flex-1 text-left px-4 py-3 text-sm font-medium ${
+                      isSelected ? "text-[#5A3FFF]" : "text-gray-700"
+                    }`}
+                  >
+                    {classItem.name}
+                  </button>
+                  {onDeleteClass && (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, classItem.id)}
+                      className="opacity-0 group-hover:opacity-100 p-2 mr-1 text-gray-400 hover:text-red-500 transition-all"
+                      aria-label={`Delete ${classItem.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>

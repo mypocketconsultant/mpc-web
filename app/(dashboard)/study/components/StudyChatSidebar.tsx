@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, Mic } from "lucide-react";
 import ChatMessage, { Message } from "./ChatMessage";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface StudyChatSidebarProps {
   title?: string;
@@ -20,6 +21,13 @@ export default function StudyChatSidebar({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
+
+  const handleMicrophone = () => {
+    toggleRecording((text: string) => {
+      setInputValue((prev) => (prev ? `${prev} ${text}` : text));
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -169,18 +177,36 @@ export default function StudyChatSidebar({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            placeholder={isTranscribing ? "Transcribing..." : "Type your message..."}
             className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
-            disabled={isLoading}
+            disabled={isLoading || isTranscribing}
           />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            className="p-2 bg-gradient-to-br from-[#5A3FFF] to-[#300878] text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            aria-label="Send message"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {inputValue.trim() ? (
+            <button
+              onClick={handleSendMessage}
+              disabled={isLoading}
+              className="flex-shrink-0 p-2 bg-gradient-to-br from-[#5A3FFF] to-[#300878] text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              aria-label="Send message"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleMicrophone}
+              disabled={isLoading || isTranscribing}
+              className={`flex-shrink-0 p-2 text-white rounded-lg transition-all ${
+                isRecording
+                  ? "bg-red-500 hover:bg-red-600"
+                  : isTranscribing
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-br from-[#5A3FFF] to-[#300878] hover:shadow-lg"
+              }`}
+              style={isRecording ? { animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" } : undefined}
+              aria-label={isRecording ? "Stop recording" : "Start recording"}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

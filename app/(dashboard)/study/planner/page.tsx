@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
 import StudyChatSidebar from "../components/StudyChatSidebar";
@@ -11,19 +12,49 @@ import CreateStudyPlanModal, {
 } from "../components/CreateStudyPlanModal";
 import { StudyTask } from "../components/StudyPlanCard";
 import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
+
+interface StudyPlan {
+  id: string;
+  title: string;
+  class_id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
 
 export default function StudyPlannerPage() {
+  const router = useRouter();
+  const { toast, showToast, hideToast } = useToast();
   const [tasks, setTasks] = useState<StudyTask[]>([]);
+  const [planTitles, setPlanTitles] = useState<Record<string, string>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch planner tasks from backend
+  // Fetch planner tasks and plans from backend
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const res: any = await apiService.get("/v1/study/planner?range=month");
-      const data = res?.data || res || [];
-      setTasks(Array.isArray(data) ? data : []);
+      const [tasksRes, plansRes] = await Promise.all([
+        apiService.get("/v1/study/planner?range=month") as Promise<any>,
+        apiService.get("/v1/study/plans") as Promise<any>,
+      ]);
+
+      const tasksData = tasksRes?.data || tasksRes || [];
+      setTasks(Array.isArray(tasksData) ? tasksData : []);
+
+      // Build plan_id → plan title lookup
+      const plansData = plansRes?.data || plansRes || [];
+      const titleMap: Record<string, string> = {};
+      if (Array.isArray(plansData)) {
+        plansData.forEach((plan: StudyPlan) => {
+          if (plan.id && plan.title) {
+            titleMap[plan.id] = plan.title;
+          }
+        });
+      }
+      setPlanTitles(titleMap);
     } catch (error) {
       console.error("Failed to fetch planner tasks:", error);
       setTasks([]);
@@ -37,8 +68,9 @@ export default function StudyPlannerPage() {
   }, [fetchTasks]);
 
   const handleEditTask = (task: StudyTask) => {
-    // TODO: Open task detail/edit modal
-    console.log("Edit task:", task);
+    if (task.plan_id) {
+      router.push(`/study/planner/${task.plan_id}`);
+    }
   };
 
   const handleCreatePlan = () => {
@@ -47,7 +79,7 @@ export default function StudyPlannerPage() {
 
   const handleSubmitPlan = async (newPlan: NewStudyPlan) => {
     try {
-      await apiService.post("/v1/study/plans/ai", {
+      const res: any = await apiService.post("/v1/study/plans/ai", {
         class_id: newPlan.class_id,
         prompt: newPlan.prompt,
         title: newPlan.title || undefined,
@@ -57,10 +89,26 @@ export default function StudyPlannerPage() {
         sessions_per_week: newPlan.sessions_per_week,
         minutes_per_session: newPlan.minutes_per_session,
       });
+
+      // Extract plan ID from response
+      const data = res?.data || res;
+      const createdPlanId = data?.plan?.id;
+
+      showToast("success", "Study plan created!", {
+        label: "See plan",
+        onClick: () => {
+          hideToast();
+          if (createdPlanId) {
+            router.push(`/study/planner/${createdPlanId}`);
+          }
+        },
+      });
+
       // Refresh calendar to show new tasks
       await fetchTasks();
     } catch (error) {
       console.error("Failed to create study plan:", error);
+      showToast("error", "Failed to create study plan. Please try again.");
     }
   };
 
@@ -79,6 +127,7 @@ export default function StudyPlannerPage() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
+      <Toast toast={toast} onClose={hideToast} />
       <Header title="Study Support" />
 
       <main className="flex-1 overflow-auto">
@@ -105,6 +154,7 @@ export default function StudyPlannerPage() {
             <div className="lg:col-span-2">
               <MonthViewCalendar
                 tasks={tasks}
+                planTitles={planTitles}
                 onEditTask={handleEditTask}
                 onCreatePlan={handleCreatePlan}
                 loading={loading}

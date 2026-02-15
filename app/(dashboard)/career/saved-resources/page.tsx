@@ -7,7 +7,6 @@ import Link from "next/link";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import DailyTips from "../components/DailyTips";
-import SuggestedPrompts from "../components/SuggestedPrompts";
 import tipsIcon from "@/public/daily.png";
 import { apiService } from "@/lib/api/apiService";
 
@@ -23,7 +22,6 @@ const INITIAL_LIMIT = 5;
 export default function SavedResourcesPage() {
   const pathname = usePathname();
   const router = useRouter();
-  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [documents, setDocuments] = useState<ResumeDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -90,27 +88,6 @@ export default function SavedResourcesPage() {
   };
 
   const hasMore = documents.length < total;
-
-  const suggestedPrompts = [
-    {
-      id: 1,
-      iconImage: "/daily.png",
-      title: "Run a 10-sec scan of my CV",
-      subtitle: "(Upload CV)",
-    },
-    {
-      id: 2,
-      iconImage: "/ai.png",
-      title: "Create New Resume",
-      subtitle: "",
-    },
-    {
-      id: 3,
-      iconImage: "/career.png",
-      title: "Write a cover letter",
-      subtitle: "",
-    },
-  ];
 
   const dailyTip = {
     title: "Update your CV regularly",
@@ -213,18 +190,6 @@ export default function SavedResourcesPage() {
             </div>
           </div>
           <hr className="my-4" />
-          {/* Suggested Prompts Section */}
-          <SuggestedPrompts
-            prompts={suggestedPrompts.map((prompt) => ({
-              id: prompt.id.toString(),
-              title: prompt.title,
-              iconImage: prompt.iconImage,
-              bgColor: "bg-gradient-to-br from-[#E8D5FF] to-[#F0E6FF]",
-              iconColor: "text-2xl",
-            }))}
-            selectedPrompt={selectedPrompt}
-            onSelect={(id) => setSelectedPrompt(id)}
-          />
         </div>
       </main>
 
