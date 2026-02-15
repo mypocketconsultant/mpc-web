@@ -140,7 +140,10 @@ export default function LifeAdvisorPage() {
       {/* Chat Input Footer */}
       <InputFooter
         placeholder="Ask me to create a plan to boost my mood..."
-        onSend={() => {}}
+        onSend={(message) => {
+          const encodedPrompt = encodeURIComponent(message);
+          router.push(`/Life/chat?prompt=${encodedPrompt}`);
+        }}
         onAttach={() => {}}
         context="life"
       />

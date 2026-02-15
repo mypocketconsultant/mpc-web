@@ -63,7 +63,7 @@ export default function InputFooter({
   const handleInputClick = () => {
     let chatUrl = "/career/chat?context=career";
     if (context === "life") {
-      chatUrl = "/career/chat?context=life";
+      chatUrl = "/Life/chat";
     } else if (context === "study") {
       chatUrl = "/study/chat?context=study";
     }
