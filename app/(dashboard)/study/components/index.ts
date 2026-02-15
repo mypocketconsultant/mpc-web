@@ -1,6 +1,6 @@
 // Study Planner Components
 export { default as StudyPlanCard } from "./StudyPlanCard";
-export type { StudyPlan } from "./StudyPlanCard";
+export type { StudyTask } from "./StudyPlanCard";
 
 export { default as WeekViewCalendar } from "./WeekViewCalendar";
 export { default as MonthViewCalendar } from "./MonthViewCalendar";

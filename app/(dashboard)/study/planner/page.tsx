@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
@@ -10,115 +9,81 @@ import MonthViewCalendar from "../components/MonthViewCalendar";
 import CreateStudyPlanModal, {
   NewStudyPlan,
 } from "../components/CreateStudyPlanModal";
-import { StudyPlan } from "../components/StudyPlanCard";
-import { Message } from "../components/ChatMessage";
-
-// Sample data for demonstration
-const generateSamplePlans = (): StudyPlan[] => {
-  const plans: StudyPlan[] = [];
-  const currentDate = new Date();
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  // Generate sample plans for the current month
-  const planTitles = [
-    { title: "Feeling res...", color: "purple" as const },
-    { title: "Energy level...", color: "light-purple" as const },
-    { title: "Study next topic...", color: "purple" as const },
-    { title: "Check with Ai...", color: "light-purple" as const },
-    { title: "Exam plan for t...", color: "purple" as const },
-    { title: "Review notes...", color: "light-purple" as const },
-  ];
-
-  // Add plans to various days
-  for (let day = 1; day <= 28; day++) {
-    const numPlans =
-      Math.random() > 0.6 ? Math.floor(Math.random() * 3) + 1 : 0;
-    for (let i = 0; i < numPlans; i++) {
-      const randomPlan =
-        planTitles[Math.floor(Math.random() * planTitles.length)];
-      plans.push({
-        id: `plan-${day}-${i}`,
-        title: randomPlan.title,
-        time: `${9 + Math.floor(Math.random() * 8)}:00`,
-        description: "Lorem ipsum dolor sit amet, consectetur adipiscing",
-        date: new Date(year, month, day),
-        color: randomPlan.color,
-      });
-    }
-  }
-
-  return plans;
-};
-
-const initialMessages: Message[] = [
-  {
-    id: "user-1",
-    type: "user",
-    content:
-      "Create a plan to study English for Grade 7 and include suitable checkpoints and tasks. Set 10am October 21 as the intended date of completion",
-    timestamp: new Date("2026-02-15T11:42:00"),
-  },
-  {
-    id: "ai-1",
-    type: "ai",
-    content: "Your plan has been set. Check your planner for details.",
-    timestamp: new Date("2026-02-15T11:43:00"),
-  },
-];
+import { StudyTask } from "../components/StudyPlanCard";
+import { apiService } from "@/lib/api/apiService";
 
 export default function StudyPlannerPage() {
-  const router = useRouter();
-  const [plans, setPlans] = useState<StudyPlan[]>(generateSamplePlans());
+  const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Message[]>(initialMessages);
+  const [loading, setLoading] = useState(true);
 
-  const handleEditPlan = (plan: StudyPlan) => {
-    // Navigate to edit page or open edit modal
-    router.push(`/study/planner/edit/${plan.id}`);
+  // Fetch planner tasks from backend
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res: any = await apiService.get("/v1/study/planner?range=month");
+      const data = res?.data || res || [];
+      setTasks(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch planner tasks:", error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const handleEditTask = (task: StudyTask) => {
+    // TODO: Open task detail/edit modal
+    console.log("Edit task:", task);
   };
 
   const handleCreatePlan = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmitPlan = (newPlan: NewStudyPlan) => {
-    const plan: StudyPlan = {
-      id: `plan-${Date.now()}`,
-      title: newPlan.title,
-      time: newPlan.time,
-      description: newPlan.description || "No description provided",
-      date: new Date(newPlan.date),
-      color: newPlan.priority === "high" ? "purple" : "light-purple",
-    };
-    setPlans((prev) => [...prev, plan]);
+  const handleSubmitPlan = async (newPlan: NewStudyPlan) => {
+    try {
+      await apiService.post("/v1/study/plans/ai", {
+        class_id: newPlan.class_id,
+        prompt: newPlan.prompt,
+        title: newPlan.title || undefined,
+        description: newPlan.description || undefined,
+        start_date: newPlan.start_date,
+        end_date: newPlan.end_date,
+        sessions_per_week: newPlan.sessions_per_week,
+        minutes_per_session: newPlan.minutes_per_session,
+      });
+      // Refresh calendar to show new tasks
+      await fetchTasks();
+    } catch (error) {
+      console.error("Failed to create study plan:", error);
+    }
   };
 
   const handleSendMessage = async (message: string): Promise<string> => {
-    // In a real implementation, this would call your AI API
-    // For now, we'll simulate a response
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Check if the message contains keywords to create a plan
-    if (
-      message.toLowerCase().includes("create") ||
-      message.toLowerCase().includes("plan") ||
-      message.toLowerCase().includes("study")
-    ) {
-      return "I've analyzed your request and created a study plan based on your requirements. You can see it in the calendar view. Would you like me to adjust anything?";
+    try {
+      const res: any = await apiService.post("/v1/study/chat", {
+        message,
+      });
+      const data = res?.data || res;
+      return data?.message || "I understand. How can I help you with your study planning?";
+    } catch (error) {
+      console.error("Study chat error:", error);
+      return "Sorry, I encountered an error. Please try again.";
     }
-
-    return "I understand. How can I help you with your study planning today?";
   };
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <Header title="Study Support" />
 
-      {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
-          {/* Back button / Breadcrumb */}
+          {/* Back button */}
           <Link href="/study">
             <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
               <ChevronLeft className="h-4 w-4" />
@@ -132,7 +97,6 @@ export default function StudyPlannerPage() {
             <div className="lg:col-span-1 h-[calc(100vh-220px)] min-h-[500px]">
               <StudyChatSidebar
                 title="Create study plan with Ai"
-                initialMessages={chatMessages}
                 onSendMessage={handleSendMessage}
               />
             </div>
@@ -140,9 +104,10 @@ export default function StudyPlannerPage() {
             {/* Right column - Month View Calendar */}
             <div className="lg:col-span-2">
               <MonthViewCalendar
-                plans={plans}
-                onEditPlan={handleEditPlan}
+                tasks={tasks}
+                onEditTask={handleEditTask}
                 onCreatePlan={handleCreatePlan}
+                loading={loading}
               />
             </div>
           </div>

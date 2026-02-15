@@ -2,61 +2,60 @@
 
 import React, { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { StudyPlan } from "./StudyPlanCard";
+import { StudyTask } from "./StudyPlanCard";
 
 interface MonthViewCalendarProps {
-  plans: StudyPlan[];
-  onEditPlan?: (plan: StudyPlan) => void;
+  tasks: StudyTask[];
+  onEditTask?: (task: StudyTask) => void;
   onCreatePlan?: () => void;
+  loading?: boolean;
 }
 
 type ViewMode = "Week view" | "Month view" | "Day view";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"];
 
+const statusDotColor: Record<string, string> = {
+  todo: "bg-[#7C5CFF]",
+  doing: "bg-[#5C9CFF]",
+  done: "bg-[#5CFF7C]",
+  skipped: "bg-[#AAAAAA]",
+};
+
 export default function MonthViewCalendar({
-  plans,
-  onEditPlan,
+  tasks,
+  onEditTask,
   onCreatePlan,
+  loading = false,
 }: MonthViewCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("Month view");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Get the first day of the month
-  const getMonthStart = (date: Date) => {
-    const d = new Date(date.getFullYear(), date.getMonth(), 1);
-    return d;
-  };
+  const getMonthStart = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), 1);
 
-  // Get the last day of the month
-  const getMonthEnd = (date: Date) => {
-    const d = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    return d;
-  };
+  const getMonthEnd = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
   const monthStart = useMemo(() => getMonthStart(currentDate), [currentDate]);
   const monthEnd = useMemo(() => getMonthEnd(currentDate), [currentDate]);
 
-  // Generate calendar grid (6 weeks x 7 days)
   const calendarDays = useMemo(() => {
     const days: (Date | null)[] = [];
-
-    // Get the day of week for the first day (0 = Sunday, adjust for Monday start)
     let startDay = monthStart.getDay();
-    startDay = startDay === 0 ? 6 : startDay - 1; // Convert to Monday = 0
+    startDay = startDay === 0 ? 6 : startDay - 1;
 
-    // Add empty cells for days before the month starts
     for (let i = 0; i < startDay; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let day = 1; day <= monthEnd.getDate(); day++) {
-      days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+      days.push(
+        new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      );
     }
 
-    // Add empty cells to complete the last week
     while (days.length % 7 !== 0) {
       days.push(null);
     }
@@ -64,18 +63,18 @@ export default function MonthViewCalendar({
     return days;
   }, [monthStart, monthEnd, currentDate]);
 
-  // Group plans by date
-  const plansByDate = useMemo(() => {
-    const grouped: Record<string, StudyPlan[]> = {};
-    plans.forEach((plan) => {
-      const dateKey = new Date(plan.date).toDateString();
+  // Group tasks by date using due_at
+  const tasksByDate = useMemo(() => {
+    const grouped: Record<string, StudyTask[]> = {};
+    tasks.forEach((task) => {
+      const dateKey = new Date(task.due_at).toDateString();
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
-      grouped[dateKey].push(plan);
+      grouped[dateKey].push(task);
     });
     return grouped;
-  }, [plans]);
+  }, [tasks]);
 
   const formatDateRange = () => {
     const month = monthStart.toLocaleString("default", { month: "long" });
@@ -109,7 +108,6 @@ export default function MonthViewCalendar({
     return `${month} ${day}`;
   };
 
-  // Split calendar days into weeks
   const weeks = useMemo(() => {
     const result: (Date | null)[][] = [];
     for (let i = 0; i < calendarDays.length; i += 7) {
@@ -123,7 +121,6 @@ export default function MonthViewCalendar({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          {/* Navigation arrows */}
           <button
             onClick={goToPreviousMonth}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200"
@@ -139,7 +136,6 @@ export default function MonthViewCalendar({
             <ChevronRight className="h-4 w-4 text-gray-600" />
           </button>
 
-          {/* Date range */}
           <span className="text-base font-medium text-gray-900">
             {formatDateRange()}
           </span>
@@ -152,7 +148,9 @@ export default function MonthViewCalendar({
             >
               {viewMode}
               <ChevronRight
-                className={`h-4 w-4 transition-transform ${isDropdownOpen ? "rotate-90" : ""}`}
+                className={`h-4 w-4 transition-transform ${
+                  isDropdownOpen ? "rotate-90" : ""
+                }`}
               />
             </button>
 
@@ -181,7 +179,6 @@ export default function MonthViewCalendar({
           </div>
         </div>
 
-        {/* Create Study Plan button */}
         <button
           onClick={onCreatePlan}
           className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white rounded-xl font-medium text-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
@@ -191,90 +188,103 @@ export default function MonthViewCalendar({
         </button>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
       {/* Calendar Grid */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[700px]">
-          {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-px bg-gray-100 rounded-t-xl overflow-hidden">
-            {dayNames.map((day, index) => (
-              <div
-                key={day}
-                className={`text-center py-3 px-2 font-medium text-sm ${
-                  index === 0 || index === 1
-                    ? "bg-[#5A3FFF] text-white"
-                    : "bg-gray-50 text-gray-700"
-                }`}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+      {!loading && (
+        <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-px bg-gray-100 rounded-t-xl overflow-hidden">
+              {dayNames.map((day, index) => (
+                <div
+                  key={day}
+                  className={`text-center py-3 px-2 font-medium text-sm ${
+                    index === 0 || index === 1
+                      ? "bg-[#5A3FFF] text-white"
+                      : "bg-gray-50 text-gray-700"
+                  }`}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
 
-          {/* Calendar Weeks */}
-          <div className="border border-gray-100 border-t-0 rounded-b-xl overflow-hidden">
-            {weeks.map((week, weekIndex) => (
-              <div
-                key={weekIndex}
-                className="grid grid-cols-7 gap-px bg-gray-100"
-              >
-                {week.map((date, dayIndex) => {
-                  const dateKey = date?.toDateString() || "";
-                  const dayPlans = plansByDate[dateKey] || [];
-                  const today = isToday(date);
+            {/* Calendar Weeks */}
+            <div className="border border-gray-100 border-t-0 rounded-b-xl overflow-hidden">
+              {weeks.map((week, weekIndex) => (
+                <div
+                  key={weekIndex}
+                  className="grid grid-cols-7 gap-px bg-gray-100"
+                >
+                  {week.map((date, dayIndex) => {
+                    const dateKey = date?.toDateString() || "";
+                    const dayTasks = tasksByDate[dateKey] || [];
+                    const today = isToday(date);
 
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`bg-white min-h-[100px] p-2 ${
-                        !date ? "bg-gray-50" : ""
-                      }`}
-                    >
-                      {date && (
-                        <>
-                          {/* Date label */}
-                          <div
-                            className={`text-xs font-medium mb-1 ${
-                              today
-                                ? "text-[#5A3FFF]"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {formatDayLabel(date)}
-                          </div>
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={`bg-white min-h-[100px] p-2 ${
+                          !date ? "bg-gray-50" : ""
+                        }`}
+                      >
+                        {date && (
+                          <>
+                            <div
+                              className={`text-xs font-medium mb-1 ${
+                                today ? "text-[#5A3FFF]" : "text-gray-500"
+                              }`}
+                            >
+                              {formatDayLabel(date)}
+                            </div>
 
-                          {/* Plans for this day */}
-                          <div className="space-y-1">
-                            {dayPlans.slice(0, 3).map((plan) => (
-                              <div
-                                key={plan.id}
-                                onClick={() => onEditPlan?.(plan)}
-                                className={`text-xs px-2 py-1 rounded cursor-pointer truncate hover:opacity-80 transition-opacity ${
-                                  plan.color === "purple"
-                                    ? "bg-[#E8E0FF] text-[#5A3FFF]"
-                                    : plan.color === "light-purple"
-                                    ? "bg-[#F3F0FF] text-[#7C5CFF]"
-                                    : "bg-[#E0F0FF] text-[#3B82F6]"
-                                }`}
-                              >
-                                {plan.title}
-                              </div>
-                            ))}
-                            {dayPlans.length > 3 && (
-                              <div className="text-xs text-gray-400 px-2">
-                                +{dayPlans.length - 3} more
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                            <div className="space-y-1">
+                              {dayTasks.slice(0, 3).map((task) => (
+                                <div
+                                  key={task.id}
+                                  onClick={() => onEditTask?.(task)}
+                                  className={`text-xs px-2 py-1 rounded cursor-pointer truncate hover:opacity-80 transition-opacity flex items-center gap-1 ${
+                                    task.status === "done"
+                                      ? "bg-[#E0FFE8] text-green-700"
+                                      : task.status === "doing"
+                                      ? "bg-[#E0F0FF] text-[#3B82F6]"
+                                      : task.status === "skipped"
+                                      ? "bg-gray-100 text-gray-500"
+                                      : "bg-[#E8E0FF] text-[#5A3FFF]"
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                      statusDotColor[task.status] ||
+                                      statusDotColor.todo
+                                    }`}
+                                  />
+                                  <span className="truncate">{task.title}</span>
+                                </div>
+                              ))}
+                              {dayTasks.length > 3 && (
+                                <div className="text-xs text-gray-400 px-2">
+                                  +{dayTasks.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

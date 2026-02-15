@@ -2,19 +2,19 @@
 
 import React, { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import StudyPlanCard, { StudyPlan } from "./StudyPlanCard";
+import StudyPlanCard, { StudyTask } from "./StudyPlanCard";
 
 interface WeekViewCalendarProps {
-  plans: StudyPlan[];
-  onEditPlan?: (plan: StudyPlan) => void;
+  tasks: StudyTask[];
+  onEditTask?: (task: StudyTask) => void;
   onCreatePlan?: () => void;
 }
 
 type ViewMode = "Week view" | "Month view" | "Day view";
 
 export default function WeekViewCalendar({
-  plans,
-  onEditPlan,
+  tasks,
+  onEditTask,
   onCreatePlan,
 }: WeekViewCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -52,18 +52,18 @@ export default function WeekViewCalendar({
     return days;
   }, [weekStart]);
 
-  // Group plans by date
-  const plansByDate = useMemo(() => {
-    const grouped: Record<string, StudyPlan[]> = {};
-    plans.forEach((plan) => {
-      const dateKey = new Date(plan.date).toDateString();
+  // Group tasks by date
+  const tasksByDate = useMemo(() => {
+    const grouped: Record<string, StudyTask[]> = {};
+    tasks.forEach((task) => {
+      const dateKey = new Date(task.due_at).toDateString();
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
-      grouped[dateKey].push(plan);
+      grouped[dateKey].push(task);
     });
     return grouped;
-  }, [plans]);
+  }, [tasks]);
 
   const formatDateRange = () => {
     const startMonth = weekStart.toLocaleString("default", { month: "long" });
@@ -182,7 +182,7 @@ export default function WeekViewCalendar({
             {weekDays.map((date, index) => {
               const { month, day } = formatDayHeader(date);
               const dateKey = date.toDateString();
-              const dayPlans = plansByDate[dateKey] || [];
+              const dayTasks = tasksByDate[dateKey] || [];
               const today = isToday(date);
 
               return (
@@ -199,20 +199,20 @@ export default function WeekViewCalendar({
                     <div className="text-xl font-bold">{day}</div>
                   </div>
 
-                  {/* Plans for this day */}
+                  {/* Tasks for this day */}
                   <div className="flex flex-col gap-3 min-h-[200px]">
-                    {dayPlans.map((plan) => (
+                    {dayTasks.map((task) => (
                       <StudyPlanCard
-                        key={plan.id}
-                        plan={plan}
-                        onEdit={onEditPlan}
+                        key={task.id}
+                        task={task}
+                        onEdit={onEditTask}
                         compact
                       />
                     ))}
 
-                    {dayPlans.length === 0 && (
+                    {dayTasks.length === 0 && (
                       <div className="flex-1 flex items-center justify-center">
-                        <span className="text-xs text-gray-400">No plans</span>
+                        <span className="text-xs text-gray-400">No tasks</span>
                       </div>
                     )}
                   </div>
