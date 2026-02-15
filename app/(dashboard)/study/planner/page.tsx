@@ -57,13 +57,13 @@ const initialMessages: Message[] = [
     type: "user",
     content:
       "Create a plan to study English for Grade 7 and include suitable checkpoints and tasks. Set 10am October 21 as the intended date of completion",
-    timestamp: new Date(Date.now() - 60000),
+    timestamp: new Date("2026-02-15T11:42:00"),
   },
   {
     id: "ai-1",
     type: "ai",
     content: "Your plan has been set. Check your planner for details.",
-    timestamp: new Date(),
+    timestamp: new Date("2026-02-15T11:43:00"),
   },
 ];
 
