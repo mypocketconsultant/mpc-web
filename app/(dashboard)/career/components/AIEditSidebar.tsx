@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
+import FormattedMessage from "@/components/FormattedMessage";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import ResumePdfModal from "./ResumePdfModal";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -23,7 +24,7 @@ interface AnalysisPlan {
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant' | 'resume' | 'loading';
+  type: "user" | "assistant" | "resume" | "loading";
   content: string;
   fullContent?: string;
   file?: {
@@ -51,7 +52,7 @@ interface AIEditSidebarProps {
   onInputChange?: (value: string) => void;
   onToggleExpanded?: (messageId: string) => void;
   onFileUpload?: (file: File) => Promise<void>;
-  intent?: 'resume-builder' | 'career-advisor' | 'planner_create';
+  intent?: "resume-builder" | "career-advisor" | "planner_create";
   emptyStateMessage?: string;
 }
 
@@ -78,26 +79,21 @@ export default function AIEditSidebar({
 
   const handleResumeLinkClick = (e: React.MouseEvent, message: Message) => {
     e.preventDefault();
-    console.log("[handleResumeLinkClick] Called with message:", message);
 
     const resumeId = message.resumeData?.resumeId;
     const title = message.resumeData?.title || "Resume";
 
     if (!resumeId) {
-      console.log("[handleResumeLinkClick] No resumeId found in message data");
       return;
     }
 
-    console.log("[handleResumeLinkClick] Setting state with resumeId:", resumeId);
     setSelectedResumeId(resumeId);
     setSelectedResumeTitle(title);
     setIsPdfModalOpen(true);
-    console.log("[handleResumeLinkClick] Modal should now be open");
   };
 
   const handleSend = () => {
     if (inputValue.trim()) {
-      console.log("[AIEditSidebar] handleSend triggered", { intent, message: inputValue });
       // Always pass intent prop to parent - don't rely on prop being undefined
       onSend?.(inputValue, intent);
       onInputChange?.("");
@@ -116,7 +112,6 @@ export default function AIEditSidebar({
   };
 
   const handleFileUpload = async (file: File) => {
-    console.log("[AIEditSidebar] File upload triggered:", file.name);
     if (onFileUpload) {
       setIsUploadingFile(true);
       try {
@@ -135,7 +130,6 @@ export default function AIEditSidebar({
     onMicrophone?.();
   };
 
-
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col relative">
       {/* Upload Loading Overlay - only for uploading file */}
@@ -143,7 +137,9 @@ export default function AIEditSidebar({
         <div className="absolute inset-0 bg-white/80 rounded-3xl flex items-center justify-center z-10">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium text-gray-700">Uploading resume...</p>
+            <p className="text-sm font-medium text-gray-700">
+              Uploading resume...
+            </p>
           </div>
         </div>
       )}
@@ -169,9 +165,12 @@ export default function AIEditSidebar({
               if (renderedIndices.has(index)) return null;
 
               // Check if this is a resume message followed by an assistant message
-              const isResumeMessage = message.type === 'resume';
-              const nextMessage = isResumeMessage && index + 1 < messages.length ? messages[index + 1] : null;
-              const isFollowedByAssistant = nextMessage?.type === 'assistant';
+              const isResumeMessage = message.type === "resume";
+              const nextMessage =
+                isResumeMessage && index + 1 < messages.length
+                  ? messages[index + 1]
+                  : null;
+              const isFollowedByAssistant = nextMessage?.type === "assistant";
 
               if (isResumeMessage && isFollowedByAssistant) {
                 // Mark both as rendered
@@ -184,16 +183,17 @@ export default function AIEditSidebar({
                 return (
                   <div key={message.id}>
                     <div className="flex justify-start mb-4">
-                      <div className={`rounded-2xl p-5 max-w-[85%] space-y-4 ${
-                        hasAnalysis
-                          ? 'bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100'
-                          : 'bg-gray-50'
-                      }`}>
+                      <div
+                        className={`rounded-2xl p-5 max-w-[85%] space-y-4 ${
+                          hasAnalysis
+                            ? "bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100"
+                            : "bg-gray-50"
+                        }`}
+                      >
                         {/* Resume PDF Link */}
                         <button
                           type="button"
                           onClick={(e) => {
-                            console.log("[AIEditSidebar] Resume link clicked, full message data:", message);
                             handleResumeLinkClick(e, message);
                           }}
                           className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-3 hover:bg-gray-50 transition-colors cursor-pointer w-fit"
@@ -207,9 +207,7 @@ export default function AIEditSidebar({
                         </button>
 
                         {/* Main AI Message Content */}
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                          {nextMessage.content}
-                        </p>
+                        <FormattedMessage content={nextMessage.content} variant="light" />
 
                         {/* If analysisPlan exists, show it */}
                         {analysisPlan && (
@@ -217,50 +215,84 @@ export default function AIEditSidebar({
                             {/* Target Role */}
                             {analysisPlan.target_role && (
                               <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
-                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">Target Role: </span>
-                                <span className="text-sm font-medium text-purple-800">{analysisPlan.target_role}</span>
+                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">
+                                  Target Role:{" "}
+                                </span>
+                                <span className="text-sm font-medium text-purple-800">
+                                  {analysisPlan.target_role}
+                                </span>
                               </div>
                             )}
 
                             {/* Sections */}
-                            {analysisPlan.sections && analysisPlan.sections.map((section: Section, idx: number) => (
-                              <div key={idx} className="bg-white rounded-lg p-4 border border-blue-100">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="text-sm font-bold text-gray-900">{section.name}</h4>
-                                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">{section.score}/10</span>
-                                </div>
+                            {analysisPlan.sections &&
+                              analysisPlan.sections.map(
+                                (section: Section, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="bg-white rounded-lg p-4 border border-blue-100"
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="text-sm font-bold text-gray-900">
+                                        {section.name}
+                                      </h4>
+                                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
+                                        {section.score}/10
+                                      </span>
+                                    </div>
 
-                                {/* Issues */}
-                                {section.issues && section.issues.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-xs font-semibold text-red-700 mb-1 uppercase">Issues</p>
-                                    <ul className="space-y-1">
-                                      {section.issues.map((issue: string, i: number) => (
-                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
-                                          <span className="text-red-500">•</span>
-                                          <span>{issue}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
+                                    {/* Issues */}
+                                    {section.issues &&
+                                      section.issues.length > 0 && (
+                                        <div className="mb-2">
+                                          <p className="text-xs font-semibold text-red-700 mb-1 uppercase">
+                                            Issues
+                                          </p>
+                                          <ul className="space-y-1">
+                                            {section.issues.map(
+                                              (issue: string, i: number) => (
+                                                <li
+                                                  key={i}
+                                                  className="text-xs text-gray-700 flex gap-2"
+                                                >
+                                                  <span className="text-red-500">
+                                                    •
+                                                  </span>
+                                                  <span>{issue}</span>
+                                                </li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
 
-                                {/* Recommendations */}
-                                {section.recommendations && section.recommendations.length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-semibold text-green-700 mb-1 uppercase">Recommendations</p>
-                                    <ul className="space-y-1">
-                                      {section.recommendations.map((rec: string, i: number) => (
-                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
-                                          <span className="text-green-600">✓</span>
-                                          <span>{rec}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                    {/* Recommendations */}
+                                    {section.recommendations &&
+                                      section.recommendations.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-semibold text-green-700 mb-1 uppercase">
+                                            Recommendations
+                                          </p>
+                                          <ul className="space-y-1">
+                                            {section.recommendations.map(
+                                              (rec: string, i: number) => (
+                                                <li
+                                                  key={i}
+                                                  className="text-xs text-gray-700 flex gap-2"
+                                                >
+                                                  <span className="text-green-600">
+                                                    ✓
+                                                  </span>
+                                                  <span>{rec}</span>
+                                                </li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
                                   </div>
-                                )}
-                              </div>
-                            ))}
+                                ),
+                              )}
                           </div>
                         )}
                       </div>
@@ -272,37 +304,36 @@ export default function AIEditSidebar({
               // Regular message rendering (user, standalone assistant, standalone resume, loading, or error)
               return (
                 <div key={message.id}>
-                  {message.type === 'user' ? (
+                  {message.type === "user" ? (
                     /* User Message Bubble */
                     <div className="flex justify-end mb-4">
-                      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 max-w-[85%]">
-                        <p className="text-sm text-gray-700 text-right mb-3">
-                          {message.content}
-                        </p>
+                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 max-w-[85%]">
+                        <div className="text-right mb-3">
+                          <FormattedMessage content={message.content} variant="dark" />
+                        </div>
                         {message.file && (
-                          <div className="flex items-center justify-between gap-3 mt-3">
+                          <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/20">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-3.5 h-3.5 text-blue-600" />
+                              <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-3.5 h-3.5 text-white" />
                               </div>
-                              <span className="text-sm font-semibold text-[#5A3FFF]">
+                              <span className="text-sm font-semibold text-white">
                                 {message.file.name}
                               </span>
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-white/80">
                               {message.file.size}
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
-                  ) : message.type === 'resume' ? (
+                  ) : message.type === "resume" ? (
                     /* Standalone Resume Message Bubble */
                     <div className="flex justify-end mb-4">
                       <button
                         type="button"
                         onClick={(e) => {
-                          console.log("[AIEditSidebar] Standalone resume clicked, full message data:", message);
                           handleResumeLinkClick(e, message);
                         }}
                         className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-2xl p-4 max-w-[85%] hover:bg-gray-50 transition-colors cursor-pointer"
@@ -315,17 +346,28 @@ export default function AIEditSidebar({
                         </span>
                       </button>
                     </div>
-                  ) : message.type === 'loading' ? (
-                    /* Loading Bubble */
+                  ) : message.type === "loading" ? (
+                    /* Thinking Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="bg-gradient-to-br from-[#F8F7FF] to-[#FEFEFF] rounded-2xl p-5 max-w-[85%] shadow-sm border border-[#E8E4FF]">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className="w-2 h-2 bg-[#5A3FFF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0s" }}
+                            />
+                            <div
+                              className="w-2 h-2 bg-[#7B61FF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0.2s" }}
+                            />
+                            <div
+                              className="w-2 h-2 bg-[#9B7FFF] rounded-full animate-pulse"
+                              style={{ animationDuration: "1.4s", animationDelay: "0.4s" }}
+                            />
                           </div>
-                          <span className="text-sm text-gray-600">AI is responding...</span>
+                          <span className="text-sm font-medium text-[#5A3FFF] animate-pulse">
+                            Thinking...
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -341,15 +383,15 @@ export default function AIEditSidebar({
                   ) : (
                     /* Assistant Message Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className={`rounded-2xl p-5 max-w-[85%] ${
-                        message.analysisPlan
-                          ? 'bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100'
-                          : 'bg-gray-50'
-                      }`}>
+                      <div
+                        className={`rounded-2xl p-5 max-w-[85%] shadow-sm hover:shadow-lg transition-shadow ${
+                          message.analysisPlan
+                            ? "bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100"
+                            : "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF]"
+                        }`}
+                      >
                         {/* Always show content */}
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                          {message.content}
-                        </p>
+                        <FormattedMessage content={message.content} variant="light" />
 
                         {/* If analysisPlan exists, show it */}
                         {message.analysisPlan && (
@@ -357,50 +399,84 @@ export default function AIEditSidebar({
                             {/* Target Role */}
                             {message.analysisPlan.target_role && (
                               <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
-                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">Target Role: </span>
-                                <span className="text-sm font-medium text-purple-800">{message.analysisPlan.target_role}</span>
+                                <span className="text-xs font-bold text-purple-900 uppercase tracking-wide">
+                                  Target Role:{" "}
+                                </span>
+                                <span className="text-sm font-medium text-purple-800">
+                                  {message.analysisPlan.target_role}
+                                </span>
                               </div>
                             )}
 
                             {/* Sections */}
-                            {message.analysisPlan.sections && message.analysisPlan.sections.map((section: Section, idx: number) => (
-                              <div key={idx} className="bg-white rounded-lg p-4 border border-blue-100">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="text-sm font-bold text-gray-900">{section.name}</h4>
-                                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">{section.score}/10</span>
-                                </div>
+                            {message.analysisPlan.sections &&
+                              message.analysisPlan.sections.map(
+                                (section: Section, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="bg-white rounded-lg p-4 border border-blue-100"
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="text-sm font-bold text-gray-900">
+                                        {section.name}
+                                      </h4>
+                                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
+                                        {section.score}/10
+                                      </span>
+                                    </div>
 
-                                {/* Issues */}
-                                {section.issues && section.issues.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-xs font-semibold text-red-700 mb-1 uppercase">Issues</p>
-                                    <ul className="space-y-1">
-                                      {section.issues.map((issue: string, i: number) => (
-                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
-                                          <span className="text-red-500">•</span>
-                                          <span>{issue}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
+                                    {/* Issues */}
+                                    {section.issues &&
+                                      section.issues.length > 0 && (
+                                        <div className="mb-2">
+                                          <p className="text-xs font-semibold text-red-700 mb-1 uppercase">
+                                            Issues
+                                          </p>
+                                          <ul className="space-y-1">
+                                            {section.issues.map(
+                                              (issue: string, i: number) => (
+                                                <li
+                                                  key={i}
+                                                  className="text-xs text-gray-700 flex gap-2"
+                                                >
+                                                  <span className="text-red-500">
+                                                    •
+                                                  </span>
+                                                  <span>{issue}</span>
+                                                </li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
 
-                                {/* Recommendations */}
-                                {section.recommendations && section.recommendations.length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-semibold text-green-700 mb-1 uppercase">Recommendations</p>
-                                    <ul className="space-y-1">
-                                      {section.recommendations.map((rec: string, i: number) => (
-                                        <li key={i} className="text-xs text-gray-700 flex gap-2">
-                                          <span className="text-green-600">✓</span>
-                                          <span>{rec}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                    {/* Recommendations */}
+                                    {section.recommendations &&
+                                      section.recommendations.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-semibold text-green-700 mb-1 uppercase">
+                                            Recommendations
+                                          </p>
+                                          <ul className="space-y-1">
+                                            {section.recommendations.map(
+                                              (rec: string, i: number) => (
+                                                <li
+                                                  key={i}
+                                                  className="text-xs text-gray-700 flex gap-2"
+                                                >
+                                                  <span className="text-green-600">
+                                                    ✓
+                                                  </span>
+                                                  <span>{rec}</span>
+                                                </li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
                                   </div>
-                                )}
-                              </div>
-                            ))}
+                                ),
+                              )}
                           </div>
                         )}
                       </div>
@@ -416,13 +492,15 @@ export default function AIEditSidebar({
       {/* Chat Input - Fixed at Bottom */}
       <div className="pt-4 border-t border-gray-100 flex-shrink-0">
         <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 transition-colors hover:border-gray-300">
-          <button
-            onClick={handleAttachClick}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-            aria-label="Attach file"
-          >
-            <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
-          </button>
+          {onFileUpload && (
+            <button
+              onClick={handleAttachClick}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              aria-label="Attach file"
+            >
+              <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
+            </button>
+          )}
 
           <input
             type="text"
@@ -437,14 +515,14 @@ export default function AIEditSidebar({
             onClick={handleMicrophoneClick}
             disabled={isTranscribing}
             className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-              isRecording ? 'animate-pulse' : ''
+              isRecording ? "animate-pulse" : ""
             }`}
             style={{
               backgroundColor: isRecording
-                ? '#EF4444'
+                ? "#EF4444"
                 : isTranscribing
-                  ? '#B0A0FF'
-                  : '#5A3FFF'
+                  ? "#B0A0FF"
+                  : "#5A3FFF",
             }}
             aria-label="Voice input"
           >

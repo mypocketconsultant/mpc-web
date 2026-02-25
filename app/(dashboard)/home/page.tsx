@@ -44,10 +44,12 @@ export default function HomePage() {
       <main className="flex-1 overflow-auto scrollbar-hide">
         <div className="max-w-[1100px] mx-auto px-6 py-8">
           {/* Greeting Section */}
-          <Greeting name={loading ? "User" : (user?.firstName || "User")} />
+          <Greeting name={loading ? "User" : user?.firstName || "User"} />
 
           {/* Career Advisory Section */}
-          <CareerAdvisory onRunAudit={() => router.push("/career/resume-builder")} />
+          <CareerAdvisory
+            onRunAudit={() => router.push("/career/resume-builder")}
+          />
 
           <QuickAction
             items={[
@@ -71,7 +73,6 @@ export default function HomePage() {
 
           {/* Expand Toolkit Section */}
           <ExpandToolkit />
-       
         </div>
       </main>
 
@@ -80,8 +81,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <InputFooter
             placeholder="Ask me to optimize your LinkedIn..."
-            onSend={(message) => console.log("Sent:", message)}
-            onAttach={() => console.log("Attach clicked")}
+            onSend={() => {}}
+            onAttach={() => {}}
             context="career"
           />
         </div>

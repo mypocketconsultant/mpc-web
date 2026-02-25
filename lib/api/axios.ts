@@ -23,33 +23,32 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Import and call logout function
-        // const { logout } = await import('@/services/auth');
-        // await logout();
+        // Sign out from Firebase
+        const { auth } = await import("@/lib/firebase");
+        await auth.signOut();
       } catch (logoutError) {
-        console.error('Logout failed:', logoutError);
-        window.location.href = "/auth/sign-in";
+        // Ignore logout errors
+      } finally {
+        // Always redirect to login on 401
+        window.location.href = "/auth/log-in";
       }
-      
+
       return Promise.reject(error);
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

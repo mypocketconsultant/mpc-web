@@ -7,7 +7,6 @@ import Link from "next/link";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import DailyTips from "../components/DailyTips";
-import SuggestedPrompts from "../components/SuggestedPrompts";
 import tipsIcon from "@/public/daily.png";
 import { apiService } from "@/lib/api/apiService";
 
@@ -23,7 +22,6 @@ const INITIAL_LIMIT = 5;
 export default function SavedResourcesPage() {
   const pathname = usePathname();
   const router = useRouter();
-  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [documents, setDocuments] = useState<ResumeDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -36,7 +34,10 @@ export default function SavedResourcesPage() {
     return "My Pocket Consultant";
   };
 
-  const fetchResumes = async (currentOffset: number = 0, append: boolean = false) => {
+  const fetchResumes = async (
+    currentOffset: number = 0,
+    append: boolean = false,
+  ) => {
     try {
       if (append) {
         setIsLoadingMore(true);
@@ -50,7 +51,7 @@ export default function SavedResourcesPage() {
           total: number;
           limit: number;
           offset: number;
-        }
+        };
       }>(`/v1/resume-builder?limit=${INITIAL_LIMIT}&offset=${currentOffset}`);
 
       const resumes = response?.data?.items || [];
@@ -64,7 +65,6 @@ export default function SavedResourcesPage() {
       setTotal(totalCount);
       setOffset(currentOffset + resumes.length);
     } catch (error) {
-      console.error("Failed to fetch resumes:", error);
       if (!append) {
         setDocuments([]);
       }
@@ -83,32 +83,11 @@ export default function SavedResourcesPage() {
   };
 
   const handleSeeChat = (resumeId: string) => {
-    sessionStorage.setItem('currentResumeId', resumeId);
-    router.push('/career/resume-builder');
+    sessionStorage.setItem("currentResumeId", resumeId);
+    router.push("/career/resume-builder");
   };
 
   const hasMore = documents.length < total;
-
-  const suggestedPrompts = [
-    {
-      id: 1,
-      iconImage: "/daily.png",
-      title: "Run a 10-sec scan of my CV",
-      subtitle: "(Upload CV)",
-    },
-    {
-      id: 2,
-      iconImage: "/ai.png",
-      title: "Create New Resume",
-      subtitle: "",
-    },
-    {
-      id: 3,
-      iconImage: "/career.png",
-      title: "Write a cover letter",
-      subtitle: "",
-    },
-  ];
 
   const dailyTip = {
     title: "Update your CV regularly",
@@ -211,18 +190,6 @@ export default function SavedResourcesPage() {
             </div>
           </div>
           <hr className="my-4" />
-          {/* Suggested Prompts Section */}
-          <SuggestedPrompts
-            prompts={suggestedPrompts.map((prompt) => ({
-              id: prompt.id.toString(),
-              title: prompt.title,
-              iconImage: prompt.iconImage,
-              bgColor: "bg-gradient-to-br from-[#E8D5FF] to-[#F0E6FF]",
-              iconColor: "text-2xl",
-            }))}
-            selectedPrompt={selectedPrompt}
-            onSelect={(id) => setSelectedPrompt(id)}
-          />
         </div>
       </main>
 
@@ -231,8 +198,8 @@ export default function SavedResourcesPage() {
         <div className="max-w-7xl mx-auto">
           <InputFooter
             placeholder="Ask me to optimize your LinkedIn..."
-            onSend={(message) => console.log("Sent:", message)}
-            onAttach={() => console.log("Attach clicked")}
+            onSend={() => {}}
+            onAttach={() => {}}
             context="career"
           />
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -29,9 +29,20 @@ import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 
 export default function HomePage() {
+  const router = useRouter();
   const pathname = usePathname();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+
+  // Check for prompt from saved-resources page on mount
+  useEffect(() => {
+    const savedPrompt = sessionStorage.getItem('careerPrompt');
+    if (savedPrompt) {
+      setInputValue(savedPrompt);
+      // Clear it so it doesn't persist on refresh
+      sessionStorage.removeItem('careerPrompt');
+    }
+  }, []);
 
   // Map routes to titles
   const getTitleFromPath = (path: string) => {
@@ -55,7 +66,7 @@ export default function HomePage() {
       title: "CV Builder",
       icon: <Image src={cvIcon} alt="CV" width={36} height={36} />,
       color: "from-[#E6E4FF] to-[#E6E4FF]",
-      href: "/career/resume-builder",
+      href: "/career/cv-builder",
     },
     {
       id: "career",
@@ -96,6 +107,14 @@ export default function HomePage() {
     },
   ];
 
+  const handlePromptSelect = (promptId: string) => {
+    const prompt = suggestedPrompts.find(p => p.id.toString() === promptId);
+    if (prompt) {
+      const encodedPrompt = encodeURIComponent(prompt.title);
+      router.push(`/career/chat?context=career&prompt=${encodedPrompt}`);
+    }
+  };
+
   return (
     <div className="flex flex-col  h-full ">
       <Header title={getTitleFromPath(pathname)} />
@@ -132,7 +151,7 @@ export default function HomePage() {
               iconColor: "text-2xl",
             }))}
             selectedPrompt={selectedPrompt}
-            onSelect={(id) => setSelectedPrompt(id)}
+            onSelect={handlePromptSelect}
           />
         </div>
       </main>
@@ -140,9 +159,13 @@ export default function HomePage() {
       {/* Chat Input Footer */}
       <InputFooter
         placeholder="Ask me to optimize your LinkedIn..."
-        onSend={(message) => console.log("Sent:", message)}
-        onAttach={() => console.log("Attach clicked")}
+        onSend={(message) => {
+          const encodedPrompt = encodeURIComponent(message);
+          router.push(`/career/chat?context=career&prompt=${encodedPrompt}`);
+        }}
+        onAttach={() => {}}
         context="career"
+        initialValue={inputValue}
       />
     </div>
   );

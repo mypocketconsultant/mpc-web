@@ -45,13 +45,21 @@ interface ResumeFormProps {
   onProfileChange?: (field: keyof ProfileData, value: string) => void;
   educations?: EducationData[];
   onAddEducation?: () => void;
-  onUpdateEducation?: (index: number, field: keyof EducationData, value: string) => void;
+  onUpdateEducation?: (
+    index: number,
+    field: keyof EducationData,
+    value: string,
+  ) => void;
   onDeleteEducation?: (index: number) => void;
   expandedEducationIndex?: number | null;
   onEducationExpand?: (index: number | null) => void;
   experience?: ExperienceData[];
   onAddExperience?: () => void;
-  onUpdateExperience?: (index: number, field: keyof ExperienceData, value: string) => void;
+  onUpdateExperience?: (
+    index: number,
+    field: keyof ExperienceData,
+    value: string,
+  ) => void;
   onDeleteExperience?: (index: number) => void;
   expandedSectionIndex?: number | null;
   onExperienceExpand?: (index: number | null) => void;
@@ -177,18 +185,22 @@ export default function ResumeForm({
 
   // Convenience getters that prefer lifted props
   const currentStep = propCurrentStep !== undefined ? propCurrentStep : 1;
-  const documentTitle = propDocumentTitle !== undefined ? propDocumentTitle : "";
+  const documentTitle =
+    propDocumentTitle !== undefined ? propDocumentTitle : "";
   const profile = propProfile || INITIAL_PROFILE;
   const educations = propEducations || [];
   const experience = propExperience || [];
   const skills = propSkills || ["Interview", "Career", "Design"];
-  const expandedEducationIndex = propExpandedEducationIndex !== undefined ? propExpandedEducationIndex : null;
-  const expandedSectionIndex = propExpandedSectionIndex !== undefined ? propExpandedSectionIndex : null;
+  const expandedEducationIndex =
+    propExpandedEducationIndex !== undefined
+      ? propExpandedEducationIndex
+      : null;
+  const expandedSectionIndex =
+    propExpandedSectionIndex !== undefined ? propExpandedSectionIndex : null;
 
   // Initialize form with data when initialFormData is provided
   React.useEffect(() => {
     if (initialFormData) {
-      console.log('[ResumeForm] Initializing form with data:', initialFormData);
       if (initialFormData.documentTitle && onDocumentTitleChange) {
         onDocumentTitleChange(initialFormData.documentTitle);
       }
@@ -197,31 +209,43 @@ export default function ResumeForm({
           onProfileChange(key as keyof ProfileData, value as string);
         });
       }
-      if (initialFormData.educations && initialFormData.educations.length > 0 && onUpdateEducation) {
+      if (
+        initialFormData.educations &&
+        initialFormData.educations.length > 0 &&
+        onUpdateEducation
+      ) {
         initialFormData.educations.forEach((edu, idx) => {
           Object.entries(edu).forEach(([key, value]) => {
             onUpdateEducation(idx, key as keyof EducationData, value as string);
           });
         });
       }
-      if (initialFormData.skills && initialFormData.skills.length > 0 && onSkillsChange) {
+      if (
+        initialFormData.skills &&
+        initialFormData.skills.length > 0 &&
+        onSkillsChange
+      ) {
         onSkillsChange(initialFormData.skills);
       }
-      console.log('[ResumeForm] Form initialized successfully');
     }
-  }, [initialFormData, onDocumentTitleChange, onProfileChange, onUpdateEducation, onSkillsChange]);
+  }, [
+    initialFormData,
+    onDocumentTitleChange,
+    onProfileChange,
+    onUpdateEducation,
+    onSkillsChange,
+  ]);
 
   // Watch for reset trigger and reset to step 1
   React.useEffect(() => {
     if (resetTrigger !== undefined && onStepChange) {
       onStepChange(1);
-      console.log('[ResumeForm] Form reset to step 1');
     }
   }, [resetTrigger, onStepChange]);
 
   const handleProfileChange = (
     field: keyof ProfileData,
-    value: string
+    value: string,
   ): void => {
     if (onProfileChange) {
       onProfileChange(field, value);
@@ -237,7 +261,7 @@ export default function ResumeForm({
   const handleUpdateEducation = (
     index: number,
     field: keyof EducationData,
-    value: string
+    value: string,
   ): void => {
     if (onUpdateEducation) {
       onUpdateEducation(index, field, value);
@@ -259,7 +283,7 @@ export default function ResumeForm({
   const handleUpdateExperience = (
     index: number,
     field: keyof ExperienceData,
-    value: string
+    value: string,
   ): void => {
     if (onUpdateExperience) {
       onUpdateExperience(index, field, value);
@@ -275,13 +299,17 @@ export default function ResumeForm({
   const handleNext = async (): Promise<void> => {
     if (currentStep < 4) {
       // Validate step 2 (education) before moving forward
-      if (currentStep === 2 && (educations.length < 1 || educations.length > 9)) {
-        console.error("Education must be between 1 and 9");
+      if (
+        currentStep === 2 &&
+        (educations.length < 1 || educations.length > 9)
+      ) {
         return;
       }
       // Validate step 3 (experience) before moving forward
-      if (currentStep === 3 && (experience.length < 1 || experience.length > 9)) {
-        console.error("Experience must be between 1 and 9");
+      if (
+        currentStep === 3 &&
+        (experience.length < 1 || experience.length > 9)
+      ) {
         return;
       }
       if (onStepChange) {
@@ -290,22 +318,18 @@ export default function ResumeForm({
     } else {
       // Validate final step before submission
       if (educations.length < 1 || educations.length > 9) {
-        console.error("Education must be between 1 and 9");
         return;
       }
       if (experience.length < 1 || experience.length > 9) {
-        console.error("Experience must be between 1 and 9");
         return;
       }
       if (skills.length < 1) {
-        console.error("At least one skill is required");
         return;
       }
 
       // Submit resume to backend
       setIsSubmitting(true);
       try {
-        console.log("[ResumeForm] Stage 1: Preparing payload");
         const payload = {
           title: documentTitle || "My Resume",
           profile,
@@ -313,53 +337,35 @@ export default function ResumeForm({
           experience,
           skills,
         };
-        console.log("[ResumeForm] Stage 2: Payload prepared", payload);
 
         // Check if updating existing resume or creating new one
-        const currentResumeId = typeof window !== 'undefined' ? sessionStorage.getItem('currentResumeId') : null;
-        console.log("[ResumeForm] Stage 2.5: currentResumeId from sessionStorage:", currentResumeId);
+        const currentResumeId =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("currentResumeId")
+            : null;
 
         let apiUrl: string;
         if (currentResumeId) {
           // Update existing resume
           apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${currentResumeId}/update`;
-          console.log("[ResumeForm] Stage 3: Updating existing resume at", apiUrl);
         } else {
           // Create new resume
           apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/submit`;
-          console.log("[ResumeForm] Stage 3: Creating new resume at", apiUrl);
         }
 
-        const response = await axios.post(
-          apiUrl,
-          payload,
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log("[ResumeForm] Stage 4: Response received from backend", response.data);
+        const response = await axios.post(apiUrl, payload, {
+          withCredentials: true,
+        });
 
         // Extract resumeId, resumeData and full response data from response
         const resumeId = response.data?.data?.resume?.id;
         const resumeData = response.data?.data?.resume;
         const responseData = response.data?.data;
 
-        console.log("[ResumeForm] Stage 5: Extracted resumeId:", resumeId);
-        console.log("[ResumeForm] Stage 6: Extracted resumeData:", resumeData);
-        console.log("[ResumeForm] Stage 7: Extracted responseData with messages:", responseData?.messages?.length, "messages");
-
         // Pass to parent component
-        console.log("[ResumeForm] Stage 8: Calling onNext callback");
         onNext?.(resumeId, resumeData, responseData);
-        console.log("[ResumeForm] Stage 9: Resume submission complete");
         setIsSubmitting(false);
       } catch (error) {
-        console.error("[ResumeForm] ERROR at submission stage:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("[ResumeForm] Axios error status:", error.response?.status);
-          console.error("[ResumeForm] Axios error response:", error.response?.data);
-        }
         setIsSubmitting(false);
       }
     }
@@ -394,7 +400,11 @@ export default function ResumeForm({
             <button
               onClick={onDownloadResume}
               disabled={!resumeId}
-              title={resumeId ? "Download resume as PDF" : "Create or load a resume first"}
+              title={
+                resumeId
+                  ? "Download resume as PDF"
+                  : "Create or load a resume first"
+              }
               className="px-6 py-2 rounded-full font-bold text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Download Resume
@@ -504,7 +514,10 @@ export default function ResumeForm({
             (currentStep === 1 && !isProfileValid(profile)) ||
             (currentStep === 2 && !areAllEducationsValid(educations)) ||
             (currentStep === 3 && !areAllExperiencesValid(experience)) ||
-            (currentStep === 4 && (!areAllEducationsValid(educations) || !areAllExperiencesValid(experience) || !areSkillsValid(skills)))
+            (currentStep === 4 &&
+              (!areAllEducationsValid(educations) ||
+                !areAllExperiencesValid(experience) ||
+                !areSkillsValid(skills)))
           }
           className="px-6 py-3 bg-[#5A3FFF] text-white rounded-lg font-bold hover:bg-[#4a2fe0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           aria-label={isLastStep() ? "Complete resume" : "Go to next step"}
@@ -557,7 +570,9 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
           value={profile.firstName}
           onChange={(e) => onChange("firstName", e.target.value)}
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-            profile.firstName.trim() === "" ? "border-red-300" : "border-gray-300"
+            profile.firstName.trim() === ""
+              ? "border-red-300"
+              : "border-gray-300"
           }`}
           aria-label="First name"
         />
@@ -573,7 +588,9 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
           value={profile.lastName}
           onChange={(e) => onChange("lastName", e.target.value)}
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-            profile.lastName.trim() === "" ? "border-red-300" : "border-gray-300"
+            profile.lastName.trim() === ""
+              ? "border-red-300"
+              : "border-gray-300"
           }`}
           aria-label="Last name"
         />
@@ -592,12 +609,16 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
               value={profile.phoneNumber}
               onChange={(e) => onChange("phoneNumber", e.target.value)}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                profile.phoneNumber.trim() === "" ? "border-red-300" : "border-gray-300"
+                profile.phoneNumber.trim() === ""
+                  ? "border-red-300"
+                  : "border-gray-300"
               }`}
               aria-label="Phone number"
             />
             {profile.phoneNumber.trim() === "" && (
-              <p className="text-xs text-red-500 mt-1">Phone number is required</p>
+              <p className="text-xs text-red-500 mt-1">
+                Phone number is required
+              </p>
             )}
           </div>
         </div>
@@ -653,7 +674,9 @@ function EducationForm({
                     <p className="text-sm font-medium text-gray-900">
                       {edu.nameOfSchool || "Untitled"}
                     </p>
-                    <p className="text-xs text-gray-600">{edu.certification || "No degree specified"}</p>
+                    <p className="text-xs text-gray-600">
+                      {edu.certification || "No degree specified"}
+                    </p>
                   </div>
                 </button>
                 <button
@@ -677,12 +700,16 @@ function EducationForm({
                         onUpdate(index, "nameOfSchool", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        edu.nameOfSchool.trim() === "" ? "border-red-300" : "border-gray-300"
+                        edu.nameOfSchool.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="School name"
                     />
                     {edu.nameOfSchool.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">School name is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        School name is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -694,12 +721,16 @@ function EducationForm({
                         onUpdate(index, "fieldOfStudy", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        edu.fieldOfStudy.trim() === "" ? "border-red-300" : "border-gray-300"
+                        edu.fieldOfStudy.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Field of study"
                     />
                     {edu.fieldOfStudy.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Field of study is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Field of study is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -711,12 +742,16 @@ function EducationForm({
                         onUpdate(index, "certification", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        edu.certification.trim() === "" ? "border-red-300" : "border-gray-300"
+                        edu.certification.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Certification or degree"
                     />
                     {edu.certification.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Certification is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Certification is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -726,12 +761,16 @@ function EducationForm({
                       value={edu.year}
                       onChange={(e) => onUpdate(index, "year", e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        edu.year.trim() === "" ? "border-red-300" : "border-gray-300"
+                        edu.year.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Graduation year"
                     />
                     {edu.year.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Year is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Year is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -739,20 +778,20 @@ function EducationForm({
                       placeholder="Description"
                       value={edu.descriptionGraduation}
                       onChange={(e) =>
-                        onUpdate(
-                          index,
-                          "descriptionGraduation",
-                          e.target.value
-                        )
+                        onUpdate(index, "descriptionGraduation", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none ${
-                        edu.descriptionGraduation.trim() === "" ? "border-red-300" : "border-gray-300"
+                        edu.descriptionGraduation.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       rows={3}
                       aria-label="Education description"
                     />
                     {edu.descriptionGraduation.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Description is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Description is required
+                      </p>
                     )}
                   </div>
                 </div>
@@ -774,14 +813,10 @@ function EducationForm({
 
       {/* Validation Messages */}
       {educations.length === 0 && (
-        <p className="text-xs text-red-500">
-          At least 1 education is required
-        </p>
+        <p className="text-xs text-red-500">At least 1 education is required</p>
       )}
       {educations.length > 9 && (
-        <p className="text-xs text-red-500">
-          Maximum 9 educations allowed
-        </p>
+        <p className="text-xs text-red-500">Maximum 9 educations allowed</p>
       )}
     </div>
   );
@@ -834,7 +869,9 @@ function ExperienceForm({
                     <p className="text-sm font-medium text-gray-900">
                       {exp.company || "Untitled"}
                     </p>
-                    <p className="text-xs text-gray-600">{exp.role || "No role specified"}</p>
+                    <p className="text-xs text-gray-600">
+                      {exp.role || "No role specified"}
+                    </p>
                   </div>
                 </button>
                 <button
@@ -858,12 +895,16 @@ function ExperienceForm({
                         onUpdate(index, "company", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        exp.company.trim() === "" ? "border-red-300" : "border-gray-300"
+                        exp.company.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Company name"
                     />
                     {exp.company.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Company name is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Company name is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -873,12 +914,16 @@ function ExperienceForm({
                       value={exp.role}
                       onChange={(e) => onUpdate(index, "role", e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        exp.role.trim() === "" ? "border-red-300" : "border-gray-300"
+                        exp.role.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Job role"
                     />
                     {exp.role.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Role is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Role is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -890,12 +935,16 @@ function ExperienceForm({
                         onUpdate(index, "location", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        exp.location.trim() === "" ? "border-red-300" : "border-gray-300"
+                        exp.location.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Job location"
                     />
                     {exp.location.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Location is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Location is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -905,12 +954,16 @@ function ExperienceForm({
                       value={exp.date}
                       onChange={(e) => onUpdate(index, "date", e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 ${
-                        exp.date.trim() === "" ? "border-red-300" : "border-gray-300"
+                        exp.date.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       aria-label="Employment date"
                     />
                     {exp.date.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Date is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Date is required
+                      </p>
                     )}
                   </div>
                   <div>
@@ -918,20 +971,20 @@ function ExperienceForm({
                       placeholder="Description experience"
                       value={exp.descriptionExperience}
                       onChange={(e) =>
-                        onUpdate(
-                          index,
-                          "descriptionExperience",
-                          e.target.value
-                        )
+                        onUpdate(index, "descriptionExperience", e.target.value)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900 resize-none ${
-                        exp.descriptionExperience.trim() === "" ? "border-red-300" : "border-gray-300"
+                        exp.descriptionExperience.trim() === ""
+                          ? "border-red-300"
+                          : "border-gray-300"
                       }`}
                       rows={3}
                       aria-label="Experience description"
                     />
                     {exp.descriptionExperience.trim() === "" && (
-                      <p className="text-xs text-red-500 mt-1">Description is required</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        Description is required
+                      </p>
                     )}
                   </div>
                 </div>
@@ -958,9 +1011,7 @@ function ExperienceForm({
         </p>
       )}
       {experiences.length > 9 && (
-        <p className="text-xs text-red-500">
-          Maximum 9 experiences allowed
-        </p>
+        <p className="text-xs text-red-500">Maximum 9 experiences allowed</p>
       )}
     </div>
   );

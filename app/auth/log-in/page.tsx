@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useState } from "react";
@@ -13,7 +15,9 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -49,15 +53,13 @@ export default function LoginPage() {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
         { idToken },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       setValidationErrors({});
-      showToast('success', 'Login successful!');
+      showToast("success", "Login successful!");
       router.push("/home");
     } catch (error: any) {
-      console.error("[Auth] Login error:", error);
-
       let errorMessage = "Login failed. Please try again.";
 
       if (error.code === "auth/user-not-found") {
@@ -68,7 +70,7 @@ export default function LoginPage() {
         errorMessage = error.response?.data?.message || errorMessage;
       }
 
-      showToast('error', errorMessage);
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -77,24 +79,37 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
+      const { signInWithPopup, GoogleAuthProvider } =
+        await import("firebase/auth");
       const provider = new GoogleAuthProvider();
 
       const result = await signInWithPopup(auth, provider);
-
       const idToken = await result.user.getIdToken();
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
+      // Call unified /google endpoint
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/google`,
         { idToken },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
+      // Check if profile is required (new user)
+      if (response.data?.profileRequired) {
+        // New user — redirect to getting-started
+        sessionStorage.setItem("googleIdToken", idToken);
+        router.push("/auth/getting-started?authType=google");
+        return;
+      }
+
+      // Existing user — logged in successfully
       setValidationErrors({});
-      showToast('success', 'Login successful!');
+      showToast("success", "Login successful!");
       router.push("/home");
     } catch (error: any) {
-      console.error("[Auth] Google login error:", error);
+      if (error.code === "auth/popup-closed-by-user") {
+        // User closed the popup - no action needed
+        return;
+      }
 
       let errorMessage = "Google login failed";
       if (axios.isAxiosError(error)) {
@@ -103,7 +118,7 @@ export default function LoginPage() {
         errorMessage = error.message;
       }
 
-      showToast('error', errorMessage);
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +126,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-white"
+      className="min-h-screen flex items-center justify-center bg-white px-4 py-8"
       style={{
         backgroundImage: "url('/background.svg')",
         backgroundRepeat: "no-repeat",
@@ -119,30 +134,34 @@ export default function LoginPage() {
         backgroundPosition: "center",
       }}
     >
-      <div className="flex items-center justify-between w-full max-w-4xl px-8">
+      <div className="flex flex-col lg:flex-row items-center justify-between w-full max-w-4xl gap-8 lg:gap-12 lg:px-8">
         {/* Left side - Logo and tagline */}
         <div className="flex flex-col items-center">
           <Image
             src="/logo.svg"
             alt="Logo"
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56"
             style={{
               borderRadius: "4rem",
-              width: `${(299 / 1728) * 100}vw`,
-              height: `${(299 / 1117) * 100}vh`,
             }}
             width={299}
             height={299}
           />
-          <p className="text-center font-display font-semibold text-[3rem] leading-[3rem] tracking-normal text-[#5A3FFF] mt-4">
+          <p className="text-center font-display font-semibold text-xl sm:text-2xl md:text-3xl lg:text-[3rem] lg:leading-[3rem] tracking-normal text-[#5A3FFF] mt-4">
             Intelligent Counsel, <br /> Anytime, Anywhere.
           </p>
         </div>
 
         {/* Right side - Login form */}
-        <div className="flex flex-col items-center space-y-6 w-full max-w-sm">
-          <h2 className="text-2xl font-bold text-[#5A3FFF] font-railway">Log In</h2>
+        <div className="flex flex-col items-center space-y-4 sm:space-y-6 w-full max-w-sm">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#5A3FFF] font-railway">
+            Log In
+          </h2>
 
-          <form className="w-full space-y-4" onSubmit={handleEmailLogin}>
+          <form
+            className="w-full space-y-3 sm:space-y-4"
+            onSubmit={handleEmailLogin}
+          >
             {/* Email field */}
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium text-gray-700">Email</label>
@@ -156,7 +175,7 @@ export default function LoginPage() {
                   }
                 }}
                 placeholder="Enter your email"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm"
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm w-full"
               />
               {validationErrors.email && (
                 <p className="text-xs text-red-500">{validationErrors.email}</p>
@@ -165,7 +184,9 @@ export default function LoginPage() {
 
             {/* Password field */}
             <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
+              <label className="text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
@@ -176,16 +197,20 @@ export default function LoginPage() {
                   }
                 }}
                 placeholder="Enter your password"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm"
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm w-full"
               />
               {validationErrors.password && (
-                <p className="text-xs text-red-500">{validationErrors.password}</p>
+                <p className="text-xs text-red-500">
+                  {validationErrors.password}
+                </p>
               )}
             </div>
 
             {/* Submit error */}
             {validationErrors.submit && (
-              <p className="text-xs text-red-500 text-center">{validationErrors.submit}</p>
+              <p className="text-xs text-red-500 text-center">
+                {validationErrors.submit}
+              </p>
             )}
 
             {/* Login button */}
@@ -221,7 +246,7 @@ export default function LoginPage() {
 
           {/* Sign up link */}
           <p className="text-sm text-gray-600 text-center">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <button
               onClick={() => router.push("/auth/sign-up")}
               className="text-[#5A3FFF] font-bold hover:underline"

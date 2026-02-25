@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import Header from "@/app/components/header";
-import PlannerCalendar, { DayData, DayEntry } from "../components/PlannerCalendar";
+import PlannerCalendar, {
+  DayData,
+  DayEntry,
+} from "../components/PlannerCalendar";
 import { apiService } from "@/lib/api/apiService";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
@@ -34,17 +37,14 @@ export default function LifePlannerPage() {
   const { toast, showToast } = useToast();
 
   const handleEntryClick = (planId: string) => {
-    console.log('[LifePlannerPage] Navigating to edit plan:', planId);
-    sessionStorage.setItem('currentGoalPlanId', planId);
-    router.push('/Life/new-goal');
+    sessionStorage.setItem("currentGoalPlanId", planId);
+    router.push("/Life/new-goal");
   };
 
   useEffect(() => {
     const fetchPlans = async () => {
-      console.log('[LifePlannerPage] Fetching plans...');
       try {
-        const response: any = await apiService.get('/v1/life/plans');
-        console.log('[LifePlannerPage] Raw response:', response);
+        const response: any = await apiService.get("/v1/life/plans");
 
         // Extract plans from response - handle nested data structure
         let plans: Plan[] = response?.data?.items || response?.items || [];
@@ -52,14 +52,11 @@ export default function LifePlannerPage() {
           plans = [];
         }
 
-        console.log('[LifePlannerPage] Plans fetched:', plans.length, 'items');
-
         // Transform plans to calendar events grouped by date
         const calendarEvents = transformPlansToCalendarEvents(plans);
         setEvents(calendarEvents);
       } catch (error) {
-        console.error('[LifePlannerPage] Failed to fetch plans:', error);
-        showToast('error', 'Failed to load plans');
+        showToast("error", "Failed to load plans");
         setEvents([]);
       } finally {
         setIsLoading(false);
@@ -70,16 +67,30 @@ export default function LifePlannerPage() {
   }, [showToast]);
 
   const transformPlansToCalendarEvents = (plans: Plan[]): DayData[] => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Group plans by date
-    const groupedByDate: Record<string, { date: Date; entries: DayEntry[] }> = {};
+    const groupedByDate: Record<string, { date: Date; entries: DayEntry[] }> =
+      {};
 
     plans.forEach((plan, index) => {
       const createdDate = new Date(plan.created_at);
-      const dateKey = createdDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dateKey = createdDate.toISOString().split("T")[0]; // YYYY-MM-DD
 
       if (!groupedByDate[dateKey]) {
         groupedByDate[dateKey] = {
@@ -91,11 +102,18 @@ export default function LifePlannerPage() {
       const entry: DayEntry = {
         id: index + 1,
         planId: plan.id,
-        title: plan.goal || plan.name || 'Untitled Plan',
-        time: createdDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        title: plan.goal || plan.name || "Untitled Plan",
+        time: createdDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
         description: plan.steps?.[0]?.description || `${plan.horizon} plan`,
-        type: 'goal',
-        leftBorder: plan.status === 'active' ? 'border-l-4 border-l-indigo-400' : 'border-l-4 border-l-gray-400',
+        type: "goal",
+        leftBorder:
+          plan.status === "active"
+            ? "border-l-4 border-l-indigo-400"
+            : "border-l-4 border-l-gray-400",
       };
 
       groupedByDate[dateKey].entries.push(entry);

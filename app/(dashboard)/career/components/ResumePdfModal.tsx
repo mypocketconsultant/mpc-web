@@ -23,30 +23,22 @@ export default function ResumePdfModal({
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  React.useEffect(() => {
-    console.log("[ResumePdfModal] isOpen changed:", isOpen, "resumeId:", resumeId, "resumeTitle:", resumeTitle);
-  }, [isOpen, resumeId, resumeTitle]);
-
   const handleProcessPdf = async () => {
     setState("loading");
     try {
-      console.log("[ResumePdfModal] Fetching PDF for resumeId:", resumeId);
-
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${resumeId}/export-pdf`,
         {
           responseType: "blob",
           withCredentials: true,
-        }
+        },
       );
 
-      console.log("[ResumePdfModal] PDF received, size:", response.data.size);
       const pdfBlob = response.data as Blob;
       const pdfBlobUrl = URL.createObjectURL(pdfBlob);
       setPdfUrl(pdfBlobUrl);
       setState("success");
     } catch (error) {
-      console.error("[ResumePdfModal] Error fetching PDF:", error);
       const message =
         axios.isAxiosError(error) && error.response?.status === 404
           ? "Resume not found"
@@ -133,7 +125,9 @@ export default function ResumePdfModal({
           {state === "loading" && (
             <div className="text-center space-y-6 max-w-md w-full">
               <div>
-                <p className="text-gray-600 text-lg mb-4">Generating your PDF...</p>
+                <p className="text-gray-600 text-lg mb-4">
+                  Generating your PDF...
+                </p>
                 {/* Indeterminate Progress Bar */}
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div className="h-full bg-[#5A3FFF] animate-pulse w-full"></div>
