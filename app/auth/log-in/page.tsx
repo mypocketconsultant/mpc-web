@@ -10,11 +10,13 @@ import { auth } from "@/lib/firebase";
 import axios from "axios";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
   }>({});
@@ -187,18 +189,27 @@ export default function LoginPage() {
               <label className="text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (validationErrors.password) {
-                    setValidationErrors({ ...validationErrors, password: "" });
-                  }
-                }}
-                placeholder="Enter your password"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm w-full"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (validationErrors.password) {
+                      setValidationErrors({ ...validationErrors, password: "" });
+                    }
+                  }}
+                  placeholder="Enter your password"
+                  className="px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:border-[#5A3FFF] focus:ring-2 focus:ring-[#5A3FFF] focus:ring-opacity-20 font-railway text-sm w-full"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p className="text-xs text-red-500">
                   {validationErrors.password}

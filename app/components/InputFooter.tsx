@@ -10,7 +10,7 @@ interface InputFooterProps {
   onSend?: (message: string) => void;
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
-  context: "career" | "life" | "study";
+  context: "career" | "life" | "study" | "business-consultancy";
   initialValue?: string;
   isRecording?: boolean;
   isTranscribing?: boolean;
@@ -66,6 +66,9 @@ export default function InputFooter({
       chatUrl = "/Life/chat";
     } else if (context === "study") {
       chatUrl = "/study/chat?context=study";
+    } else if (context === "business-consultancy") {
+      chatUrl =
+        "/modules/business-consultancy/chat?context=business-consultancy";
     }
     router.push(chatUrl);
   };
@@ -105,8 +108,8 @@ export default function InputFooter({
               isRecording
                 ? "bg-red-500"
                 : isTranscribing
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-br from-purple-600 to-purple-800"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-br from-purple-600 to-purple-800"
             }`}
             style={
               isRecording
@@ -119,8 +122,8 @@ export default function InputFooter({
               isRecording
                 ? "Stop recording"
                 : isTranscribing
-                ? "Transcribing..."
-                : "Voice input"
+                  ? "Transcribing..."
+                  : "Voice input"
             }
           >
             {isTranscribing ? (

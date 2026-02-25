@@ -64,12 +64,12 @@ export default function DashboardLayout({
       href={href}
       className={`flex items-center gap-3 px-2 py-4 rounded-full transition-all font-medium ${
         active
-          ? "bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg"
+          ? "bg-linear-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg shrink-0"
           : "text-gray-700 hover:bg-gray-100"
       }`}
       style={active ? { backgroundColor: "#5A3FFF" } : {}}
     >
-      <Icon className="h-[17px] w-[17px] flex-shrink-0" />
+      <Icon className="h-[17px] w-[17px] shrink-0" />
       {sidebarOpen && <span className="text-sm">{label}</span>}
     </Link>
   );
