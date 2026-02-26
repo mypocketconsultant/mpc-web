@@ -127,7 +127,8 @@ function SignupContent() {
     } catch (error: unknown) {
       const err = error as any;
       const errorMessage =
-        err?.response?.data?.message || (error instanceof Error ? error.message : "An error occurred");
+        err?.response?.data?.message ||
+        (error instanceof Error ? error.message : "An error occurred");
       showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
@@ -161,7 +162,8 @@ function SignupContent() {
     } catch (error: unknown) {
       const err = error as any;
       const errorMessage =
-        err?.response?.data?.message || (error instanceof Error ? error.message : "An error occurred");
+        err?.response?.data?.message ||
+        (error instanceof Error ? error.message : "An error occurred");
       showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
@@ -191,7 +193,12 @@ function SignupContent() {
     setValidationErrors({});
     const effectiveAuthType = storedAuthType || authType;
     const minStep = effectiveAuthType === "google" ? 3 : 1;
-    setStep(Math.max(currentStep - 1, minStep));
+
+    if (currentStep <= minStep) {
+      router.back();
+    } else {
+      setStep(currentStep - 1);
+    }
   };
 
   if (!isHydrated) {
