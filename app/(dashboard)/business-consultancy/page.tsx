@@ -46,7 +46,7 @@ export default function BusinessConsultancyPage() {
       title: "Chat with Ai Agent",
       icon: <Image src={aiIcon} alt="AI" width={32} height={32} />,
       color: "from-[#E6E4FF] to-[#E6E4FF]",
-      href: "/business-consultancy/chat?context=business-consultancy",
+      href: "/business-consultancy/chat",
     },
     {
       id: "resources",
@@ -86,7 +86,7 @@ export default function BusinessConsultancyPage() {
     if (prompt) {
       const encodedPrompt = encodeURIComponent(prompt.title);
       router.push(
-        `/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
+        `/business-consultancy/chat?prompt=${encodedPrompt}`,
       );
     }
   };
@@ -137,7 +137,7 @@ export default function BusinessConsultancyPage() {
         onSend={(message) => {
           const encodedPrompt = encodeURIComponent(message);
           router.push(
-            `/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
+            `/business-consultancy/chat?prompt=${encodedPrompt}`,
           );
         }}
         onAttach={() => {}}

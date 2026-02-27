@@ -9,7 +9,6 @@ import {
   Trash2,
   MoreVertical,
   Plus,
-  X,
   FileText,
   Loader2,
 } from "lucide-react";
@@ -25,156 +24,92 @@ import {
   publishCanvas,
 } from "./canvasApi";
 
-interface BlockData {
-  title: string;
-  content: string;
-  color: string;
-  colSpan?: number;
+// ── Types ────────────────────────────────────────────────
+
+/** What the backend stores per block: a list of strings */
+type ApiBlocks = Record<string, string[]>;
+
+/** UI metadata for each of the 9 fixed canvas sections (never sent to API) */
+interface BlockMeta {
+  key: string;        // backend key e.g. "customer_segments"
+  title: string;      // display name
+  placeholder: string;
+  color: string;      // tailwind bg class
+  colSpan: number;
 }
 
-type BlocksMap = Record<string, BlockData>;
-
+/** Local state per block: backend key + editable text + UI metadata */
 interface CanvasBlock {
-  id: string;
+  key: string;        // matches backend key
   title: string;
-  content: string;
+  content: string;    // textarea value — joined from string[] with newlines
   placeholder: string;
   color: string;
-  colSpan?: number;
+  colSpan: number;
 }
 
-const DEFAULT_BLOCKS: CanvasBlock[] = [
-  { id: "cs", title: "Customer Segments", content: "", placeholder: "Who are you serving?", color: "bg-indigo-100", colSpan: 1 },
-  { id: "vp", title: "Value Propositions", content: "", placeholder: "What problem are you solving?", color: "bg-yellow-200", colSpan: 2 },
-  { id: "ch", title: "Channels", content: "", placeholder: "How do they reach you?", color: "bg-yellow-400", colSpan: 1 },
-  { id: "rs", title: "Revenue Streams", content: "", placeholder: "How do you make money?", color: "bg-green-100", colSpan: 1 },
-  { id: "cr", title: "Customer Relationships", content: "", placeholder: "What support or loyalty model?", color: "bg-indigo-100", colSpan: 1 },
-  { id: "kr", title: "Key Resources", content: "", placeholder: "What assets do you need?", color: "bg-green-100", colSpan: 1 },
-  { id: "ka", title: "Key Activities", content: "", placeholder: "Core actions to deliver the value", color: "bg-indigo-100", colSpan: 1 },
-  { id: "kp", title: "Key Partnerships", content: "", placeholder: "Who helps you?", color: "bg-yellow-200", colSpan: 2 },
-  { id: "cs2", title: "Cost Structure", content: "", placeholder: "Main expenses (staff, cloud, marketing, logistics)", color: "bg-indigo-100", colSpan: 1 },
+// ── Constants (UI-only, never sent to backend) ───────────
+
+const BLOCK_META: BlockMeta[] = [
+  { key: "customer_segments",      title: "Customer Segments",      placeholder: "Who are you serving?",                              color: "bg-indigo-100",  colSpan: 1 },
+  { key: "value_propositions",     title: "Value Propositions",     placeholder: "What problem are you solving?",                     color: "bg-yellow-200",  colSpan: 2 },
+  { key: "channels",               title: "Channels",               placeholder: "How do they reach you?",                            color: "bg-yellow-400",  colSpan: 1 },
+  { key: "revenue_streams",        title: "Revenue Streams",        placeholder: "How do you make money?",                            color: "bg-green-100",   colSpan: 1 },
+  { key: "customer_relationships", title: "Customer Relationships", placeholder: "What support or loyalty model?",                    color: "bg-indigo-100",  colSpan: 1 },
+  { key: "key_resources",          title: "Key Resources",          placeholder: "What assets do you need?",                          color: "bg-green-100",   colSpan: 1 },
+  { key: "key_activities",         title: "Key Activities",         placeholder: "Core actions to deliver the value",                  color: "bg-indigo-100",  colSpan: 1 },
+  { key: "key_partnerships",       title: "Key Partnerships",       placeholder: "Who helps you?",                                    color: "bg-yellow-200",  colSpan: 2 },
+  { key: "cost_structure",         title: "Cost Structure",         placeholder: "Main expenses (staff, cloud, marketing, logistics)", color: "bg-indigo-100",  colSpan: 1 },
 ];
 
-function blocksMapToArray(blocksMap: BlocksMap): CanvasBlock[] {
-  const placeholderMap: Record<string, string> = Object.fromEntries(
-    DEFAULT_BLOCKS.map((b) => [b.id, b.placeholder])
-  );
-  return Object.entries(blocksMap).map(([id, data]) => ({
-    id,
-    title: data.title,
-    content: data.content,
-    color: data.color,
-    colSpan: data.colSpan,
-    placeholder: placeholderMap[id] ?? "Add notes...",
+const META_BY_KEY: Record<string, BlockMeta> = Object.fromEntries(
+  BLOCK_META.map((m) => [m.key, m])
+);
+
+// ── Conversion helpers ───────────────────────────────────
+
+/** Build local CanvasBlock[] from API blocks (Record<string, string[]>) */
+function apiBlocksToLocal(apiBlocks: ApiBlocks): CanvasBlock[] {
+  return BLOCK_META.map((meta) => {
+    const items = apiBlocks[meta.key] ?? [];
+    return {
+      key: meta.key,
+      title: meta.title,
+      content: items.join("\n"),
+      placeholder: meta.placeholder,
+      color: meta.color,
+      colSpan: meta.colSpan,
+    };
+  });
+}
+
+/** Build API blocks (Record<string, string[]>) from local CanvasBlock[] */
+function localBlocksToApi(blocks: CanvasBlock[]): ApiBlocks {
+  const result: ApiBlocks = {};
+  for (const block of blocks) {
+    // Split textarea by newlines, trim each line, drop empties
+    const lines = block.content
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    result[block.key] = lines;
+  }
+  return result;
+}
+
+/** Default empty local blocks (used when creating a new canvas) */
+function defaultLocalBlocks(): CanvasBlock[] {
+  return BLOCK_META.map((meta) => ({
+    key: meta.key,
+    title: meta.title,
+    content: "",
+    placeholder: meta.placeholder,
+    color: meta.color,
+    colSpan: meta.colSpan,
   }));
 }
 
-function blocksArrayToMap(blocks: CanvasBlock[]): BlocksMap {
-  return Object.fromEntries(
-    blocks.map(({ id, title, content, color, colSpan }) => [
-      id,
-      { title, content, color, ...(colSpan !== undefined ? { colSpan } : {}) },
-    ])
-  );
-}
-
-function AddCardModal({
-  onClose,
-  onAdd,
-}: {
-  onClose: () => void;
-  onAdd: (block: CanvasBlock) => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [color, setColor] = useState("bg-indigo-100");
-
-  const COLORS = [
-    { label: "Indigo", value: "bg-indigo-100" },
-    { label: "Yellow", value: "bg-yellow-200" },
-    { label: "Gold", value: "bg-yellow-400" },
-    { label: "Green", value: "bg-green-100" },
-    { label: "Purple", value: "bg-purple-100" },
-    { label: "Pink", value: "bg-pink-100" },
-  ];
-
-  const handleSubmit = () => {
-    if (!title.trim()) return;
-    const id = `custom_${Date.now()}`;
-    onAdd({
-      id,
-      title: title.trim(),
-      content: "",
-      placeholder: "Add notes...",
-      color,
-      colSpan: 1,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-gray-900">Add Card</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">
-              Card Title
-            </label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors"
-              placeholder="e.g. Risk Factors"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-2 block">
-              Color
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setColor(c.value)}
-                  className={`w-7 h-7 rounded-full ${c.value} border-2 transition-all ${
-                    color === c.value
-                      ? "border-[#5A3FFF] scale-110"
-                      : "border-transparent"
-                  }`}
-                  title={c.label}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!title.trim()}
-            className="flex-1 bg-[#5A3FFF] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#4930e8] disabled:opacity-50 transition-colors"
-          >
-            Add Card
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ── Page content ─────────────────────────────────────────
 
 function CanvasPageContent() {
   const router = useRouter();
@@ -186,7 +121,7 @@ function CanvasPageContent() {
   const [canvasId, setCanvasId] = useState<string | null>(null);
   const [canvasStatus, setCanvasStatus] = useState<"draft" | "published">("draft");
   const [documentTitle, setDocumentTitle] = useState("");
-  const [blocks, setBlocks] = useState<CanvasBlock[]>(DEFAULT_BLOCKS);
+  const [blocks, setBlocks] = useState<CanvasBlock[]>(defaultLocalBlocks());
 
   // Loading states
   const [isInitializing, setIsInitializing] = useState(true);
@@ -195,7 +130,6 @@ function CanvasPageContent() {
 
   // UI states
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAddCardOpen, setIsAddCardOpen] = useState(false);
 
   // Refs
   const menuRef = useRef<HTMLDivElement>(null);
@@ -206,7 +140,8 @@ function CanvasPageContent() {
     blocksRef.current = blocks;
   }, [blocks]);
 
-  // Initialization
+  // ── Initialization ──────────────────────────────────
+
   useEffect(() => {
     if (userLoading || !user) return;
 
@@ -217,29 +152,31 @@ function CanvasPageContent() {
       setIsInitializing(true);
       try {
         if (!isNew && idFromUrl) {
-          // Load existing canvas
           const canvas = await getCanvas(idFromUrl);
+          console.log("[Canvas] GET canvas from URL:", JSON.stringify(canvas, null, 2));
           setCanvasId(canvas.id);
           setDocumentTitle(canvas.title ?? "");
           setCanvasStatus(canvas.status);
           if (canvas.blocks && Object.keys(canvas.blocks).length > 0) {
-            setBlocks(blocksMapToArray(canvas.blocks));
+            console.log("[Canvas] API blocks:", JSON.stringify(canvas.blocks, null, 2));
+            console.log("[Canvas] Converted to local blocks:", apiBlocksToLocal(canvas.blocks));
+            setBlocks(apiBlocksToLocal(canvas.blocks));
           }
           sessionStorage.setItem("currentCanvasId", canvas.id);
         } else if (!isNew && sessionStorage.getItem("currentCanvasId")) {
-          // Returning to canvas (e.g., from chat)
           const savedId = sessionStorage.getItem("currentCanvasId")!;
           try {
             const canvas = await getCanvas(savedId);
+            console.log("[Canvas] GET canvas from sessionStorage:", JSON.stringify(canvas, null, 2));
             setCanvasId(canvas.id);
             setDocumentTitle(canvas.title ?? "");
             setCanvasStatus(canvas.status);
             if (canvas.blocks && Object.keys(canvas.blocks).length > 0) {
-              setBlocks(blocksMapToArray(canvas.blocks));
+              console.log("[Canvas] API blocks:", JSON.stringify(canvas.blocks, null, 2));
+              setBlocks(apiBlocksToLocal(canvas.blocks));
             }
             window.history.replaceState(null, "", `/business-consultancy/canvas?canvas_id=${savedId}`);
           } catch {
-            // Saved ID invalid, create new
             sessionStorage.removeItem("currentCanvasId");
             const canvas = await createCanvas("");
             setCanvasId(canvas.id);
@@ -247,15 +184,15 @@ function CanvasPageContent() {
             window.history.replaceState(null, "", `/business-consultancy/canvas?canvas_id=${canvas.id}`);
           }
         } else {
-          // Create new canvas
           const canvas = await createCanvas("");
+          console.log("[Canvas] POST createCanvas (new):", JSON.stringify(canvas, null, 2));
           setCanvasId(canvas.id);
           setCanvasStatus("draft");
-          setBlocks(DEFAULT_BLOCKS);
+          setBlocks(defaultLocalBlocks());
           sessionStorage.setItem("currentCanvasId", canvas.id);
           window.history.replaceState(null, "", `/business-consultancy/canvas?canvas_id=${canvas.id}`);
         }
-      } catch (err) {
+      } catch {
         showToast("error", "Failed to load canvas. Please try again.");
       } finally {
         setIsInitializing(false);
@@ -265,7 +202,8 @@ function CanvasPageContent() {
     init();
   }, [user, userLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save function
+  // ── Save ────────────────────────────────────────────
+
   const saveCanvas = useCallback(
     async (updates: { title?: string; blocks?: CanvasBlock[] }) => {
       if (!canvasId) return;
@@ -273,8 +211,10 @@ function CanvasPageContent() {
       try {
         const payload: Record<string, unknown> = {};
         if (updates.title !== undefined) payload.title = updates.title;
-        if (updates.blocks !== undefined) payload.blocks = blocksArrayToMap(updates.blocks);
-        await patchCanvas(canvasId, payload);
+        if (updates.blocks !== undefined) payload.blocks = localBlocksToApi(updates.blocks);
+        console.log("[Canvas] PATCH saveCanvas payload:", JSON.stringify(payload, null, 2));
+        const patchResult = await patchCanvas(canvasId, payload);
+        console.log("[Canvas] PATCH saveCanvas response:", JSON.stringify(patchResult, null, 2));
       } catch {
         showToast("error", "Failed to save. Please try again.");
       } finally {
@@ -284,10 +224,11 @@ function CanvasPageContent() {
     [canvasId, showToast]
   );
 
-  // Block handlers
-  const handleBlockContentChange = (blockId: string, newContent: string) => {
+  // ── Block handlers ──────────────────────────────────
+
+  const handleBlockContentChange = (blockKey: string, newContent: string) => {
     setBlocks((prev) =>
-      prev.map((b) => (b.id === blockId ? { ...b, content: newContent } : b))
+      prev.map((b) => (b.key === blockKey ? { ...b, content: newContent } : b))
     );
   };
 
@@ -295,12 +236,14 @@ function CanvasPageContent() {
     saveCanvas({ blocks: blocksRef.current });
   };
 
-  const handleDeleteBlock = (blockId: string) => {
-    const previous = [...blocks];
-    const updated = blocks.filter((b) => b.id !== blockId);
+  const handleClearBlock = (blockKey: string) => {
+    const previous = blocks.map((b) => ({ ...b }));
+    const updated = blocks.map((b) =>
+      b.key === blockKey ? { ...b, content: "" } : b
+    );
     setBlocks(updated);
     saveCanvas({ blocks: updated });
-    showToast("success", "Card removed.", {
+    showToast("success", "Card cleared.", {
       label: "Undo",
       onClick: () => {
         setBlocks(previous);
@@ -310,14 +253,8 @@ function CanvasPageContent() {
     });
   };
 
-  const handleAddCard = (newBlock: CanvasBlock) => {
-    const updated = [...blocks, newBlock];
-    setBlocks(updated);
-    saveCanvas({ blocks: updated });
-    setIsAddCardOpen(false);
-  };
+  // ── Publish ─────────────────────────────────────────
 
-  // Publish handler
   const handlePublish = async () => {
     if (!canvasId || isPublishing) return;
     if (canvasStatus === "published") {
@@ -326,13 +263,29 @@ function CanvasPageContent() {
     }
     setIsPublishing(true);
     try {
-      await patchCanvas(canvasId, {
+      const publishPatchPayload = {
         title: documentTitle,
-        blocks: blocksArrayToMap(blocks),
-      });
-      const updated = await publishCanvas(canvasId);
-      setCanvasStatus(updated.status ?? "published");
+        blocks: localBlocksToApi(blocks),
+      };
+      console.log("[Canvas] PATCH before publish payload:", JSON.stringify(publishPatchPayload, null, 2));
+      const patchRes = await patchCanvas(canvasId, publishPatchPayload);
+      console.log("[Canvas] PATCH before publish response:", JSON.stringify(patchRes, null, 2));
+      const pubRes = await publishCanvas(canvasId);
+      console.log("[Canvas] POST publish response:", JSON.stringify(pubRes, null, 2));
       showToast("success", "Canvas published successfully!");
+
+      // Reset to a fresh canvas
+      sessionStorage.removeItem("currentCanvasId");
+      setCanvasId(null);
+      setCanvasStatus("draft");
+      setDocumentTitle("");
+      setBlocks(defaultLocalBlocks());
+
+      const fresh = await createCanvas("");
+      console.log("[Canvas] POST createCanvas (post-publish reset):", JSON.stringify(fresh, null, 2));
+      setCanvasId(fresh.id);
+      sessionStorage.setItem("currentCanvasId", fresh.id);
+      window.history.replaceState(null, "", `/business-consultancy/canvas?canvas_id=${fresh.id}`);
     } catch {
       showToast("error", "Failed to publish. Please try again.");
     } finally {
@@ -340,7 +293,8 @@ function CanvasPageContent() {
     }
   };
 
-  // Click-outside handler for menu
+  // ── Three-dot menu ──────────────────────────────────
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -361,6 +315,8 @@ function CanvasPageContent() {
     setIsMenuOpen(false);
     router.push("/business-consultancy/resources");
   };
+
+  // ── Render ──────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] md:bg-white text-gray-800">
@@ -397,7 +353,7 @@ function CanvasPageContent() {
             <button
               onClick={handlePublish}
               disabled={isPublishing || canvasStatus === "published"}
-              className={`bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2`}
+              className="bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isPublishing && <Loader2 className="h-4 w-4 animate-spin" />}
               {isPublishing ? "Publishing..." : canvasStatus === "published" ? "Published" : "Publish"}
@@ -457,9 +413,9 @@ function CanvasPageContent() {
           <div className="grid grid-cols-4 gap-4 auto-rows-min pb-4 max-w-[1100px] mx-auto">
             {blocks.map((block) => (
               <div
-                key={block.id}
+                key={block.key}
                 className="bg-white rounded-2xl flex flex-col shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
-                style={{ gridColumn: `span ${block.colSpan || 1}` }}
+                style={{ gridColumn: `span ${block.colSpan}` }}
               >
                 {/* Card Header */}
                 <div className={`flex justify-between items-center px-4 py-2 ${block.color}`}>
@@ -469,13 +425,13 @@ function CanvasPageContent() {
                   <div className="flex items-center gap-1 opacity-60 text-indigo-900">
                     <button
                       className="p-1 hover:bg-white/20 rounded-md"
-                      onClick={() => textareaRefs.current[block.id]?.focus()}
+                      onClick={() => textareaRefs.current[block.key]?.focus()}
                     >
                       <Edit2 className="h-3 w-3" />
                     </button>
                     <button
                       className="p-1 hover:bg-white/20 rounded-md"
-                      onClick={() => handleDeleteBlock(block.id)}
+                      onClick={() => handleClearBlock(block.key)}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -486,28 +442,17 @@ function CanvasPageContent() {
                 <div className="flex-1 p-4">
                   <textarea
                     ref={(el) => {
-                      textareaRefs.current[block.id] = el;
+                      textareaRefs.current[block.key] = el;
                     }}
                     placeholder={block.placeholder}
                     value={block.content}
-                    onChange={(e) => handleBlockContentChange(block.id, e.target.value)}
+                    onChange={(e) => handleBlockContentChange(block.key, e.target.value)}
                     onBlur={handleBlockBlur}
                     className="w-full h-full min-h-[80px] text-xs text-gray-700 placeholder:text-gray-300 bg-transparent border-none outline-none resize-none leading-relaxed"
                   />
                 </div>
               </div>
             ))}
-
-            {/* Add Card Button */}
-            <button
-              onClick={() => setIsAddCardOpen(true)}
-              className="col-span-1 bg-gray-100/80 hover:bg-gray-200 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-gray-400 transition-colors min-h-[140px]"
-            >
-              <div className="h-10 w-10 rounded-full border border-gray-300 flex items-center justify-center mb-2 bg-white">
-                <Plus className="h-5 w-5" />
-              </div>
-              <span className="text-sm font-medium">Add Card</span>
-            </button>
           </div>
         </div>
       </main>
@@ -525,14 +470,6 @@ function CanvasPageContent() {
           context="business-consultancy"
         />
       </div>
-
-      {/* Add Card Modal */}
-      {isAddCardOpen && (
-        <AddCardModal
-          onClose={() => setIsAddCardOpen(false)}
-          onAdd={handleAddCard}
-        />
-      )}
 
       {/* Toast */}
       <Toast toast={toast} onClose={hideToast} />

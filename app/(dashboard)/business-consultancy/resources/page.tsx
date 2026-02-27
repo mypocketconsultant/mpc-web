@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, FileText, ArrowRightCircle } from "lucide-react";
+import { ChevronLeft, FileText, ArrowRightCircle, Loader2 } from "lucide-react";
 import Header from "@/app/components/header";
 import DailyTips from "../components/DailyTips";
 import tipsIcon from "@/public/tip.png";
+import { apiService } from "@/lib/api/apiService";
 
 interface ResourceItem {
   id: string;
@@ -15,53 +16,47 @@ interface ResourceItem {
 }
 
 export default function ResourcesPage() {
-  const createdResources: ResourceItem[] = [
-    {
-      id: "1",
-      name: "SWOT-New business Name",
-      type: "Edit",
-      href: "/business-consultancy/swot",
-    },
-    {
-      id: "2",
-      name: "Business Canvas-New business Name",
-      type: "Edit",
-      href: "/business-consultancy/canvas",
-    },
-  ];
+  const [createdResources, setCreatedResources] = useState<ResourceItem[]>([]);
+  const [generatedDocuments, setGeneratedDocuments] = useState<ResourceItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const generatedDocuments: ResourceItem[] = [
-    {
-      id: "3",
-      name: "Expense repo...oct.pdf",
-      type: "see prompt history",
-      href: "#",
-    },
-    {
-      id: "4",
-      name: "Expense repo...nov.xls",
-      type: "see prompt history",
-      href: "#",
-    },
-    {
-      id: "5",
-      name: "Expense repo...dec.pdf",
-      type: "see prompt history",
-      href: "#",
-    },
-    {
-      id: "6",
-      name: "Expense repo...jan.pdf",
-      type: "see prompt history",
-      href: "#",
-    },
-    {
-      id: "7",
-      name: "Income repo...jan.pdf",
-      type: "see prompt history",
-      href: "#",
-    },
-  ];
+  useEffect(() => {
+    async function fetchResources() {
+      try {
+        const res: any = await apiService.get("/v1/business/resources");
+        const data = res?.data ?? res;
+        console.log("[Resources] raw API response:", JSON.stringify(data, null, 2));
+
+        // Map created_resources (swot + canvas)
+        const created = (data?.created_resources ?? []).map((r: any) => ({
+          id: r.id,
+          name: r.title || "Untitled",
+          type: "Edit",
+          href: r.type === "canvas"
+            ? `/business-consultancy/canvas?canvas_id=${r.id}`
+            : `/business-consultancy/swot?swot_id=${r.id}`,
+        }));
+        console.log("[Resources] created_resources mapped:", created);
+        setCreatedResources(created);
+
+        // Map generated_documents
+        const docs = (data?.generated_documents ?? []).map((d: any) => ({
+          id: d.id,
+          name: d.filename || d.title || "Untitled",
+          type: "see prompt history",
+          href: d.storage?.url || "#",
+        }));
+        console.log("[Resources] generated_documents mapped:", docs);
+        setGeneratedDocuments(docs);
+      } catch (err: any) {
+        console.error("[Resources] fetch error:", err.message, err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchResources();
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] md:bg-white text-gray-800">
@@ -77,7 +72,13 @@ export default function ResourcesPage() {
 
         <div className="w-full h-[1px] bg-gray-100 mb-10" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8">
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-[#4A247c] animate-spin" />
+          </div>
+        )}
+
+        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8 ${isLoading ? "hidden" : ""}`}>
           {/* Main Docs Section - Left Side */}
           <div className="lg:col-span-2 flex flex-col gap-10">
             {/* Created Resources */}

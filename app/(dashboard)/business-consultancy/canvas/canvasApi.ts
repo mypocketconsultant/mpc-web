@@ -5,7 +5,7 @@ export interface CanvasDocument {
   user_id: string;
   project_id: string | null;
   title: string;
-  blocks: Record<string, { title: string; content: string; color: string; colSpan?: number }>;
+  blocks: Record<string, string[]>;
   status: "draft" | "published";
   created_at: string;
   updated_at: string;
