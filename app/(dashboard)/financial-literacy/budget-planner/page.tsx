@@ -97,7 +97,10 @@ function NewBudgetModal({
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    if (!period) { setError("Period is required"); return; }
+    if (!period) {
+      setError("Period is required");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -116,18 +119,23 @@ function NewBudgetModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-gray-900">New Budget</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Title (optional)</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Title (optional)
+            </label>
             <input
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors"
               placeholder="e.g. March Budget, Brazil Trip"
@@ -137,7 +145,9 @@ function NewBudgetModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Period</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Period
+            </label>
             <input
               type="month"
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors"
@@ -147,7 +157,9 @@ function NewBudgetModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Currency</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Currency
+            </label>
             <select
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors bg-white"
               value={currency}
@@ -176,7 +188,11 @@ function NewBudgetModal({
             disabled={saving}
             className="flex-1 bg-[#5A3FFF] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#4930e8] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
             Create Budget
           </button>
         </div>
@@ -207,14 +223,20 @@ function AddTransactionModal({
   const [error, setError] = useState<string | null>(null);
 
   // Flatten all row names from all groups as category options
-  const categoryOptions = Object.values(budget.groups || {}).flatMap(
-    (group) => (group.rows || []).map((r) => r.name).filter(Boolean)
+  const categoryOptions = Object.values(budget.groups || {}).flatMap((group) =>
+    (group.rows || []).map((r) => r.name).filter(Boolean),
   );
 
   const submit = async () => {
-    if (!name.trim()) { setError("Name is required"); return; }
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
     const amt = parseFloat(amount);
-    if (isNaN(amt) || amt <= 0) { setError("Enter a valid amount"); return; }
+    if (isNaN(amt) || amt <= 0) {
+      setError("Enter a valid amount");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -237,11 +259,16 @@ function AddTransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6 mb-4 sm:mb-0">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-gray-900">Add Transaction</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-base font-semibold text-gray-900">
+            Add Transaction
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -267,7 +294,9 @@ function AddTransactionModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Name</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Name
+            </label>
             <input
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors"
               placeholder="e.g. Salary, Rent, Groceries"
@@ -277,7 +306,9 @@ function AddTransactionModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Amount ({budget.currency})</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Amount ({budget.currency})
+            </label>
             <input
               type="number"
               min="0"
@@ -290,7 +321,9 @@ function AddTransactionModal({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Date</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">
+              Date
+            </label>
             <input
               type="date"
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors"
@@ -301,7 +334,9 @@ function AddTransactionModal({
 
           {categoryOptions.length > 0 && (
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Category</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">
+                Category
+              </label>
               <select
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#5A3FFF] transition-colors bg-white"
                 value={category}
@@ -309,7 +344,9 @@ function AddTransactionModal({
               >
                 <option value="">Select a category</option>
                 {categoryOptions.map((name) => (
-                  <option key={name} value={name}>{name}</option>
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -330,7 +367,11 @@ function AddTransactionModal({
             disabled={saving}
             className="flex-1 bg-[#5A3FFF] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#4930e8] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
             Add
           </button>
         </div>
@@ -368,7 +409,8 @@ function PlanGroupEditor({
     setNewAmount("");
   };
 
-  const removeRow = (i: number) => setLocalRows((r) => r.filter((_, idx) => idx !== i));
+  const removeRow = (i: number) =>
+    setLocalRows((r) => r.filter((_, idx) => idx !== i));
 
   const save = async () => {
     setSaving(true);
@@ -389,9 +431,11 @@ function PlanGroupEditor({
 
   if (!editing) {
     return (
-      <div className="px-5 py-4 border-b border-gray-50 last:border-0">
+      <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-50 last:border-0">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{groupName}</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            {groupName}
+          </p>
           <button
             onClick={() => setEditing(true)}
             className="text-xs text-[#5A3FFF] hover:underline"
@@ -418,16 +462,23 @@ function PlanGroupEditor({
   }
 
   return (
-    <div className="px-5 py-4 border-b border-gray-50 last:border-0 bg-purple-50/30">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{groupName}</p>
+    <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-50 last:border-0 bg-purple-50/30">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        {groupName}
+      </p>
 
       {/* Existing rows */}
       <div className="space-y-2 mb-3">
         {localRows.map((row, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
             <span className="text-sm text-gray-700 flex-1">{row.name}</span>
-            <span className="text-sm font-medium text-gray-900">{fmt(row.target_amount || 0, currency)}</span>
-            <button onClick={() => removeRow(i)} className="text-red-400 hover:text-red-600 ml-1">
+            <span className="text-sm font-medium text-gray-900">
+              {fmt(row.target_amount || 0, currency)}
+            </span>
+            <button
+              onClick={() => removeRow(i)}
+              className="text-red-400 hover:text-red-600 ml-1"
+            >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -476,7 +527,11 @@ function PlanGroupEditor({
           disabled={saving}
           className="flex-1 bg-[#5A3FFF] text-white rounded-lg py-1.5 text-xs font-medium hover:bg-[#4930e8] disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          {saving ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Check className="w-3.5 h-3.5" />
+          )}
           Save
         </button>
       </div>
@@ -505,7 +560,9 @@ function BudgetChart({
   const actualByCategory: Record<string, number> = {};
   for (const tx of transactions) {
     const key = (tx.category || "").toLowerCase().trim();
-    if (key) actualByCategory[key] = (actualByCategory[key] || 0) + (tx.actual_amount || 0);
+    if (key)
+      actualByCategory[key] =
+        (actualByCategory[key] || 0) + (tx.actual_amount || 0);
   }
 
   // Flatten all rows from all groups — each row becomes one bar pair
@@ -551,7 +608,9 @@ function BudgetChart({
         {payload.length === 2 && payload[0].value > 0 && (
           <p
             className={`mt-1.5 font-medium ${
-              payload[1].value > payload[0].value ? "text-red-500" : "text-green-600"
+              payload[1].value > payload[0].value
+                ? "text-red-500"
+                : "text-green-600"
             }`}
           >
             {payload[1].value > payload[0].value
@@ -567,7 +626,9 @@ function BudgetChart({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="p-5 border-b border-gray-100">
         <h2 className="text-base font-semibold text-gray-900">Overview</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Planned vs actual per line item</p>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Planned vs actual per line item
+        </p>
       </div>
       <div className="p-4">
         <ResponsiveContainer width="100%" height={chartHeight}>
@@ -578,7 +639,11 @@ function BudgetChart({
             barCategoryGap="30%"
             barGap={3}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              horizontal={false}
+              stroke="#f0f0f0"
+            />
             <XAxis
               type="number"
               tickFormatter={CURRENCY_COMPACT}
@@ -600,16 +665,16 @@ function BudgetChart({
               iconSize={8}
               wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
             />
-            <Bar dataKey="planned" name="Planned" fill="#e9d5ff" radius={[0, 4, 4, 0]} />
+            <Bar
+              dataKey="planned"
+              name="Planned"
+              fill="#e9d5ff"
+              radius={[0, 4, 4, 0]}
+            />
             <Bar dataKey="actual" name="Actual" radius={[0, 4, 4, 0]}>
               {chartData.map((entry, i) => {
                 const over = entry.actual > entry.planned && entry.planned > 0;
-                return (
-                  <Cell
-                    key={i}
-                    fill={over ? "#f87171" : "#818cf8"}
-                  />
-                );
+                return <Cell key={i} fill={over ? "#f87171" : "#818cf8"} />;
               })}
             </Bar>
           </BarChart>
@@ -633,7 +698,9 @@ export default function BudgetPlannerPage() {
   const [selectedBudget, setSelectedBudget] = useState<BudgetDoc | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "income" | "expense">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "income" | "expense">(
+    "all",
+  );
   const [showAddTx, setShowAddTx] = useState(false);
 
   /* ---------------------------------------------------------------- */
@@ -653,7 +720,9 @@ export default function BudgetPlannerPage() {
     }
   }, []);
 
-  useEffect(() => { fetchBudgets(); }, [fetchBudgets]);
+  useEffect(() => {
+    fetchBudgets();
+  }, [fetchBudgets]);
 
   /* ---------------------------------------------------------------- */
   /*  Level 2 — fetch transactions for selected budget               */
@@ -665,7 +734,7 @@ export default function BudgetPlannerPage() {
     setLoadingTx(true);
     try {
       const res: any = await apiService.get(
-        `/v1/finance/transactions?budget_id=${budget.id}&limit=200`
+        `/v1/finance/transactions?budget_id=${budget.id}&limit=200`,
       );
       const data = res?.data || res;
       setTransactions(data?.items || []);
@@ -686,10 +755,13 @@ export default function BudgetPlannerPage() {
       if (!selectedBudget) return;
 
       // Detect removed rows so we can cascade-delete their transactions
-      const oldRows: BudgetRow[] = selectedBudget.groups?.[groupName]?.rows || [];
-      const newRowNames = new Set(updatedRows.map((r) => r.name?.toLowerCase()));
+      const oldRows: BudgetRow[] =
+        selectedBudget.groups?.[groupName]?.rows || [];
+      const newRowNames = new Set(
+        updatedRows.map((r) => r.name?.toLowerCase()),
+      );
       const removedRows = oldRows.filter(
-        (r) => r.name && !newRowNames.has(r.name.toLowerCase())
+        (r) => r.name && !newRowNames.has(r.name.toLowerCase()),
       );
 
       // Cascade-delete transactions for each removed row
@@ -697,9 +769,9 @@ export default function BudgetPlannerPage() {
         await Promise.allSettled(
           removedRows.map((r) =>
             apiService.delete(
-              `/v1/finance/transactions?budget_id=${selectedBudget.id}&category=${encodeURIComponent(r.name)}`
-            )
-          )
+              `/v1/finance/transactions?budget_id=${selectedBudget.id}&category=${encodeURIComponent(r.name)}`,
+            ),
+          ),
         );
       }
 
@@ -709,15 +781,15 @@ export default function BudgetPlannerPage() {
       };
       const res: any = await apiService.patch(
         `/v1/finance/budgets/${selectedBudget.id}`,
-        { groups: updatedGroups }
+        { groups: updatedGroups },
       );
       const updated = res?.data || res;
       setSelectedBudget(updated);
       setBudgets((prev) =>
-        prev.map((b) => (b.id === updated.id ? updated : b))
+        prev.map((b) => (b.id === updated.id ? updated : b)),
       );
     },
-    [selectedBudget]
+    [selectedBudget],
   );
 
   /* ---------------------------------------------------------------- */
@@ -725,17 +797,18 @@ export default function BudgetPlannerPage() {
   /* ---------------------------------------------------------------- */
 
   const filteredTx = transactions.filter((t) =>
-    activeTab === "all" ? true : t.direction === activeTab
+    activeTab === "all" ? true : t.direction === activeTab,
   );
 
   const totalPlanned = (budget: BudgetDoc) =>
     Object.values(budget.groups || {}).reduce(
       (sum, g) =>
         sum + (g.rows || []).reduce((s, r) => s + (r.target_amount || 0), 0),
-      0
+      0,
     );
 
-  const budgetLabel = (b: BudgetDoc) => b.title || b.period || "Untitled Budget";
+  const budgetLabel = (b: BudgetDoc) =>
+    b.title || b.period || "Untitled Budget";
 
   /* ---------------------------------------------------------------- */
   /*  Render — Level 1 (budget list)                                  */
@@ -758,9 +831,9 @@ export default function BudgetPlannerPage() {
         )}
 
         <main className="flex-1 overflow-auto pb-28">
-          <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
+          <div className="max-w-[900px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
             <Link href="/financial-literacy">
-              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
+              <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors">
                 <ChevronLeft className="h-4 w-4" />
                 Finance Literacy / Budget Planner
               </button>
@@ -768,14 +841,16 @@ export default function BudgetPlannerPage() {
 
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Your Budgets</h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Your Budgets
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-[200px] sm:max-w-none">
                   Tap a budget to see its plan and transactions.
                 </p>
               </div>
               <button
                 onClick={() => setShowNewBudget(true)}
-                className="flex items-center gap-2 bg-[#5A3FFF] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#4930e8] transition-colors"
+                className="flex items-center gap-1.5 sm:gap-2 bg-[#5A3FFF] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium hover:bg-[#4930e8] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 New Budget
@@ -811,15 +886,15 @@ export default function BudgetPlannerPage() {
                     <button
                       key={budget.id}
                       onClick={() => openBudget(budget)}
-                      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-left hover:border-[#5A3FFF] hover:shadow-md transition-all group"
+                      className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 text-left hover:border-[#5A3FFF] hover:shadow-md transition-all group"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                            <PieChart className="w-5 h-5 text-purple-600" />
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center">
+                            <PieChart className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">
+                            <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-1">
                               {budgetLabel(budget)}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -853,14 +928,18 @@ export default function BudgetPlannerPage() {
                       </div>
 
                       <p className="text-xs text-gray-400 mt-3">
-                        Planned total: {fmt(totalPlanned(budget), budget.currency)}
+                        Planned total:{" "}
+                        {fmt(totalPlanned(budget), budget.currency)}
                         {" · "}
                         {budget.created_at
-                          ? new Date(budget.created_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })
+                          ? new Date(budget.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )
                           : ""}
                       </p>
                     </button>
@@ -908,11 +987,11 @@ export default function BudgetPlannerPage() {
       )}
 
       <main className="flex-1 overflow-auto pb-28">
-        <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-[900px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
           {/* Back */}
           <button
             onClick={() => setSelectedBudget(null)}
-            className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
             Back to Budgets
@@ -921,7 +1000,7 @@ export default function BudgetPlannerPage() {
           {/* Budget header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-1 max-w-[150px] sm:max-w-[300px]">
                 {budgetLabel(selectedBudget)}
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
@@ -929,7 +1008,9 @@ export default function BudgetPlannerPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/financial-literacy/reports?budget_id=${selectedBudget.id}`}>
+              <Link
+                href={`/financial-literacy/reports?budget_id=${selectedBudget.id}`}
+              >
                 <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#5A3FFF] bg-[#5A3FFF]/10 rounded-full hover:bg-[#5A3FFF]/20 transition-colors">
                   <BarChart3 className="w-3.5 h-3.5" />
                   View Report
@@ -1003,15 +1084,19 @@ export default function BudgetPlannerPage() {
                 No groups yet — edit the plan to add rows.
               </div>
             ) : (
-              Object.entries(selectedBudget.groups || {}).map(([groupName, group]) => (
-                <PlanGroupEditor
-                  key={groupName}
-                  groupName={groupName}
-                  rows={group.rows || []}
-                  currency={selectedBudget.currency}
-                  onSave={(updatedRows) => savePlanGroup(groupName, updatedRows)}
-                />
-              ))
+              Object.entries(selectedBudget.groups || {}).map(
+                ([groupName, group]) => (
+                  <PlanGroupEditor
+                    key={groupName}
+                    groupName={groupName}
+                    rows={group.rows || []}
+                    currency={selectedBudget.currency}
+                    onSave={(updatedRows) =>
+                      savePlanGroup(groupName, updatedRows)
+                    }
+                  />
+                ),
+              )
             )}
           </div>
 
@@ -1019,7 +1104,9 @@ export default function BudgetPlannerPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">Actual Transactions</h2>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Actual Transactions
+                </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Real income and spending recorded against this budget
                 </p>
@@ -1045,7 +1132,11 @@ export default function BudgetPlannerPage() {
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {tab === "all" ? "All" : tab === "income" ? "Income" : "Expenses"}
+                  {tab === "all"
+                    ? "All"
+                    : tab === "income"
+                      ? "Income"
+                      : "Expenses"}
                 </button>
               ))}
             </div>
@@ -1054,7 +1145,9 @@ export default function BudgetPlannerPage() {
               {loadingTx ? (
                 <div className="p-12 text-center">
                   <Loader2 className="w-7 h-7 text-[#5A3FFF] animate-spin mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Loading transactions...</p>
+                  <p className="text-gray-500 text-sm">
+                    Loading transactions...
+                  </p>
                 </div>
               ) : filteredTx.length === 0 ? (
                 <div className="p-12 text-center">
@@ -1079,7 +1172,9 @@ export default function BudgetPlannerPage() {
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                          tx.direction === "income" ? "bg-green-100" : "bg-red-100"
+                          tx.direction === "income"
+                            ? "bg-green-100"
+                            : "bg-red-100"
                         }`}
                       >
                         {tx.direction === "income" ? (
@@ -1089,7 +1184,9 @@ export default function BudgetPlannerPage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{tx.name}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {tx.name}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                           {tx.category && (
                             <span className="px-1.5 py-0.5 bg-gray-100 rounded-full">
@@ -1112,7 +1209,9 @@ export default function BudgetPlannerPage() {
                     <div className="text-right">
                       <p
                         className={`text-sm font-semibold ${
-                          tx.direction === "income" ? "text-green-600" : "text-red-600"
+                          tx.direction === "income"
+                            ? "text-green-600"
+                            : "text-red-600"
                         }`}
                       >
                         {tx.direction === "income" ? "+" : "-"}
@@ -1124,7 +1223,6 @@ export default function BudgetPlannerPage() {
               )}
             </div>
           </div>
-
         </div>
       </main>
       <InputFooter

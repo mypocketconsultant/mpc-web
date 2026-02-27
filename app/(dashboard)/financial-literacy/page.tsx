@@ -20,9 +20,9 @@ export default function FinancialLiteracyPage() {
       id: "budget-planner",
       title: "Budget planner",
       icon: (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E3A5F]">
+        <div className="flex h-6 w-6 max-[640px]:h-5 max-[640px]:w-5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E3A5F]">
           <svg
-            className="h-5 w-5 text-white"
+            className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -43,9 +43,9 @@ export default function FinancialLiteracyPage() {
       id: "resources",
       title: "Insights & Resources",
       icon: (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#10B981]">
+        <div className="flex h-6 w-6 max-[640px]:h-5 max-[640px]:w-5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#10B981]">
           <svg
-            className="h-5 w-5 text-white"
+            className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -66,9 +66,9 @@ export default function FinancialLiteracyPage() {
       id: "reports",
       title: "Financial reports and exports",
       icon: (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EC4899]">
+        <div className="flex h-6 w-6 max-[640px]:h-5 max-[640px]:w-5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#EC4899]">
           <svg
-            className="h-5 w-5 text-white"
+            className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -89,9 +89,9 @@ export default function FinancialLiteracyPage() {
       id: "chat",
       title: "Chat with AI Agent",
       icon: (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B5CF6]">
+        <div className="flex h-6 w-6 max-[640px]:h-5 max-[640px]:w-5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#8B5CF6]">
           <svg
-            className="h-5 w-5 text-white"
+            className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -149,7 +149,7 @@ export default function FinancialLiteracyPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-[1100px] mx-auto px-2 max-[640px]:px-3 sm:px-6 py-4 max-[640px]:py-4 sm:py-8">
           {/* Go back home */}
           <Link href="/home">
             <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 sm:mb-8 transition-colors">

@@ -3,7 +3,14 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus } from "lucide-react";
+import {
+  ChevronLeft,
+  Mic,
+  Paperclip,
+  Loader2,
+  History,
+  Plus,
+} from "lucide-react";
 import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import FormattedMessage from "@/components/FormattedMessage";
@@ -170,12 +177,14 @@ function FinanceChatContent() {
       }>(`/v1/chat-sessions/${sid}`);
       const sessionData = response?.data;
       if (sessionData?.messages) {
-        const loaded: Message[] = sessionData.messages.map((msg: any, idx: number) => ({
-          id: `loaded_${idx}`,
-          type: msg.role === "user" ? "user" : "ai",
-          content: msg.content,
-          timestamp: new Date(msg.timestamp || Date.now()),
-        }));
+        const loaded: Message[] = sessionData.messages.map(
+          (msg: any, idx: number) => ({
+            id: `loaded_${idx}`,
+            type: msg.role === "user" ? "user" : "ai",
+            content: msg.content,
+            timestamp: new Date(msg.timestamp || Date.now()),
+          }),
+        );
         setMessages(loaded);
       }
     } catch {
@@ -194,10 +203,17 @@ function FinanceChatContent() {
         switch (action.type) {
           case "finance.create_transaction": {
             const txId = metadata?.created_transaction_id;
-            showToast("success", "Transaction created!", txId ? {
-              label: "View in Budget Planner",
-              onClick: () => router.push("/financial-literacy/budget-planner"),
-            } : undefined);
+            showToast(
+              "success",
+              "Transaction created!",
+              txId
+                ? {
+                    label: "View in Budget Planner",
+                    onClick: () =>
+                      router.push("/financial-literacy/budget-planner"),
+                  }
+                : undefined,
+            );
             break;
           }
           case "finance.update_transaction": {
@@ -206,10 +222,17 @@ function FinanceChatContent() {
           }
           case "finance.create_budget": {
             const budgetId = metadata?.created_budget_id;
-            showToast("success", "Budget created!", budgetId ? {
-              label: "View Budget",
-              onClick: () => router.push("/financial-literacy/budget-planner"),
-            } : undefined);
+            showToast(
+              "success",
+              "Budget created!",
+              budgetId
+                ? {
+                    label: "View Budget",
+                    onClick: () =>
+                      router.push("/financial-literacy/budget-planner"),
+                  }
+                : undefined,
+            );
             break;
           }
           case "finance.update_budget": {
@@ -221,7 +244,8 @@ function FinanceChatContent() {
             break;
           }
           case "finance.export_cashflow_pdf": {
-            const docId = metadata?.created_doc_id || (action.payload as any)?.doc_id;
+            const docId =
+              metadata?.created_doc_id || (action.payload as any)?.doc_id;
             if (docId) {
               showToast("success", "PDF export started. Generating...", {
                 label: "View Reports",
@@ -257,7 +281,11 @@ function FinanceChatContent() {
     setIsDrawerOpen(false);
     setMessages([]);
     setSessionId(selectedSessionId);
-    window.history.replaceState(null, "", `/financial-literacy/chat?session_id=${selectedSessionId}`);
+    window.history.replaceState(
+      null,
+      "",
+      `/financial-literacy/chat?session_id=${selectedSessionId}`,
+    );
     loadSession(selectedSessionId);
   };
 
@@ -290,7 +318,11 @@ function FinanceChatContent() {
       }>("/v1/finance/chat", payload);
 
       const agentResponse = httpResponse.data;
-      console.log("[mpc-web][finance.chat] ←", { intent: agentResponse?.intent, actions: agentResponse?.actions?.map((a: any) => a.type), created_budget_id: agentResponse?.metadata?.created_budget_id ?? null });
+      console.log("[mpc-web][finance.chat] ←", {
+        intent: agentResponse?.intent,
+        actions: agentResponse?.actions?.map((a: any) => a.type),
+        created_budget_id: agentResponse?.metadata?.created_budget_id ?? null,
+      });
 
       // Capture session_id from response metadata
       const returnedSessionId = agentResponse?.metadata?.session_id as string;
@@ -299,7 +331,7 @@ function FinanceChatContent() {
         window.history.replaceState(
           null,
           "",
-          `/financial-literacy/chat?session_id=${returnedSessionId}`
+          `/financial-literacy/chat?session_id=${returnedSessionId}`,
         );
       }
 
@@ -315,7 +347,7 @@ function FinanceChatContent() {
         content: aiContent,
         timestamp: new Date(),
         actions: agentResponse?.actions ?? undefined,
-        metadata: agentResponse?.metadata as Record<string, any> ?? undefined,
+        metadata: (agentResponse?.metadata as Record<string, any>) ?? undefined,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -365,11 +397,13 @@ function FinanceChatContent() {
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[900px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
           {/* Back button + History actions */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <Link href="/financial-literacy">
-              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+              <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
                 <ChevronLeft className="h-4 w-4" />
-                <span>Finance Literacy / Chat with AI Agent</span>
+                <span className="truncate max-w-[200px] sm:max-w-none">
+                  Finance Literacy / Chat with AI Agent
+                </span>
               </button>
             </Link>
             <div className="flex items-center gap-2">
@@ -391,7 +425,7 @@ function FinanceChatContent() {
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+          <div className="flex-1 overflow-y-auto bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 {/* Welcome State */}
@@ -451,10 +485,10 @@ function FinanceChatContent() {
           </div>
 
           {/* Input Area */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <div className="flex items-center gap-3">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4">
+            <div className="flex items-center gap-1.5 sm:gap-3">
               <button
-                className="flex-shrink-0 p-3 hover:bg-gray-100 rounded-xl transition-colors"
+                className="flex-[0_0_auto] p-2 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors shrink-0"
                 aria-label="Attach file"
               >
                 <Paperclip className="h-5 w-5 text-gray-500" />
@@ -467,14 +501,14 @@ function FinanceChatContent() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me how to make my finances better."
-                className="flex-1 bg-gray-50 rounded-full px-5 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
+                className="flex-1 min-w-0 bg-gray-50 rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
                 disabled={isLoading}
               />
 
               <button
                 onClick={handleMicrophone}
                 disabled={isTranscribing}
-                className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                className={`flex-[0_0_auto] shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
                   isRecording
                     ? "bg-red-500"
                     : isTranscribing
