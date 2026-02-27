@@ -3,9 +3,6 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-<<<<<<< HEAD
-import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus } from "lucide-react";
-=======
 import {
   ChevronLeft,
   Mic,
@@ -14,7 +11,6 @@ import {
   History,
   Plus,
 } from "lucide-react";
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
 import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import FormattedMessage from "@/components/FormattedMessage";
@@ -47,17 +43,10 @@ interface AgentResponse {
 // ── Suggested prompts for welcome state ────────────────
 
 const suggestedPrompts = [
-<<<<<<< HEAD
-  "Suggest business names for my business",
-  "Create a go-to-market plan",
-  "Help me build a business model canvas",
-  "Show me best practices for my industry",
-=======
   "Suggest business names for my business.",
   "Create a go-to-market plan",
   "Show me best practices for my industry",
   "What is the best way to analyze my competitors?",
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
 ];
 
 // ── ChatMessage component ──────────────────────────────
@@ -70,11 +59,7 @@ function ChatMessage({ message }: { message: Message }) {
       className={`flex gap-3 ${isAI ? "justify-start" : "justify-end"} mb-4`}
     >
       {isAI && (
-<<<<<<< HEAD
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
-=======
         <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
           <svg
             className="w-4 h-4 text-white"
             fill="none"
@@ -85,11 +70,7 @@ function ChatMessage({ message }: { message: Message }) {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-<<<<<<< HEAD
               d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-=======
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
             />
           </svg>
         </div>
@@ -118,11 +99,7 @@ function ChatMessage({ message }: { message: Message }) {
       </div>
 
       {!isAI && (
-<<<<<<< HEAD
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-=======
         <div className="shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
           <svg
             className="w-4 h-4 text-gray-600"
             fill="none"
@@ -144,11 +121,7 @@ function ChatMessage({ message }: { message: Message }) {
 
 // ── Main content component ─────────────────────────────
 
-<<<<<<< HEAD
-function BusinessChatContent() {
-=======
 function BusinessConsultancyChatContent() {
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -204,14 +177,6 @@ function BusinessConsultancyChatContent() {
       }>(`/v1/chat-sessions/${sid}`);
       const sessionData = response?.data;
       if (sessionData?.messages) {
-<<<<<<< HEAD
-        const loaded: Message[] = sessionData.messages.map((msg: any, idx: number) => ({
-          id: `loaded_${idx}`,
-          type: msg.role === "user" ? "user" : "ai",
-          content: msg.content,
-          timestamp: new Date(msg.timestamp || Date.now()),
-        }));
-=======
         const loaded: Message[] = sessionData.messages.map(
           (msg: any, idx: number) => ({
             id: `loaded_${idx}`,
@@ -220,7 +185,6 @@ function BusinessConsultancyChatContent() {
             timestamp: new Date(msg.timestamp || Date.now()),
           }),
         );
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
         setMessages(loaded);
       }
     } catch {
@@ -238,12 +202,10 @@ function BusinessConsultancyChatContent() {
       for (const action of actions) {
         switch (action.type) {
           case "business.create_canvas": {
-<<<<<<< HEAD
-            const canvasId = metadata?.created_canvas_id;
-            showToast("success", "Business Model Canvas created!", canvasId ? {
+            showToast("success", "Canvas model created!", {
               label: "View Canvas",
-              onClick: () => router.push(`/business-consultancy/canvas`),
-            } : undefined);
+              onClick: () => router.push("/business-consultancy/canvas"),
+            });
             break;
           }
           case "business.update_canvas": {
@@ -255,11 +217,10 @@ function BusinessConsultancyChatContent() {
             break;
           }
           case "business.create_swot": {
-            const swotId = metadata?.created_swot_id;
-            showToast("success", "SWOT Analysis created!", swotId ? {
+            showToast("success", "SWOT analysis created!", {
               label: "View SWOT",
-              onClick: () => router.push(`/business-consultancy/swot`),
-            } : undefined);
+              onClick: () => router.push("/business-consultancy/swot"),
+            });
             break;
           }
           case "business.update_swot": {
@@ -268,27 +229,6 @@ function BusinessConsultancyChatContent() {
           }
           case "business.publish_swot": {
             showToast("success", "SWOT published!");
-            break;
-          }
-          case "business.list_canvases":
-          case "business.list_swots":
-          case "business.get_canvas":
-          case "business.get_swot":
-          case "business.get_resources":
-            // Data-fetching actions — info is in the agent message
-            break;
-=======
-            showToast("success", "Canvas model created!", {
-              label: "View Canvas",
-              onClick: () => router.push("/business-consultancy/canvas"),
-            });
-            break;
-          }
-          case "business.create_swot": {
-            showToast("success", "SWOT analysis created!", {
-              label: "View SWOT",
-              onClick: () => router.push("/business-consultancy/swot"),
-            });
             break;
           }
           case "business.export_pdf": {
@@ -302,7 +242,13 @@ function BusinessConsultancyChatContent() {
             }
             break;
           }
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
+          case "business.list_canvases":
+          case "business.list_swots":
+          case "business.get_canvas":
+          case "business.get_swot":
+          case "business.get_resources":
+            // Data-fetching actions — info is in the agent message
+            break;
           default:
             break;
         }
@@ -322,15 +268,11 @@ function BusinessConsultancyChatContent() {
     setIsDrawerOpen(false);
     setMessages([]);
     setSessionId(selectedSessionId);
-<<<<<<< HEAD
-    window.history.replaceState(null, "", `/business-consultancy/chat?session_id=${selectedSessionId}`);
-=======
     window.history.replaceState(
       null,
       "",
       `/business-consultancy/chat?session_id=${selectedSessionId}`,
     );
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
     loadSession(selectedSessionId);
   };
 
@@ -363,14 +305,10 @@ function BusinessConsultancyChatContent() {
       }>("/v1/business/chat", payload);
 
       const agentResponse = httpResponse.data;
-<<<<<<< HEAD
-      console.log("[mpc-web][business.chat] \u2190", { intent: agentResponse?.intent, actions: agentResponse?.actions?.map((a: any) => a.type) });
-=======
-      console.log("[mpc-web][business.chat] ←", {
+      console.log("[mpc-web][business.chat] \u2190", {
         intent: agentResponse?.intent,
         actions: agentResponse?.actions?.map((a: any) => a.type),
       });
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
 
       // Capture session_id from response metadata
       const returnedSessionId = agentResponse?.metadata?.session_id as string;
@@ -379,11 +317,7 @@ function BusinessConsultancyChatContent() {
         window.history.replaceState(
           null,
           "",
-<<<<<<< HEAD
-          `/business-consultancy/chat?session_id=${returnedSessionId}`
-=======
           `/business-consultancy/chat?session_id=${returnedSessionId}`,
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
         );
       }
 
@@ -399,11 +333,7 @@ function BusinessConsultancyChatContent() {
         content: aiContent,
         timestamp: new Date(),
         actions: agentResponse?.actions ?? undefined,
-<<<<<<< HEAD
-        metadata: agentResponse?.metadata as Record<string, any> ?? undefined,
-=======
         metadata: (agentResponse?.metadata as Record<string, any>) ?? undefined,
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -453,13 +383,6 @@ function BusinessConsultancyChatContent() {
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[900px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
           {/* Back button + History actions */}
-<<<<<<< HEAD
-          <div className="flex items-center justify-between mb-4">
-            <Link href="/business-consultancy">
-              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
-                <ChevronLeft className="h-4 w-4" />
-                <span>Business Consultancy / Chat with AI Agent</span>
-=======
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <Link href="/business-consultancy">
               <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
@@ -467,7 +390,6 @@ function BusinessConsultancyChatContent() {
                 <span className="truncate max-w-[200px] sm:max-w-none">
                   Business Consultancy / Chat
                 </span>
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
               </button>
             </Link>
             <div className="flex items-center gap-2">
@@ -489,11 +411,7 @@ function BusinessConsultancyChatContent() {
           </div>
 
           {/* Chat Area */}
-<<<<<<< HEAD
-          <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
-=======
           <div className="flex-1 overflow-y-auto bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-4">
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 {/* Welcome State */}
@@ -508,29 +426,16 @@ function BusinessConsultancyChatContent() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-<<<<<<< HEAD
                       d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-=======
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
                     />
                   </svg>
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
-<<<<<<< HEAD
-                  Business AI Assistant
-                </h2>
-                <p className="text-gray-500 text-sm max-w-md">
-                  I&apos;m here to help you with your business needs. Ask me
-                  about business strategy, planning, market analysis, or any
-                  business topic.
-=======
                   Business AI Consultant
                 </h2>
                 <p className="text-gray-500 text-sm max-w-md">
                   I&apos;m here to help you manage your business better. Ask me
                   about strategy, market plans, SWOT analysis, and naming.
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
                 </p>
 
                 {/* Suggested Prompts */}
@@ -566,17 +471,10 @@ function BusinessConsultancyChatContent() {
           </div>
 
           {/* Input Area */}
-<<<<<<< HEAD
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <div className="flex items-center gap-3">
-              <button
-                className="flex-shrink-0 p-3 hover:bg-gray-100 rounded-xl transition-colors"
-=======
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4">
             <div className="flex items-center gap-1.5 sm:gap-3">
               <button
                 className="flex-[0_0_auto] p-2 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors shrink-0"
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
                 aria-label="Attach file"
               >
                 <Paperclip className="h-5 w-5 text-gray-500" />
@@ -588,24 +486,15 @@ function BusinessConsultancyChatContent() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-<<<<<<< HEAD
-                placeholder="Ask me about your business strategy..."
-                className="flex-1 bg-gray-50 rounded-full px-5 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
-=======
                 placeholder="Ask me to suggest a business name.."
                 className="flex-1 min-w-0 bg-gray-50 rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
                 disabled={isLoading}
               />
 
               <button
                 onClick={handleMicrophone}
                 disabled={isTranscribing}
-<<<<<<< HEAD
-                className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
-=======
                 className={`flex-[0_0_auto] shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
                   isRecording
                     ? "bg-red-500"
                     : isTranscribing
@@ -649,11 +538,7 @@ function BusinessConsultancyChatContent() {
 
 // ── Page export ────────────────────────────────────────
 
-<<<<<<< HEAD
-export default function BusinessChatPage() {
-=======
 export default function BusinessConsultancyChatPage() {
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
   return (
     <Suspense
       fallback={
@@ -662,14 +547,7 @@ export default function BusinessConsultancyChatPage() {
         </div>
       }
     >
-<<<<<<< HEAD
-      <BusinessChatContent />
-    </Suspense>
-  );
-}
-=======
       <BusinessConsultancyChatContent />
     </Suspense>
   );
 }
->>>>>>> a30ffeba03735eafe5f45791fc3d1003799e4b5f
