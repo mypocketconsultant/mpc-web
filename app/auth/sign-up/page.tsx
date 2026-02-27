@@ -24,7 +24,7 @@ export default function SignupPage() {
 
       // Step 2: Call unified /google endpoint
       const apiService = (await import("@/lib/api/apiService")).apiService;
-      const response = await apiService.post("/v1/auth/google", { idToken });
+      const response: any = await apiService.post("/v1/auth/google", { idToken });
 
       // Step 3: Check if profile is needed
       if (response.data?.profileRequired) {

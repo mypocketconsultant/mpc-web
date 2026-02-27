@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  Suspense,
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -290,7 +291,7 @@ function computePercentChange(current: number, previous: number): string {
 
 // ── Component ─────────────────────────────────────────────
 
-export default function ReportsPage() {
+function ReportsPageContent() {
   const searchParams = useSearchParams();
   const urlBudgetId = searchParams.get("budget_id");
 
@@ -1166,5 +1167,13 @@ export default function ReportsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col h-full bg-white" />}>
+      <ReportsPageContent />
+    </Suspense>
   );
 }
