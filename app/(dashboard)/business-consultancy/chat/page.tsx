@@ -43,13 +43,13 @@ interface AgentResponse {
 // ── Suggested prompts for welcome state ────────────────
 
 const suggestedPrompts = [
-  "How can I create a budget that works for me?",
-  "What's the 50/30/20 rule for budgeting?",
-  "How do I start building an emergency fund?",
-  "Tips for reducing my monthly expenses",
+  "Suggest business names for my business.",
+  "Create a go-to-market plan",
+  "Show me best practices for my industry",
+  "What is the best way to analyze my competitors?",
 ];
 
-// ── ChatMessage component (matches study chat pattern) ─
+// ── ChatMessage component ──────────────────────────────
 
 function ChatMessage({ message }: { message: Message }) {
   const isAI = message.type === "ai";
@@ -59,7 +59,7 @@ function ChatMessage({ message }: { message: Message }) {
       className={`flex gap-3 ${isAI ? "justify-start" : "justify-end"} mb-4`}
     >
       {isAI && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
+        <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
           <svg
             className="w-4 h-4 text-white"
             fill="none"
@@ -99,7 +99,7 @@ function ChatMessage({ message }: { message: Message }) {
       </div>
 
       {!isAI && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+        <div className="shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
           <svg
             className="w-4 h-4 text-gray-600"
             fill="none"
@@ -121,7 +121,7 @@ function ChatMessage({ message }: { message: Message }) {
 
 // ── Main content component ─────────────────────────────
 
-function FinanceChatContent() {
+function BusinessConsultancyChatContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -201,67 +201,31 @@ function FinanceChatContent() {
     if (actions && actions.length > 0) {
       for (const action of actions) {
         switch (action.type) {
-          case "finance.create_transaction": {
-            const txId = metadata?.created_transaction_id;
-            showToast(
-              "success",
-              "Transaction created!",
-              txId
-                ? {
-                    label: "View in Budget Planner",
-                    onClick: () =>
-                      router.push("/financial-literacy/budget-planner"),
-                  }
-                : undefined,
-            );
+          case "business.create_canvas": {
+            showToast("success", "Canvas model created!", {
+              label: "View Canvas",
+              onClick: () => router.push("/business-consultancy/canvas"),
+            });
             break;
           }
-          case "finance.update_transaction": {
-            showToast("success", "Transaction updated.");
+          case "business.create_swot": {
+            showToast("success", "SWOT analysis created!", {
+              label: "View SWOT",
+              onClick: () => router.push("/business-consultancy/swot"),
+            });
             break;
           }
-          case "finance.create_budget": {
-            const budgetId = metadata?.created_budget_id;
-            showToast(
-              "success",
-              "Budget created!",
-              budgetId
-                ? {
-                    label: "View Budget",
-                    onClick: () =>
-                      router.push("/financial-literacy/budget-planner"),
-                  }
-                : undefined,
-            );
-            break;
-          }
-          case "finance.update_budget": {
-            showToast("success", "Budget updated.");
-            break;
-          }
-          case "finance.publish_budget": {
-            showToast("success", "Budget published!");
-            break;
-          }
-          case "finance.export_cashflow_pdf": {
+          case "business.export_pdf": {
             const docId =
               metadata?.created_doc_id || (action.payload as any)?.doc_id;
             if (docId) {
               showToast("success", "PDF export started. Generating...", {
-                label: "View Reports",
-                onClick: () => router.push("/financial-literacy/reports"),
+                label: "View Resources",
+                onClick: () => router.push("/business-consultancy/resources"),
               });
             }
             break;
           }
-          case "finance.list_transactions":
-          case "finance.list_budgets":
-          case "finance.get_transaction":
-          case "finance.get_budget":
-          case "finance.get_doc":
-          case "finance.poll_doc":
-            // Data-fetching actions — info is in the agent message
-            break;
           default:
             break;
         }
@@ -274,7 +238,7 @@ function FinanceChatContent() {
   const handleNewChat = () => {
     setMessages([]);
     setSessionId("");
-    window.history.replaceState(null, "", "/financial-literacy/chat");
+    window.history.replaceState(null, "", "/business-consultancy/chat");
   };
 
   const handleSelectSession = (selectedSessionId: string) => {
@@ -284,7 +248,7 @@ function FinanceChatContent() {
     window.history.replaceState(
       null,
       "",
-      `/financial-literacy/chat?session_id=${selectedSessionId}`,
+      `/business-consultancy/chat?session_id=${selectedSessionId}`,
     );
     loadSession(selectedSessionId);
   };
@@ -315,13 +279,12 @@ function FinanceChatContent() {
         status: string;
         message: string;
         data: AgentResponse;
-      }>("/v1/finance/chat", payload);
+      }>("/v1/business/chat", payload);
 
       const agentResponse = httpResponse.data;
-      console.log("[mpc-web][finance.chat] ←", {
+      console.log("[mpc-web][business.chat] ←", {
         intent: agentResponse?.intent,
         actions: agentResponse?.actions?.map((a: any) => a.type),
-        created_budget_id: agentResponse?.metadata?.created_budget_id ?? null,
       });
 
       // Capture session_id from response metadata
@@ -331,11 +294,11 @@ function FinanceChatContent() {
         window.history.replaceState(
           null,
           "",
-          `/financial-literacy/chat?session_id=${returnedSessionId}`,
+          `/business-consultancy/chat?session_id=${returnedSessionId}`,
         );
       }
 
-      // Extract message content with fallbacks (same pattern as study/life chats)
+      // Extract message content with fallbacks
       const aiContent =
         agentResponse?.message ||
         (httpResponse as any)?.data?.data?.message ||
@@ -392,17 +355,17 @@ function FinanceChatContent() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      <Header title="Finance Literacy" />
+      <Header title="Business Consultancy" />
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[900px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
           {/* Back button + History actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <Link href="/financial-literacy">
+            <Link href="/business-consultancy">
               <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="truncate max-w-[200px] sm:max-w-none">
-                  Finance Literacy / Chat with AI Agent
+                  Business Consultancy / Chat
                 </span>
               </button>
             </Link>
@@ -445,11 +408,11 @@ function FinanceChatContent() {
                   </svg>
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  Financial AI Assistant
+                  Business AI Consultant
                 </h2>
                 <p className="text-gray-500 text-sm max-w-md">
-                  I&apos;m here to help you manage your finances better. Ask me
-                  about budgeting, saving, investing, or any financial topic.
+                  I&apos;m here to help you manage your business better. Ask me
+                  about strategy, market plans, SWOT analysis, and naming.
                 </p>
 
                 {/* Suggested Prompts */}
@@ -476,7 +439,7 @@ function FinanceChatContent() {
                   <ChatMessage key={message.id} message={message} />
                 ))}
 
-                {/* Loading indicator — same ThinkingBubble as study chat */}
+                {/* Loading indicator */}
                 {isLoading && <ThinkingBubble />}
 
                 <div ref={messagesEndRef} />
@@ -500,7 +463,7 @@ function FinanceChatContent() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask me how to make my finances better."
+                placeholder="Ask me to suggest a business name.."
                 className="flex-1 min-w-0 bg-gray-50 rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
                 disabled={isLoading}
               />
@@ -541,7 +504,7 @@ function FinanceChatContent() {
         onClose={() => setIsDrawerOpen(false)}
         onSelectSession={handleSelectSession}
         onNewChat={handleNewChat}
-        module="finance"
+        module="business"
         currentSessionId={sessionId}
       />
 
@@ -552,7 +515,7 @@ function FinanceChatContent() {
 
 // ── Page export ────────────────────────────────────────
 
-export default function FinanceChatPage() {
+export default function BusinessConsultancyChatPage() {
   return (
     <Suspense
       fallback={
@@ -561,7 +524,7 @@ export default function FinanceChatPage() {
         </div>
       }
     >
-      <FinanceChatContent />
+      <BusinessConsultancyChatContent />
     </Suspense>
   );
 }

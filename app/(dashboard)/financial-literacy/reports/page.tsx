@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -162,7 +168,7 @@ function getMonthsAgo(months: number): Date {
 
 function filterByPeriod(
   transactions: Transaction[],
-  months: number
+  months: number,
 ): Transaction[] {
   const cutoff = getMonthsAgo(months);
   return transactions.filter((t) => {
@@ -173,7 +179,7 @@ function filterByPeriod(
 
 function buildCategoryBreakdown(
   transactions: Transaction[],
-  planRowNames?: string[]
+  planRowNames?: string[],
 ): CategoryBreakdown[] {
   const expenses = transactions.filter((t) => t.direction === "expense");
   const categoryMap = new Map<string, number>();
@@ -190,7 +196,7 @@ function buildCategoryBreakdown(
     // Match case-insensitively to plan rows if available
     if (planRowNames && planRowNames.length > 0) {
       const match = planRowNames.find(
-        (r) => r.toLowerCase() === cat.toLowerCase()
+        (r) => r.toLowerCase() === cat.toLowerCase(),
       );
       if (match) {
         categoryMap.set(match, (categoryMap.get(match) || 0) + t.actual_amount);
@@ -203,10 +209,7 @@ function buildCategoryBreakdown(
     }
   }
 
-  const total = Array.from(categoryMap.values()).reduce(
-    (sum, v) => sum + v,
-    0
-  );
+  const total = Array.from(categoryMap.values()).reduce((sum, v) => sum + v, 0);
   return Array.from(categoryMap.entries())
     .map(([category, amount]) => ({
       category,
@@ -293,7 +296,9 @@ export default function ReportsPage() {
 
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<BudgetDoc[]>([]);
-  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(urlBudgetId);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(
+    urlBudgetId,
+  );
   const [budgetDropdownOpen, setBudgetDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("6months");
@@ -311,7 +316,10 @@ export default function ReportsPage() {
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setBudgetDropdownOpen(false);
       }
     };
@@ -337,7 +345,13 @@ export default function ReportsPage() {
       const budgetItems: BudgetDoc[] = budgetData?.items || [];
       setBudgets(budgetItems);
 
-      console.log("[Reports] fetched", txItems.length, "transactions,", budgetItems.length, "budgets");
+      console.log(
+        "[Reports] fetched",
+        txItems.length,
+        "transactions,",
+        budgetItems.length,
+        "budgets",
+      );
     } catch (error) {
       console.error("[Reports] fetchData error:", error);
       setAllTransactions([]);
@@ -364,8 +378,8 @@ export default function ReportsPage() {
   // Get plan row names from the selected budget (for category axis)
   const planRowNames = useMemo(() => {
     if (!selectedBudget) return undefined;
-    return Object.values(selectedBudget.groups || {}).flatMap(
-      (g) => (g.rows || []).map((r) => r.name).filter(Boolean)
+    return Object.values(selectedBudget.groups || {}).flatMap((g) =>
+      (g.rows || []).map((r) => r.name).filter(Boolean),
     );
   }, [selectedBudget]);
 
@@ -378,25 +392,25 @@ export default function ReportsPage() {
     PERIOD_OPTIONS.find((p) => p.value === selectedPeriod) || PERIOD_OPTIONS[2];
   const filteredTransactions = filterByPeriod(
     budgetFilteredTx,
-    periodConfig.months
+    periodConfig.months,
   );
   const previousPeriodTransactions = filterByPeriod(
     budgetFilteredTx,
-    periodConfig.months * 2
+    periodConfig.months * 2,
   ).filter((t) => !filteredTransactions.includes(t));
 
-  const categoryBreakdown = buildCategoryBreakdown(filteredTransactions, planRowNames);
+  const categoryBreakdown = buildCategoryBreakdown(
+    filteredTransactions,
+    planRowNames,
+  );
   const monthlyData = buildMonthlyData(filteredTransactions);
   const summary = buildPeriodSummary(filteredTransactions);
   const previousSummary = buildPeriodSummary(previousPeriodTransactions);
 
-  const totalExpenses = categoryBreakdown.reduce(
-    (sum, c) => sum + c.amount,
-    0
-  );
+  const totalExpenses = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0);
   const maxBarValue = Math.max(
     ...monthlyData.map((m) => Math.max(m.income, m.expenses)),
-    1
+    1,
   );
 
   // ── Export handler ──────────────────────────────────────
@@ -417,7 +431,9 @@ export default function ReportsPage() {
       const csvContent = [
         headers.join(","),
         ...rows.map((r) =>
-          headers.map((h) => `"${(r as Record<string, unknown>)[h]}"`).join(",")
+          headers
+            .map((h) => `"${(r as Record<string, unknown>)[h]}"`)
+            .join(","),
         ),
       ].join("\n");
 
@@ -441,7 +457,7 @@ export default function ReportsPage() {
       });
 
       console.log(
-        "[Reports] handleExport → POST /v1/finance/exports/cashflow.pdf"
+        "[Reports] handleExport → POST /v1/finance/exports/cashflow.pdf",
       );
       const res: any = await apiService.post(
         "/v1/finance/exports/cashflow.pdf",
@@ -451,7 +467,7 @@ export default function ReportsPage() {
           currency: "USD",
           include_transactions: true,
           transaction_limit: 200,
-        }
+        },
       );
 
       const data = res?.data || res;
@@ -479,7 +495,7 @@ export default function ReportsPage() {
       pollRef.current = setInterval(async () => {
         try {
           const pollRes: any = await apiService.get(
-            `/v1/finance/docs/${docId}`
+            `/v1/finance/docs/${docId}`,
           );
           const pollData = pollRes?.data || pollRes;
 
@@ -527,13 +543,15 @@ export default function ReportsPage() {
       <Header title="Finance Literacy" />
 
       <main className="flex-1 overflow-auto">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-[1200px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
           {/* Back + Export Buttons */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
             <Link href="/financial-literacy">
-              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+              <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
                 <ChevronLeft className="h-4 w-4" />
-                <span>Finance Literacy / Reports & Exports</span>
+                <span className="truncate max-w-[200px] sm:max-w-none">
+                  Finance Literacy / Reports & Exports
+                </span>
               </button>
             </Link>
 
@@ -588,7 +606,9 @@ export default function ReportsPage() {
               >
                 <span className="truncate max-w-[160px]">
                   {selectedBudget
-                    ? selectedBudget.title || selectedBudget.period || "Untitled Budget"
+                    ? selectedBudget.title ||
+                      selectedBudget.period ||
+                      "Untitled Budget"
                     : "All Budgets"}
                 </span>
                 <ChevronDown className="w-4 h-4 flex-shrink-0" />
@@ -602,7 +622,9 @@ export default function ReportsPage() {
                       setBudgetDropdownOpen(false);
                     }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      !selectedBudgetId ? "text-[#5A3FFF] font-medium" : "text-gray-700"
+                      !selectedBudgetId
+                        ? "text-[#5A3FFF] font-medium"
+                        : "text-gray-700"
                     }`}
                   >
                     All Budgets
@@ -615,7 +637,9 @@ export default function ReportsPage() {
                         setBudgetDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        selectedBudgetId === b.id ? "text-[#5A3FFF] font-medium" : "text-gray-700"
+                        selectedBudgetId === b.id
+                          ? "text-[#5A3FFF] font-medium"
+                          : "text-gray-700"
                       }`}
                     >
                       {b.title || b.period || "Untitled Budget"}
@@ -793,7 +817,9 @@ export default function ReportsPage() {
                                 title={`Expenses: ${formatCurrency(m.expenses)}`}
                               />
                             </div>
-                            <span className="text-xs text-gray-500">{m.month}</span>
+                            <span className="text-xs text-gray-500">
+                              {m.month}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -809,11 +835,20 @@ export default function ReportsPage() {
                         {monthlyData.map((m) => {
                           const net = m.income - m.expenses;
                           return (
-                            <div key={m.month} className="grid grid-cols-4 text-sm py-1.5 px-1 border-b border-gray-50 last:border-0">
+                            <div
+                              key={m.month}
+                              className="grid grid-cols-4 text-sm py-1.5 px-1 border-b border-gray-50 last:border-0"
+                            >
                               <span className="text-gray-700">{m.month}</span>
-                              <span className="text-right text-green-600">{formatCurrency(m.income)}</span>
-                              <span className="text-right text-red-600">{formatCurrency(m.expenses)}</span>
-                              <span className={`text-right font-medium ${net >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <span className="text-right text-green-600">
+                                {formatCurrency(m.income)}
+                              </span>
+                              <span className="text-right text-red-600">
+                                {formatCurrency(m.expenses)}
+                              </span>
+                              <span
+                                className={`text-right font-medium ${net >= 0 ? "text-green-600" : "text-red-600"}`}
+                              >
                                 {formatCurrency(net)}
                               </span>
                             </div>
@@ -846,20 +881,31 @@ export default function ReportsPage() {
                       {/* Expense trend line chart (CSS-based) */}
                       <div className="relative h-48 flex items-end gap-1 mb-4">
                         {(() => {
-                          const maxExp = Math.max(...monthlyData.map((m) => m.expenses), 1);
+                          const maxExp = Math.max(
+                            ...monthlyData.map((m) => m.expenses),
+                            1,
+                          );
                           return monthlyData.map((m, i) => (
-                            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                            <div
+                              key={m.month}
+                              className="flex-1 flex flex-col items-center gap-1"
+                            >
                               <div className="w-full flex flex-col items-center h-40 justify-end">
                                 <div
                                   className="w-full max-w-[40px] bg-gradient-to-t from-[#5A3FFF] to-[#8B7AFF] rounded-t-md transition-all relative group"
-                                  style={{ height: `${(m.expenses / maxExp) * 100}%`, minHeight: m.expenses > 0 ? "4px" : "0px" }}
+                                  style={{
+                                    height: `${(m.expenses / maxExp) * 100}%`,
+                                    minHeight: m.expenses > 0 ? "4px" : "0px",
+                                  }}
                                 >
                                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                     {formatCurrency(m.expenses)}
                                   </div>
                                 </div>
                               </div>
-                              <span className="text-[10px] text-gray-500">{m.month}</span>
+                              <span className="text-[10px] text-gray-500">
+                                {m.month}
+                              </span>
                             </div>
                           ));
                         })()}
@@ -867,18 +913,31 @@ export default function ReportsPage() {
 
                       {/* Top spending categories for this period */}
                       <div className="border-t border-gray-100 pt-4">
-                        <h3 className="text-sm font-medium text-gray-700 mb-3">Top Spending Categories</h3>
+                        <h3 className="text-sm font-medium text-gray-700 mb-3">
+                          Top Spending Categories
+                        </h3>
                         <div className="space-y-2">
                           {categoryBreakdown.slice(0, 5).map((cat, i) => (
-                            <div key={cat.category} className="flex items-center gap-3">
-                              <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                            <div
+                              key={cat.category}
+                              className="flex items-center gap-3"
+                            >
+                              <span className="text-xs text-gray-400 w-4">
+                                {i + 1}.
+                              </span>
                               <div
                                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: cat.color }}
                               />
-                              <span className="text-sm text-gray-700 flex-1">{cat.category}</span>
-                              <span className="text-sm font-medium text-gray-900">{formatCurrency(cat.amount)}</span>
-                              <span className="text-xs text-gray-500 w-10 text-right">{cat.percentage}%</span>
+                              <span className="text-sm text-gray-700 flex-1">
+                                {cat.category}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {formatCurrency(cat.amount)}
+                              </span>
+                              <span className="text-xs text-gray-500 w-10 text-right">
+                                {cat.percentage}%
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -887,9 +946,14 @@ export default function ReportsPage() {
                       {/* Average monthly spend */}
                       <div className="mt-4 p-4 bg-gray-50 rounded-xl">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Avg. monthly spending</span>
+                          <span className="text-sm text-gray-600">
+                            Avg. monthly spending
+                          </span>
                           <span className="text-sm font-semibold text-gray-900">
-                            {formatCurrency(summary.totalExpenses / Math.max(monthlyData.length, 1))}
+                            {formatCurrency(
+                              summary.totalExpenses /
+                                Math.max(monthlyData.length, 1),
+                            )}
                           </span>
                         </div>
                       </div>
@@ -904,37 +968,57 @@ export default function ReportsPage() {
                   {/* Summary Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                      <span className="text-sm text-gray-500">Total Income</span>
+                      <span className="text-sm text-gray-500">
+                        Total Income
+                      </span>
                       <p className="text-2xl font-bold text-gray-900 mt-1">
                         {formatCurrency(summary.totalIncome)}
                       </p>
                       <span className="text-xs text-green-600">
-                        {computePercentChange(summary.totalIncome, previousSummary.totalIncome)} from last period
+                        {computePercentChange(
+                          summary.totalIncome,
+                          previousSummary.totalIncome,
+                        )}{" "}
+                        from last period
                       </span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                      <span className="text-sm text-gray-500">Total Expenses</span>
+                      <span className="text-sm text-gray-500">
+                        Total Expenses
+                      </span>
                       <p className="text-2xl font-bold text-gray-900 mt-1">
                         {formatCurrency(summary.totalExpenses)}
                       </p>
                       <span className="text-xs text-red-600">
-                        {computePercentChange(summary.totalExpenses, previousSummary.totalExpenses)} from last period
+                        {computePercentChange(
+                          summary.totalExpenses,
+                          previousSummary.totalExpenses,
+                        )}{" "}
+                        from last period
                       </span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                       <span className="text-sm text-gray-500">Net Savings</span>
-                      <p className={`text-2xl font-bold mt-1 ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      <p
+                        className={`text-2xl font-bold mt-1 ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
                         {formatCurrency(summary.netSavings)}
                       </p>
                       <span className="text-xs text-green-600">
-                        {computePercentChange(summary.netSavings, previousSummary.netSavings)} from last period
+                        {computePercentChange(
+                          summary.netSavings,
+                          previousSummary.netSavings,
+                        )}{" "}
+                        from last period
                       </span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                      <span className="text-sm text-gray-500">Savings Rate</span>
+                      <span className="text-sm text-gray-500">
+                        Savings Rate
+                      </span>
                       <p className="text-2xl font-bold text-gray-900 mt-1">
                         {Math.round(summary.savingsRate)}%
                       </p>
@@ -956,7 +1040,10 @@ export default function ReportsPage() {
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-sm text-gray-600">Income</span>
                           <span className="text-xs text-gray-500">
-                            {computePercentChange(summary.totalIncome, previousSummary.totalIncome)}
+                            {computePercentChange(
+                              summary.totalIncome,
+                              previousSummary.totalIncome,
+                            )}
                           </span>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -964,19 +1051,28 @@ export default function ReportsPage() {
                             <div className="w-full bg-gray-100 rounded-full h-3">
                               <div
                                 className="h-3 rounded-full bg-[#10B981] transition-all"
-                                style={{ width: `${Math.min(100, summary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1) * 100)}%` }}
+                                style={{
+                                  width: `${Math.min(100, (summary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1)) * 100)}%`,
+                                }}
                               />
                             </div>
-                            <span className="text-xs text-gray-500 mt-0.5">Current: {formatCurrency(summary.totalIncome)}</span>
+                            <span className="text-xs text-gray-500 mt-0.5">
+                              Current: {formatCurrency(summary.totalIncome)}
+                            </span>
                           </div>
                           <div className="flex-1">
                             <div className="w-full bg-gray-100 rounded-full h-3">
                               <div
                                 className="h-3 rounded-full bg-[#10B981]/40 transition-all"
-                                style={{ width: `${Math.min(100, previousSummary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1) * 100)}%` }}
+                                style={{
+                                  width: `${Math.min(100, (previousSummary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1)) * 100)}%`,
+                                }}
                               />
                             </div>
-                            <span className="text-xs text-gray-500 mt-0.5">Previous: {formatCurrency(previousSummary.totalIncome)}</span>
+                            <span className="text-xs text-gray-500 mt-0.5">
+                              Previous:{" "}
+                              {formatCurrency(previousSummary.totalIncome)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -984,9 +1080,14 @@ export default function ReportsPage() {
                       {/* Expenses comparison */}
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-sm text-gray-600">Expenses</span>
+                          <span className="text-sm text-gray-600">
+                            Expenses
+                          </span>
                           <span className="text-xs text-gray-500">
-                            {computePercentChange(summary.totalExpenses, previousSummary.totalExpenses)}
+                            {computePercentChange(
+                              summary.totalExpenses,
+                              previousSummary.totalExpenses,
+                            )}
                           </span>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -994,19 +1095,28 @@ export default function ReportsPage() {
                             <div className="w-full bg-gray-100 rounded-full h-3">
                               <div
                                 className="h-3 rounded-full bg-[#EF4444] transition-all"
-                                style={{ width: `${Math.min(100, summary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1) * 100)}%` }}
+                                style={{
+                                  width: `${Math.min(100, (summary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1)) * 100)}%`,
+                                }}
                               />
                             </div>
-                            <span className="text-xs text-gray-500 mt-0.5">Current: {formatCurrency(summary.totalExpenses)}</span>
+                            <span className="text-xs text-gray-500 mt-0.5">
+                              Current: {formatCurrency(summary.totalExpenses)}
+                            </span>
                           </div>
                           <div className="flex-1">
                             <div className="w-full bg-gray-100 rounded-full h-3">
                               <div
                                 className="h-3 rounded-full bg-[#EF4444]/40 transition-all"
-                                style={{ width: `${Math.min(100, previousSummary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1) * 100)}%` }}
+                                style={{
+                                  width: `${Math.min(100, (previousSummary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1)) * 100)}%`,
+                                }}
                               />
                             </div>
-                            <span className="text-xs text-gray-500 mt-0.5">Previous: {formatCurrency(previousSummary.totalExpenses)}</span>
+                            <span className="text-xs text-gray-500 mt-0.5">
+                              Previous:{" "}
+                              {formatCurrency(previousSummary.totalExpenses)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1014,23 +1124,36 @@ export default function ReportsPage() {
                       {/* Net Savings comparison */}
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-sm text-gray-600">Net Savings</span>
+                          <span className="text-sm text-gray-600">
+                            Net Savings
+                          </span>
                           <span className="text-xs text-gray-500">
-                            {computePercentChange(summary.netSavings, previousSummary.netSavings)}
+                            {computePercentChange(
+                              summary.netSavings,
+                              previousSummary.netSavings,
+                            )}
                           </span>
                         </div>
                         <div className="flex gap-2 items-center">
                           <div className="flex-1 p-3 bg-gray-50 rounded-xl text-center">
-                            <p className={`text-lg font-bold ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            <p
+                              className={`text-lg font-bold ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
+                            >
                               {formatCurrency(summary.netSavings)}
                             </p>
-                            <span className="text-xs text-gray-500">Current</span>
+                            <span className="text-xs text-gray-500">
+                              Current
+                            </span>
                           </div>
                           <div className="flex-1 p-3 bg-gray-50 rounded-xl text-center">
-                            <p className={`text-lg font-bold ${previousSummary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            <p
+                              className={`text-lg font-bold ${previousSummary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
+                            >
                               {formatCurrency(previousSummary.netSavings)}
                             </p>
-                            <span className="text-xs text-gray-500">Previous</span>
+                            <span className="text-xs text-gray-500">
+                              Previous
+                            </span>
                           </div>
                         </div>
                       </div>

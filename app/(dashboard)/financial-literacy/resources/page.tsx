@@ -121,7 +121,11 @@ function InsightIcon({ kind }: { kind: string }) {
   return <TrendingUp className="w-4 h-4" />;
 }
 
-function insightToneStyles(tone: string): { card: string; icon: string; badge: string } {
+function insightToneStyles(tone: string): {
+  card: string;
+  icon: string;
+  badge: string;
+} {
   if (tone === "positive")
     return {
       card: "border-green-100 bg-green-50",
@@ -145,7 +149,9 @@ function insightToneStyles(tone: string): { card: string; icon: string; badge: s
 
 export default function SavedResourcesPage() {
   const [activeWindow, setActiveWindow] = useState<WindowFilter>("all_time");
-  const [resourcesData, setResourcesData] = useState<ResourcesResponse | null>(null);
+  const [resourcesData, setResourcesData] = useState<ResourcesResponse | null>(
+    null,
+  );
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [resourcesError, setResourcesError] = useState<string | null>(null);
 
@@ -161,7 +167,7 @@ export default function SavedResourcesPage() {
       setResourcesLoading(true);
       setResourcesError(null);
       const res: any = await apiService.get(
-        `/v1/finance/resources?window=${w}&limit=100`
+        `/v1/finance/resources?window=${w}&limit=100`,
       );
       const payload = res?.data || res;
       console.log("[SavedResources] /v1/finance/resources →", payload);
@@ -181,7 +187,7 @@ export default function SavedResourcesPage() {
       setInsightsLoading(true);
       setInsightsError(null);
       const res: any = await apiService.get(
-        `/v1/finance/insights?range=${r}&limit=50`
+        `/v1/finance/insights?range=${r}&limit=50`,
       );
       const payload: InsightsResponse = res?.data || res;
       console.log("[SavedResources] /v1/finance/insights →", payload);
@@ -212,7 +218,7 @@ export default function SavedResourcesPage() {
 
   const generatedDocs = [...(resourcesData?.generated_documents ?? [])].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   return (
@@ -220,21 +226,24 @@ export default function SavedResourcesPage() {
       <Header title="Finance Literacy" />
 
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
-
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
           {/* Back nav */}
           <Link href="/financial-literacy">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
+            <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors">
               <ChevronLeft className="h-4 w-4" />
-              <span>Finance Literacy / Insights & Resources</span>
+              <span className="truncate max-w-[200px] sm:max-w-none">
+                Finance Literacy / Insights & Resources
+              </span>
             </button>
           </Link>
 
           {/* Page title + window filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Insights & Resources</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Insights & Resources
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Your insights and generated documents
               </p>
             </div>
@@ -303,7 +312,9 @@ export default function SavedResourcesPage() {
             ) : insights.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 bg-white rounded-2xl border border-gray-100 text-center">
                 <TrendingUp className="w-8 h-8 text-gray-300 mb-2" />
-                <p className="text-sm text-gray-500 font-medium">No insights yet</p>
+                <p className="text-sm text-gray-500 font-medium">
+                  No insights yet
+                </p>
                 <p className="text-xs text-gray-400 mt-1">
                   Insights are generated as you add transactions and budgets
                 </p>
@@ -318,10 +329,14 @@ export default function SavedResourcesPage() {
                       className={`rounded-2xl border p-5 ${styles.card}`}
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${styles.icon}`}>
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg ${styles.icon}`}
+                        >
                           <InsightIcon kind={insight.kind} />
                         </div>
-                        <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${styles.badge}`}>
+                        <span
+                          className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${styles.badge}`}
+                        >
                           {insight.kind?.replace("_", " ") ?? "insight"}
                         </span>
                       </div>
@@ -329,24 +344,27 @@ export default function SavedResourcesPage() {
                         {insight.title}
                       </h3>
                       {insight.subtitle && (
-                        <p className="text-xs text-gray-500">{insight.subtitle}</p>
+                        <p className="text-xs text-gray-500">
+                          {insight.subtitle}
+                        </p>
                       )}
-                      {insight.metric && Object.keys(insight.metric).length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-black/5 flex flex-wrap gap-x-4 gap-y-1">
-                          {Object.entries(insight.metric).map(([k, v]) => (
-                            <div key={k} className="flex items-center gap-1">
-                              <span className="text-[10px] text-gray-400 capitalize">
-                                {k.replace(/_/g, " ")}:
-                              </span>
-                              <span className="text-[10px] font-semibold text-gray-700">
-                                {typeof v === "number" && k.includes("amount")
-                                  ? formatCurrency(v)
-                                  : String(v)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {insight.metric &&
+                        Object.keys(insight.metric).length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-black/5 flex flex-wrap gap-x-4 gap-y-1">
+                            {Object.entries(insight.metric).map(([k, v]) => (
+                              <div key={k} className="flex items-center gap-1">
+                                <span className="text-[10px] text-gray-400 capitalize">
+                                  {k.replace(/_/g, " ")}:
+                                </span>
+                                <span className="text-[10px] font-semibold text-gray-700">
+                                  {typeof v === "number" && k.includes("amount")
+                                    ? formatCurrency(v)
+                                    : String(v)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                     </div>
                   );
                 })}
@@ -391,7 +409,9 @@ export default function SavedResourcesPage() {
                 {generatedDocs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 bg-white rounded-2xl border border-gray-100 text-center">
                     <FileText className="w-8 h-8 text-gray-300 mb-2" />
-                    <p className="text-sm text-gray-500 font-medium">No documents yet</p>
+                    <p className="text-sm text-gray-500 font-medium">
+                      No documents yet
+                    </p>
                     <p className="text-xs text-gray-400 mt-1 mb-3">
                       Export a report to see it here
                     </p>
@@ -469,7 +489,6 @@ export default function SavedResourcesPage() {
                   </div>
                 )}
               </section>
-
             </>
           )}
         </div>

@@ -25,7 +25,7 @@
 
 # production
 /build
-bun.lock
+.bun.lock
 
 # misc
 .DS_Store
