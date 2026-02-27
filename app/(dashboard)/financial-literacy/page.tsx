@@ -40,8 +40,8 @@ export default function FinancialLiteracyPage() {
       href: "/financial-literacy/budget-planner",
     },
     {
-      id: "add-entry",
-      title: "Add a new entry to your plan",
+      id: "resources",
+      title: "Insights & Resources",
       icon: (
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#10B981]">
           <svg
@@ -60,7 +60,7 @@ export default function FinancialLiteracyPage() {
         </div>
       ),
       color: "from-[#A7F3D0] to-[#6EE7B7]",
-      href: "/financial-literacy/budget-planner?action=add",
+      href: "/financial-literacy/resources",
     },
     {
       id: "reports",
@@ -123,6 +123,7 @@ export default function FinancialLiteracyPage() {
       title: "Tell me how to make my finances better",
       bgColor: "bg-gradient-to-br from-[#E0F2FE] to-[#BAE6FD]",
       iconColor: "text-2xl",
+      href: `/financial-literacy/chat?prompt=${encodeURIComponent("Tell me how to make my finances better")}`,
     },
     {
       id: "2",
@@ -130,6 +131,7 @@ export default function FinancialLiteracyPage() {
       title: "Do a trend analysis of my cash flows",
       bgColor: "bg-gradient-to-br from-[#D1FAE5] to-[#A7F3D0]",
       iconColor: "text-2xl",
+      href: `/financial-literacy/chat?prompt=${encodeURIComponent("Do a trend analysis of my cash flows")}`,
     },
     {
       id: "3",
@@ -137,6 +139,7 @@ export default function FinancialLiteracyPage() {
       title: "How I can save more money?",
       bgColor: "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A]",
       iconColor: "text-2xl",
+      href: `/financial-literacy/chat?prompt=${encodeURIComponent("How I can save more money?")}`,
     },
   ];
 
@@ -179,7 +182,7 @@ export default function FinancialLiteracyPage() {
         placeholder="Ask me how to make my finances better."
         onSend={() => {}}
         onAttach={() => {}}
-        context="life"
+        context="financial-literacy"
       />
     </div>
   );

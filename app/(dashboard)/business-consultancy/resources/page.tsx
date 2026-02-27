@@ -20,13 +20,13 @@ export default function ResourcesPage() {
       id: "1",
       name: "SWOT-New business Name",
       type: "Edit",
-      href: "/modules/business-consultancy/swot",
+      href: "/business-consultancy/swot",
     },
     {
       id: "2",
       name: "Business Canvas-New business Name",
       type: "Edit",
-      href: "/modules/business-consultancy/canvas",
+      href: "/business-consultancy/canvas",
     },
   ];
 
@@ -68,7 +68,7 @@ export default function ResourcesPage() {
       <Header title="Business Consultancy" />
 
       <main className="flex-1 overflow-auto max-w-[1100px] mx-auto w-full px-4 sm:px-6 py-8">
-        <Link href="/modules/business-consultancy">
+        <Link href="/business-consultancy">
           <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors">
             <ChevronLeft className="h-4 w-4" />
             <span>Business Consultancy / Resources</span>

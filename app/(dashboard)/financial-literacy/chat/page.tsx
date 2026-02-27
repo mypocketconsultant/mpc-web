@@ -1,18 +1,39 @@
 "use client";
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mic, Paperclip, Send } from "lucide-react";
+import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus } from "lucide-react";
+import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import FormattedMessage from "@/components/FormattedMessage";
+import ThinkingBubble from "@/components/ThinkingBubble";
+import { apiService } from "@/lib/api/apiService";
+import { useToast } from "@/hooks/useToast";
+import { Toast } from "@/components/Toast";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+
+// ── Types ──────────────────────────────────────────────
 
 interface Message {
   id: string;
   type: "user" | "ai";
   content: string;
   timestamp: Date;
+  actions?: Array<{ type: string; payload: any }>;
+  metadata?: Record<string, any>;
 }
+
+interface AgentResponse {
+  module: string;
+  intent: string;
+  message: string;
+  plan?: Record<string, unknown>;
+  actions?: Array<{ type: string; payload: any }>;
+  metadata?: Record<string, unknown>;
+}
+
+// ── Suggested prompts for welcome state ────────────────
 
 const suggestedPrompts = [
   "How can I create a budget that works for me?",
@@ -21,13 +42,90 @@ const suggestedPrompts = [
   "Tips for reducing my monthly expenses",
 ];
 
+// ── ChatMessage component (matches study chat pattern) ─
+
+function ChatMessage({ message }: { message: Message }) {
+  const isAI = message.type === "ai";
+
+  return (
+    <div
+      className={`flex gap-3 ${isAI ? "justify-start" : "justify-end"} mb-4`}
+    >
+      {isAI && (
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
+          <svg
+            className="w-4 h-4 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      )}
+
+      <div
+        className={`max-w-[80%] ${
+          isAI
+            ? "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF] rounded-2xl rounded-tl-md"
+            : "bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl rounded-tr-md"
+        } px-4 py-3 shadow-sm`}
+      >
+        <FormattedMessage
+          content={message.content}
+          variant={isAI ? "light" : "dark"}
+        />
+
+        <span
+          className={`text-[10px] mt-2 block ${isAI ? "text-gray-400" : "text-white/60"}`}
+        >
+          {message.timestamp.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </div>
+
+      {!isAI && (
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <svg
+            className="w-4 h-4 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main content component ─────────────────────────────
+
 function FinanceChatContent() {
   const searchParams = useSearchParams();
-  const context = searchParams.get("context") || "finance";
+  const router = useRouter();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
+  const { toast, showToast, hideToast } = useToast();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +140,128 @@ function FinanceChatContent() {
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+
+    const sessionIdParam = searchParams.get("session_id");
+    if (sessionIdParam) {
+      setSessionId(sessionIdParam);
+      loadSession(sessionIdParam);
+    }
+
+    const promptParam = searchParams.get("prompt");
+    if (promptParam) {
+      try {
+        setInputValue(decodeURIComponent(promptParam));
+      } catch {
+        setInputValue(promptParam);
+      }
+    }
+  }, [searchParams]);
+
+  // ── Load a persisted session from chat_sessions ──────
+
+  const loadSession = async (sid: string) => {
+    try {
+      const response = await apiService.get<{
+        status: string;
+        data: {
+          id: string;
+          messages: Array<{ role: string; content: string; timestamp: string }>;
+        };
+      }>(`/v1/chat-sessions/${sid}`);
+      const sessionData = response?.data;
+      if (sessionData?.messages) {
+        const loaded: Message[] = sessionData.messages.map((msg: any, idx: number) => ({
+          id: `loaded_${idx}`,
+          type: msg.role === "user" ? "user" : "ai",
+          content: msg.content,
+          timestamp: new Date(msg.timestamp || Date.now()),
+        }));
+        setMessages(loaded);
+      }
+    } catch {
+      // session may not exist yet
+    }
+  };
+
+  // ── Process agent actions and show toasts ────────────
+
+  const processAgentActions = (agentResponse: AgentResponse) => {
+    const actions = agentResponse.actions;
+    const metadata = agentResponse.metadata as Record<string, any> | undefined;
+
+    if (actions && actions.length > 0) {
+      for (const action of actions) {
+        switch (action.type) {
+          case "finance.create_transaction": {
+            const txId = metadata?.created_transaction_id;
+            showToast("success", "Transaction created!", txId ? {
+              label: "View in Budget Planner",
+              onClick: () => router.push("/financial-literacy/budget-planner"),
+            } : undefined);
+            break;
+          }
+          case "finance.update_transaction": {
+            showToast("success", "Transaction updated.");
+            break;
+          }
+          case "finance.create_budget": {
+            const budgetId = metadata?.created_budget_id;
+            showToast("success", "Budget created!", budgetId ? {
+              label: "View Budget",
+              onClick: () => router.push("/financial-literacy/budget-planner"),
+            } : undefined);
+            break;
+          }
+          case "finance.update_budget": {
+            showToast("success", "Budget updated.");
+            break;
+          }
+          case "finance.publish_budget": {
+            showToast("success", "Budget published!");
+            break;
+          }
+          case "finance.export_cashflow_pdf": {
+            const docId = metadata?.created_doc_id || (action.payload as any)?.doc_id;
+            if (docId) {
+              showToast("success", "PDF export started. Generating...", {
+                label: "View Reports",
+                onClick: () => router.push("/financial-literacy/reports"),
+              });
+            }
+            break;
+          }
+          case "finance.list_transactions":
+          case "finance.list_budgets":
+          case "finance.get_transaction":
+          case "finance.get_budget":
+          case "finance.get_doc":
+          case "finance.poll_doc":
+            // Data-fetching actions — info is in the agent message
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  };
+
+  // ── History drawer handlers ───────────────────────────
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setSessionId("");
+    window.history.replaceState(null, "", "/financial-literacy/chat");
+  };
+
+  const handleSelectSession = (selectedSessionId: string) => {
+    setIsDrawerOpen(false);
+    setMessages([]);
+    setSessionId(selectedSessionId);
+    window.history.replaceState(null, "", `/financial-literacy/chat?session_id=${selectedSessionId}`);
+    loadSession(selectedSessionId);
+  };
+
+  // ── Send message handler ─────────────────────────────
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -59,45 +278,60 @@ function FinanceChatContent() {
     setIsLoading(true);
 
     try {
-      // Simulate AI response
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const aiResponses: Record<string, string> = {
-        budget:
-          "Creating an effective budget starts with tracking your income and expenses. I recommend the 50/30/20 rule:\n\n• 50% for needs (rent, utilities, groceries)\n• 30% for wants (entertainment, dining out)\n• 20% for savings and debt repayment\n\nWould you like me to help you set up a personalized budget plan?",
-        savings:
-          "Building an emergency fund is crucial for financial security. Here's a step-by-step approach:\n\n1. Start with a goal of $1,000 for unexpected expenses\n2. Then work toward 3-6 months of living expenses\n3. Keep it in a high-yield savings account\n4. Automate your savings with direct deposits\n\nHow much would you like to start saving monthly?",
-        default:
-          "I can help you with various aspects of personal finance including:\n\n• Budgeting and expense tracking\n• Saving strategies\n• Debt management\n• Investment basics\n• Cash flow analysis\n\nWhat specific area would you like to explore?",
+      const payload: Record<string, unknown> = {
+        message: userMessage.content,
+        session_id: sessionId || undefined,
       };
 
-      let responseContent = aiResponses.default;
-      const lowerInput = userMessage.content.toLowerCase();
+      const httpResponse = await apiService.post<{
+        status: string;
+        message: string;
+        data: AgentResponse;
+      }>("/v1/finance/chat", payload);
 
-      if (lowerInput.includes("budget") || lowerInput.includes("spending")) {
-        responseContent = aiResponses.budget;
-      } else if (
-        lowerInput.includes("save") ||
-        lowerInput.includes("saving") ||
-        lowerInput.includes("emergency")
-      ) {
-        responseContent = aiResponses.savings;
+      const agentResponse = httpResponse.data;
+      console.log("[mpc-web][finance.chat] ←", { intent: agentResponse?.intent, actions: agentResponse?.actions?.map((a: any) => a.type), created_budget_id: agentResponse?.metadata?.created_budget_id ?? null });
+
+      // Capture session_id from response metadata
+      const returnedSessionId = agentResponse?.metadata?.session_id as string;
+      if (returnedSessionId && returnedSessionId !== sessionId) {
+        setSessionId(returnedSessionId);
+        window.history.replaceState(
+          null,
+          "",
+          `/financial-literacy/chat?session_id=${returnedSessionId}`
+        );
       }
+
+      // Extract message content with fallbacks (same pattern as study/life chats)
+      const aiContent =
+        agentResponse?.message ||
+        (httpResponse as any)?.data?.data?.message ||
+        "I received your message but could not generate a response.";
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         type: "ai",
-        content: responseContent,
+        content: aiContent,
         timestamp: new Date(),
+        actions: agentResponse?.actions ?? undefined,
+        metadata: agentResponse?.metadata as Record<string, any> ?? undefined,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Process actions — show toasts, navigate, etc.
+      processAgentActions(agentResponse);
     } catch (error) {
+      const errorText =
+        error instanceof Error ? error.message : "Failed to get AI response";
+      showToast("error", errorText);
+
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         type: "ai",
         content:
-          "I apologize, but I encountered an error. Please try again.",
+          "I apologize, but I encountered an error processing your request. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -106,7 +340,7 @@ function FinanceChatContent() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -118,28 +352,52 @@ function FinanceChatContent() {
     inputRef.current?.focus();
   };
 
+  const handleMicrophone = () => {
+    toggleRecording((text) => {
+      setInputValue(text);
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <Header title="Finance Literacy" />
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[900px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
-          {/* Back button */}
-          <Link href="/financial-literacy">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
-              <span>Finance Literacy / Chat with AI Agent</span>
-            </button>
-          </Link>
+          {/* Back button + History actions */}
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/financial-literacy">
+              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-4 w-4" />
+                <span>Finance Literacy / Chat with AI Agent</span>
+              </button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleNewChat}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Chat
+              </button>
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+            </div>
+          </div>
 
           {/* Chat Area */}
           <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 {/* Welcome State */}
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E8E0FF] to-[#F3F0FF] flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#E8E0FF] to-[#F3F0FF] flex items-center justify-center mb-4">
                   <svg
-                    className="w-10 h-10 text-[#5A3FFF]"
+                    className="w-8 h-8 text-[#5A3FFF]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -152,16 +410,16 @@ function FinanceChatContent() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
                   Financial AI Assistant
                 </h2>
-                <p className="text-gray-500 mb-8 max-w-md">
+                <p className="text-gray-500 text-sm max-w-md">
                   I&apos;m here to help you manage your finances better. Ask me
                   about budgeting, saving, investing, or any financial topic.
                 </p>
 
                 {/* Suggested Prompts */}
-                <div className="w-full max-w-lg">
+                <div className="w-full max-w-lg mt-8">
                   <p className="text-sm text-gray-500 mb-3">
                     Try one of these prompts:
                   </p>
@@ -179,104 +437,13 @@ function FinanceChatContent() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-1">
                 {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-3 ${
-                      message.type === "ai" ? "justify-start" : "justify-end"
-                    }`}
-                  >
-                    {message.type === "ai" && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                    )}
-
-                    <div
-                      className={`max-w-[80%] ${
-                        message.type === "ai"
-                          ? "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF] rounded-2xl rounded-tl-md"
-                          : "bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl rounded-tr-md"
-                      } px-4 py-3 shadow-sm`}
-                    >
-                      <FormattedMessage
-                        content={message.content}
-                        variant={message.type === "ai" ? "light" : "dark"}
-                      />
-                      <span className={`text-[10px] mt-2 block ${message.type === "ai" ? "text-gray-400" : "text-white/60"}`}>
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-
-                    {message.type === "user" && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-gray-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
+                  <ChatMessage key={message.id} message={message} />
                 ))}
 
-                {/* Loading indicator */}
-                {isLoading && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                        <span
-                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        />
-                        <span
-                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Loading indicator — same ThinkingBubble as study chat */}
+                {isLoading && <ThinkingBubble />}
 
                 <div ref={messagesEndRef} />
               </div>
@@ -298,25 +465,58 @@ function FinanceChatContent() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="Ask me how to make my finances better."
                 className="flex-1 bg-gray-50 rounded-full px-5 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
                 disabled={isLoading}
               />
 
               <button
-                className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+                onClick={handleMicrophone}
+                disabled={isTranscribing}
+                className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                  isRecording
+                    ? "bg-red-500"
+                    : isTranscribing
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-br from-[#5A3FFF] to-[#300878]"
+                }`}
+                style={
+                  isRecording
+                    ? {
+                        animation:
+                          "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                      }
+                    : undefined
+                }
                 aria-label="Voice input"
               >
-                <Mic className="h-5 w-5" />
+                {isTranscribing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>
         </div>
       </main>
+
+      <ChatHistoryDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSelectSession={handleSelectSession}
+        onNewChat={handleNewChat}
+        module="finance"
+        currentSessionId={sessionId}
+      />
+
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   );
 }
+
+// ── Page export ────────────────────────────────────────
 
 export default function FinanceChatPage() {
   return (

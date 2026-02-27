@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mic, Paperclip, Loader2 } from "lucide-react";
+import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus } from "lucide-react";
+import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import ChatMessage, { Message } from "../components/ChatMessage";
 import ClassSelectionSidebar, {
@@ -37,6 +38,7 @@ function StudyChatContent() {
     classParam || null,
   );
   const [sessionId, setSessionId] = useState<string>("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
   const { toast, showToast, hideToast } = useToast();
@@ -125,6 +127,34 @@ function StudyChatContent() {
     }
   };
 
+  const loadSession = async (sid: string) => {
+    setIsLoadingMessages(true);
+    setMessages([]);
+    try {
+      const response = await apiService.get<{
+        status: string;
+        data: {
+          id: string;
+          messages: Array<{ role: string; content: string; timestamp: string }>;
+        };
+      }>(`/v1/chat-sessions/${sid}`);
+      const sessionData = response?.data;
+      if (sessionData?.messages) {
+        const loaded: Message[] = sessionData.messages.map((msg: any, idx: number) => ({
+          id: `loaded_${idx}`,
+          type: msg.role === "user" ? "user" : "ai",
+          content: msg.content,
+          timestamp: new Date(msg.timestamp || Date.now()),
+        }));
+        setMessages(loaded);
+      }
+    } catch {
+      // session may not exist yet
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -182,6 +212,7 @@ function StudyChatContent() {
         response?.data?.data?.metadata?.session_id;
       if (returnedSessionId && returnedSessionId !== sessionId) {
         setSessionId(returnedSessionId);
+        window.history.replaceState(null, "", `/study/chat?session_id=${returnedSessionId}`);
       }
 
       const aiContent =
@@ -277,6 +308,20 @@ function StudyChatContent() {
     }
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setSessionId("");
+    window.history.replaceState(null, "", "/study/chat");
+  };
+
+  const handleSelectSession = (selectedSessionId: string) => {
+    setIsDrawerOpen(false);
+    setMessages([]);
+    setSessionId(selectedSessionId);
+    window.history.replaceState(null, "", `/study/chat?session_id=${selectedSessionId}`);
+    loadSession(selectedSessionId);
+  };
+
   const handleAttachClick = () => {
     fileInputRef.current?.click();
   };
@@ -298,13 +343,31 @@ function StudyChatContent() {
       {/* Main Content */}
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
-          {/* Back button / Breadcrumb */}
-          <Link href="/study">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
-              <span>{breadcrumbTitle}</span>
-            </button>
-          </Link>
+          {/* Back button / Breadcrumb + History actions */}
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/study">
+              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-4 w-4" />
+                <span>{breadcrumbTitle}</span>
+              </button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleNewChat}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Chat
+              </button>
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+            </div>
+          </div>
 
           {/* Two-column layout */}
           <div className="flex-1 flex gap-6 overflow-hidden">
@@ -460,6 +523,15 @@ function StudyChatContent() {
           </div>
         </div>
       </main>
+
+      <ChatHistoryDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSelectSession={handleSelectSession}
+        onNewChat={handleNewChat}
+        module="study"
+        currentSessionId={sessionId}
+      />
 
       <Toast toast={toast} onClose={hideToast} />
     </div>

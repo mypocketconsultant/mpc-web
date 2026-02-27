@@ -31,29 +31,29 @@ export default function BusinessConsultancyPage() {
       id: "canvas",
       title: "Create Business Model Canvas",
       icon: <Image src={careerIcon} alt="Canvas" width={32} height={32} />,
-      color: "from-[#8FCF91] to-[#78C879]",
-      href: "/modules/business-consultancy/canvas",
+      color: "from-[#C4B0FF] to-[#9B7FFF]",
+      href: "/business-consultancy/canvas",
     },
     {
       id: "swot",
       title: "Create SWOT Analysis Doc",
       icon: <Image src={dailyIcon} alt="SWOT" width={32} height={32} />,
-      color: "from-[#66BB6A] to-[#4CAF50]",
-      href: "/modules/business-consultancy/swot",
+      color: "from-[#E6E4FF] to-[#E6E4FF]",
+      href: "/business-consultancy/swot",
     },
     {
       id: "ai",
       title: "Chat with Ai Agent",
       icon: <Image src={aiIcon} alt="AI" width={32} height={32} />,
-      color: "from-[#43A047] to-[#2E7D32]",
-      href: "/modules/business-consultancy/chat?context=business-consultancy",
+      color: "from-[#E6E4FF] to-[#E6E4FF]",
+      href: "/business-consultancy/chat?context=business-consultancy",
     },
     {
       id: "resources",
       title: "Saved Business Docs",
-      icon: <FileText className="h-8 w-8 text-white" />,
-      color: "from-[#2E7D32] to-[#1B5E20]",
-      href: "/modules/business-consultancy/resources",
+      icon: <FileText className="h-8 w-8 text-[#5A3FFF]" />,
+      color: "from-[#C4B0FF] to-[#9B7FFF]",
+      href: "/business-consultancy/resources",
     },
   ];
 
@@ -86,7 +86,7 @@ export default function BusinessConsultancyPage() {
     if (prompt) {
       const encodedPrompt = encodeURIComponent(prompt.title);
       router.push(
-        `/modules/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
+        `/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
       );
     }
   };
@@ -137,7 +137,7 @@ export default function BusinessConsultancyPage() {
         onSend={(message) => {
           const encodedPrompt = encodeURIComponent(message);
           router.push(
-            `/modules/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
+            `/business-consultancy/chat?context=business-consultancy&prompt=${encodedPrompt}`,
           );
         }}
         onAttach={() => {}}

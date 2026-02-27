@@ -470,51 +470,6 @@ export default function SavedResourcesPage() {
                 )}
               </section>
 
-              {/* Uploaded Documents */}
-              <section className="mb-8">
-                <h2 className="text-base font-semibold text-gray-800 mb-3">
-                  Uploaded Documents
-                </h2>
-
-                {userUploads.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
-                    <p className="text-sm text-gray-500">No documents uploaded in the finance module yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {userUploads.map((upload) => (
-                      <div
-                        key={upload.id}
-                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
-                            <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-800 truncate max-w-[200px]">
-                              {upload.filename}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {upload.status} · {upload.size ? `${Math.round(upload.size / 1024)} KB` : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          upload.status === "parsed" ? "bg-green-50 text-green-700"
-                          : upload.status === "failed" ? "bg-red-50 text-red-600"
-                          : "bg-yellow-50 text-yellow-700"
-                        }`}>
-                          {upload.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
             </>
           )}
         </div>

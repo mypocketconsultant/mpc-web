@@ -1,20 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
+  ChevronDown,
   Download,
   FileText,
-  PieChart,
   BarChart3,
   TrendingUp,
-  Calendar,
-  Filter,
+  PieChart,
+  ArrowUpDown,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import Header from "@/app/components/header";
+import { apiService } from "@/lib/api/apiService";
 
-interface ReportData {
+// ── Types (aligned with backend) ──────────────────────────
+
+interface Transaction {
+  id: string;
+  user_id: string;
+  budget_id: string | null;
+  name: string;
+  direction: "income" | "expense";
+  category: string | null;
+  subcategory: string | null;
+  target_amount: number | null;
+  actual_amount: number;
+  currency: string;
+  date: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BudgetRow {
+  name: string;
+  target_amount: number;
+  actual_amount?: number | null;
+}
+
+interface BudgetDoc {
+  id: string;
+  title: string | null;
+  period: string | null;
+  currency: string;
+  groups: Record<string, { rows: BudgetRow[] }>;
+}
+
+interface CategoryBreakdown {
   category: string;
   amount: number;
   percentage: number;
@@ -27,333 +65,981 @@ interface MonthlyData {
   expenses: number;
 }
 
-const expensesByCategory: ReportData[] = [
-  { category: "Rent", amount: 1500, percentage: 40, color: "#5A3FFF" },
-  { category: "Groceries", amount: 450, percentage: 12, color: "#10B981" },
-  { category: "Utilities", amount: 200, percentage: 5, color: "#F59E0B" },
-  { category: "Transportation", amount: 300, percentage: 8, color: "#EC4899" },
-  { category: "Entertainment", amount: 150, percentage: 4, color: "#8B5CF6" },
-  { category: "Healthcare", amount: 100, percentage: 3, color: "#06B6D4" },
-  { category: "Shopping", amount: 400, percentage: 11, color: "#EF4444" },
-  { category: "Other", amount: 650, percentage: 17, color: "#6B7280" },
+interface PeriodSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  netSavings: number;
+  avgMonthlySavings: number;
+  savingsRate: number;
+  monthCount: number;
+}
+
+interface ExportStatus {
+  docId: string | null;
+  status: "idle" | "processing" | "ready" | "failed";
+  downloadUrl: string | null;
+  error: string | null;
+}
+
+// ── Constants ─────────────────────────────────────────────
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Rent: "#EF4444",
+  Groceries: "#F59E0B",
+  Utilities: "#3B82F6",
+  Transportation: "#8B5CF6",
+  Entertainment: "#EC4899",
+  Healthcare: "#10B981",
+  Education: "#06B6D4",
+  Shopping: "#F97316",
+  "Other Expenses": "#6B7280",
+  Salary: "#10B981",
+  Freelance: "#3B82F6",
+  Investments: "#8B5CF6",
+  Business: "#F59E0B",
+  "Other Income": "#6B7280",
+};
+
+const DEFAULT_COLOR = "#9CA3AF";
+
+const PERIOD_OPTIONS = [
+  { value: "1month", label: "1 Month", months: 1 },
+  { value: "3months", label: "3 Months", months: 3 },
+  { value: "6months", label: "6 Months", months: 6 },
+  { value: "1year", label: "1 Year", months: 12 },
 ];
 
-const monthlyData: MonthlyData[] = [
-  { month: "Jul", income: 5200, expenses: 3200 },
-  { month: "Aug", income: 5500, expenses: 3400 },
-  { month: "Sep", income: 5300, expenses: 3100 },
-  { month: "Oct", income: 5800, expenses: 3600 },
-  { month: "Nov", income: 5400, expenses: 3300 },
-  { month: "Dec", income: 6200, expenses: 4100 },
-];
-
-const reportTypes = [
-  {
-    id: "monthly",
-    title: "Monthly Summary",
-    description: "Overview of income and expenses for the month",
-    icon: Calendar,
-  },
+const REPORT_TYPES = [
   {
     id: "category",
     title: "Category Breakdown",
-    description: "Detailed breakdown by spending category",
+    description: "Expenses grouped by category",
     icon: PieChart,
   },
   {
+    id: "monthly",
+    title: "Monthly Overview",
+    description: "Income vs expenses by month",
+    icon: BarChart3,
+  },
+  {
     id: "trends",
-    title: "Spending Trends",
-    description: "Track your spending patterns over time",
+    title: "Trends",
+    description: "Spending trends over time",
     icon: TrendingUp,
   },
   {
     id: "comparison",
-    title: "Income vs Expenses",
-    description: "Compare your income against expenses",
-    icon: BarChart3,
+    title: "Period Comparison",
+    description: "Compare with previous period",
+    icon: ArrowUpDown,
   },
 ];
 
-export default function FinancialReportsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState("6months");
-  const [selectedReport, setSelectedReport] = useState("category");
+// ── Helpers ───────────────────────────────────────────────
 
-  const totalExpenses = expensesByCategory.reduce(
-    (sum, item) => sum + item.amount,
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function getMonthKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+function getMonthsAgo(months: number): Date {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function filterByPeriod(
+  transactions: Transaction[],
+  months: number
+): Transaction[] {
+  const cutoff = getMonthsAgo(months);
+  return transactions.filter((t) => {
+    if (!t.date) return false;
+    return new Date(t.date) >= cutoff;
+  });
+}
+
+function buildCategoryBreakdown(
+  transactions: Transaction[],
+  planRowNames?: string[]
+): CategoryBreakdown[] {
+  const expenses = transactions.filter((t) => t.direction === "expense");
+  const categoryMap = new Map<string, number>();
+
+  // If plan rows provided, seed them all at 0 so every row shows
+  if (planRowNames && planRowNames.length > 0) {
+    for (const name of planRowNames) {
+      categoryMap.set(name, 0);
+    }
+  }
+
+  for (const t of expenses) {
+    const cat = t.category || "Other Expenses";
+    // Match case-insensitively to plan rows if available
+    if (planRowNames && planRowNames.length > 0) {
+      const match = planRowNames.find(
+        (r) => r.toLowerCase() === cat.toLowerCase()
+      );
+      if (match) {
+        categoryMap.set(match, (categoryMap.get(match) || 0) + t.actual_amount);
+      } else {
+        // Transaction category doesn't match any plan row — group under "Other"
+        categoryMap.set(cat, (categoryMap.get(cat) || 0) + t.actual_amount);
+      }
+    } else {
+      categoryMap.set(cat, (categoryMap.get(cat) || 0) + t.actual_amount);
+    }
+  }
+
+  const total = Array.from(categoryMap.values()).reduce(
+    (sum, v) => sum + v,
     0
   );
+  return Array.from(categoryMap.entries())
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: total > 0 ? Math.round((amount / total) * 100) : 0,
+      color: CATEGORY_COLORS[category] || DEFAULT_COLOR,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+}
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+function buildMonthlyData(transactions: Transaction[]): MonthlyData[] {
+  const monthMap = new Map<
+    string,
+    { income: number; expenses: number; sortKey: string }
+  >();
+
+  for (const t of transactions) {
+    if (!t.date) continue;
+    const key = getMonthKey(t.date);
+    const sortKey = t.date.slice(0, 7);
+    if (!monthMap.has(key)) {
+      monthMap.set(key, { income: 0, expenses: 0, sortKey });
+    }
+    const entry = monthMap.get(key)!;
+    if (t.direction === "income") {
+      entry.income += t.actual_amount;
+    } else {
+      entry.expenses += t.actual_amount;
+    }
+  }
+
+  return Array.from(monthMap.entries())
+    .sort((a, b) => a[1].sortKey.localeCompare(b[1].sortKey))
+    .map(([month, data]) => ({
+      month,
+      income: data.income,
+      expenses: data.expenses,
+    }));
+}
+
+function buildPeriodSummary(transactions: Transaction[]): PeriodSummary {
+  let totalIncome = 0;
+  let totalExpenses = 0;
+  const monthsSet = new Set<string>();
+
+  for (const t of transactions) {
+    if (t.direction === "income") {
+      totalIncome += t.actual_amount;
+    } else {
+      totalExpenses += t.actual_amount;
+    }
+    if (t.date) {
+      monthsSet.add(t.date.slice(0, 7));
+    }
+  }
+
+  const monthCount = Math.max(monthsSet.size, 1);
+  const netSavings = totalIncome - totalExpenses;
+  const avgMonthlySavings = netSavings / monthCount;
+  const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netSavings,
+    avgMonthlySavings,
+    savingsRate,
+    monthCount,
   };
+}
 
-  const handleExport = (format: "pdf" | "csv" | "excel") => {
-    // Simulate export functionality
-    alert(`Exporting report as ${format.toUpperCase()}...`);
-  };
+function computePercentChange(current: number, previous: number): string {
+  if (previous === 0) return current > 0 ? "+100%" : "0%";
+  const change = ((current - previous) / previous) * 100;
+  const sign = change >= 0 ? "+" : "";
+  return `${sign}${Math.round(change)}%`;
+}
 
+// ── Component ─────────────────────────────────────────────
+
+export default function ReportsPage() {
+  const searchParams = useSearchParams();
+  const urlBudgetId = searchParams.get("budget_id");
+
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [budgets, setBudgets] = useState<BudgetDoc[]>([]);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(urlBudgetId);
+  const [budgetDropdownOpen, setBudgetDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState("6months");
+  const [selectedReport, setSelectedReport] = useState("category");
+  const [exportStatus, setExportStatus] = useState<ExportStatus>({
+    docId: null,
+    status: "idle",
+    downloadUrl: null,
+    error: null,
+  });
+
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setBudgetDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Fetch budgets + transactions on mount ─────────────────────
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [txRes, budgetRes]: any[] = await Promise.all([
+        apiService.get("/v1/finance/transactions?limit=200"),
+        apiService.get("/v1/finance/budgets?limit=100"),
+      ]);
+
+      const txData = txRes?.data || txRes;
+      const txItems: Transaction[] = txData?.items || [];
+      setAllTransactions(txItems);
+
+      const budgetData = budgetRes?.data || budgetRes;
+      const budgetItems: BudgetDoc[] = budgetData?.items || [];
+      setBudgets(budgetItems);
+
+      console.log("[Reports] fetched", txItems.length, "transactions,", budgetItems.length, "budgets");
+    } catch (error) {
+      console.error("[Reports] fetchData error:", error);
+      setAllTransactions([]);
+      setBudgets([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ── Cleanup polling on unmount ──────────────────────────
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  // ── Derived data ────────────────────────────────────────
+  const selectedBudget = budgets.find((b) => b.id === selectedBudgetId) || null;
+
+  // Get plan row names from the selected budget (for category axis)
+  const planRowNames = useMemo(() => {
+    if (!selectedBudget) return undefined;
+    return Object.values(selectedBudget.groups || {}).flatMap(
+      (g) => (g.rows || []).map((r) => r.name).filter(Boolean)
+    );
+  }, [selectedBudget]);
+
+  // Filter transactions: by budget_id if selected, then by period
+  const budgetFilteredTx = selectedBudgetId
+    ? allTransactions.filter((t) => t.budget_id === selectedBudgetId)
+    : allTransactions;
+
+  const periodConfig =
+    PERIOD_OPTIONS.find((p) => p.value === selectedPeriod) || PERIOD_OPTIONS[2];
+  const filteredTransactions = filterByPeriod(
+    budgetFilteredTx,
+    periodConfig.months
+  );
+  const previousPeriodTransactions = filterByPeriod(
+    budgetFilteredTx,
+    periodConfig.months * 2
+  ).filter((t) => !filteredTransactions.includes(t));
+
+  const categoryBreakdown = buildCategoryBreakdown(filteredTransactions, planRowNames);
+  const monthlyData = buildMonthlyData(filteredTransactions);
+  const summary = buildPeriodSummary(filteredTransactions);
+  const previousSummary = buildPeriodSummary(previousPeriodTransactions);
+
+  const totalExpenses = categoryBreakdown.reduce(
+    (sum, c) => sum + c.amount,
+    0
+  );
   const maxBarValue = Math.max(
-    ...monthlyData.flatMap((d) => [d.income, d.expenses])
+    ...monthlyData.map((m) => Math.max(m.income, m.expenses)),
+    1
   );
 
+  // ── Export handler ──────────────────────────────────────
+  const handleExport = async (format: "pdf" | "csv") => {
+    if (format === "csv") {
+      const rows = filteredTransactions.map((t) => ({
+        Date: t.date || "",
+        Name: t.name,
+        Direction: t.direction,
+        Category: t.category || "",
+        Amount: t.actual_amount,
+        Currency: t.currency,
+      }));
+
+      if (rows.length === 0) return;
+
+      const headers = Object.keys(rows[0]);
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((r) =>
+          headers.map((h) => `"${(r as Record<string, unknown>)[h]}"`).join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "finance-report.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // PDF export via backend
+    try {
+      setExportStatus({
+        docId: null,
+        status: "processing",
+        downloadUrl: null,
+        error: null,
+      });
+
+      console.log(
+        "[Reports] handleExport → POST /v1/finance/exports/cashflow.pdf"
+      );
+      const res: any = await apiService.post(
+        "/v1/finance/exports/cashflow.pdf",
+        {
+          title: "Cashflow Report",
+          period: `${periodConfig.months}m`,
+          currency: "USD",
+          include_transactions: true,
+          transaction_limit: 200,
+        }
+      );
+
+      const data = res?.data || res;
+      const docId = data?.id;
+
+      if (!docId) {
+        setExportStatus({
+          docId: null,
+          status: "failed",
+          downloadUrl: null,
+          error: "No document ID returned",
+        });
+        return;
+      }
+
+      console.log("[Reports] export created, docId:", docId, "polling...");
+      setExportStatus({
+        docId,
+        status: "processing",
+        downloadUrl: null,
+        error: null,
+      });
+
+      // Poll for completion
+      pollRef.current = setInterval(async () => {
+        try {
+          const pollRes: any = await apiService.get(
+            `/v1/finance/docs/${docId}`
+          );
+          const pollData = pollRes?.data || pollRes;
+
+          console.log("[Reports] poll ←", pollData?.status);
+
+          if (pollData?.status === "ready") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            const downloadUrl = pollData?.storage?.url || null;
+            setExportStatus({
+              docId,
+              status: "ready",
+              downloadUrl,
+              error: null,
+            });
+            if (downloadUrl) {
+              window.open(downloadUrl, "_blank");
+            }
+          } else if (pollData?.status === "failed") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setExportStatus({
+              docId,
+              status: "failed",
+              downloadUrl: null,
+              error: "Export generation failed",
+            });
+          }
+        } catch (pollError) {
+          console.error("[Reports] poll error:", pollError);
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("[Reports] handleExport error:", error);
+      setExportStatus({
+        docId: null,
+        status: "failed",
+        downloadUrl: null,
+        error: "Failed to start export",
+      });
+    }
+  };
+
+  // ── Render ──────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <Header title="Finance Literacy" />
 
       <main className="flex-1 overflow-auto">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
-          {/* Back button */}
-          <Link href="/financial-literacy">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
-              <span>Finance Literacy / Reports & Exports</span>
-            </button>
-          </Link>
+          {/* Back + Export Buttons */}
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/financial-literacy">
+              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-4 w-4" />
+                <span>Finance Literacy / Reports & Exports</span>
+              </button>
+            </Link>
 
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Financial Reports
-              </h1>
-              <p className="text-gray-500 text-sm mt-1">
-                Analyze your finances and export detailed reports
-              </p>
-            </div>
-
-            {/* Export Buttons */}
             <div className="flex items-center gap-2">
+              {exportStatus.status === "processing" && (
+                <span className="flex items-center gap-1 text-sm text-amber-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating...
+                </span>
+              )}
+              {exportStatus.status === "ready" && (
+                <span className="flex items-center gap-1 text-sm text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  Ready
+                </span>
+              )}
+              {exportStatus.status === "failed" && (
+                <span className="flex items-center gap-1 text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4" />
+                  Failed
+                </span>
+              )}
               <button
                 onClick={() => handleExport("pdf")}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={exportStatus.status === "processing"}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 <FileText className="w-4 h-4" />
                 PDF
               </button>
               <button
                 onClick={() => handleExport("csv")}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 CSV
               </button>
-              <button
-                onClick={() => handleExport("excel")}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white rounded-xl text-sm font-medium hover:shadow-lg transition-all"
-              >
-                <Download className="w-4 h-4" />
-                Excel
-              </button>
             </div>
           </div>
 
-          {/* Period Filter */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Filter className="w-4 h-4" />
-              <span>Period:</span>
+          {/* Filters: Budget + Period */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            {/* Budget Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setBudgetDropdownOpen((o) => !o)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  selectedBudgetId
+                    ? "bg-[#5A3FFF] text-white shadow-sm"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-[#5A3FFF] hover:text-[#5A3FFF]"
+                }`}
+              >
+                <span className="truncate max-w-[160px]">
+                  {selectedBudget
+                    ? selectedBudget.title || selectedBudget.period || "Untitled Budget"
+                    : "All Budgets"}
+                </span>
+                <ChevronDown className="w-4 h-4 flex-shrink-0" />
+              </button>
+
+              {budgetDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-1 max-h-60 overflow-auto">
+                  <button
+                    onClick={() => {
+                      setSelectedBudgetId(null);
+                      setBudgetDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                      !selectedBudgetId ? "text-[#5A3FFF] font-medium" : "text-gray-700"
+                    }`}
+                  >
+                    All Budgets
+                  </button>
+                  {budgets.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedBudgetId(b.id);
+                        setBudgetDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        selectedBudgetId === b.id ? "text-[#5A3FFF] font-medium" : "text-gray-700"
+                      }`}
+                    >
+                      {b.title || b.period || "Untitled Budget"}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex bg-white rounded-xl border border-gray-200 p-1">
-              {[
-                { id: "1month", label: "1 Month" },
-                { id: "3months", label: "3 Months" },
-                { id: "6months", label: "6 Months" },
-                { id: "1year", label: "1 Year" },
-              ].map((period) => (
-                <button
-                  key={period.id}
-                  onClick={() => setSelectedPeriod(period.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    selectedPeriod === period.id
-                      ? "bg-[#5A3FFF] text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  {period.label}
-                </button>
-              ))}
-            </div>
+
+            {/* Period Filter */}
+            {PERIOD_OPTIONS.map((period) => (
+              <button
+                key={period.value}
+                onClick={() => setSelectedPeriod(period.value)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  selectedPeriod === period.value
+                    ? "bg-[#5A3FFF] text-white shadow-sm"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-[#5A3FFF] hover:text-[#5A3FFF]"
+                }`}
+              >
+                {period.label}
+              </button>
+            ))}
           </div>
 
           {/* Report Type Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {reportTypes.map((report) => {
-              const Icon = report.icon;
-              return (
-                <button
-                  key={report.id}
-                  onClick={() => setSelectedReport(report.id)}
-                  className={`p-4 rounded-2xl border text-left transition-all ${
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+            {REPORT_TYPES.map((report) => (
+              <button
+                key={report.id}
+                onClick={() => setSelectedReport(report.id)}
+                className={`p-4 rounded-2xl text-left transition-all ${
+                  selectedReport === report.id
+                    ? "bg-[#5A3FFF] text-white shadow-lg shadow-[#5A3FFF]/25"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-[#5A3FFF]"
+                }`}
+              >
+                <report.icon
+                  className={`w-5 h-5 mb-2 ${
                     selectedReport === report.id
-                      ? "bg-[#5A3FFF] text-white border-[#5A3FFF] shadow-lg"
-                      : "bg-white border-gray-100 hover:border-[#5A3FFF] hover:shadow-md"
+                      ? "text-white"
+                      : "text-[#5A3FFF]"
+                  }`}
+                />
+                <h3 className="text-sm font-semibold">{report.title}</h3>
+                <p
+                  className={`text-xs mt-1 ${
+                    selectedReport === report.id
+                      ? "text-white/80"
+                      : "text-gray-500"
                   }`}
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                      selectedReport === report.id
-                        ? "bg-white/20"
-                        : "bg-[#F3F0FF]"
-                    }`}
-                  >
-                    <Icon
-                      className={`w-5 h-5 ${
-                        selectedReport === report.id
-                          ? "text-white"
-                          : "text-[#5A3FFF]"
-                      }`}
-                    />
-                  </div>
-                  <h3 className="font-semibold text-sm mb-1">{report.title}</h3>
-                  <p
-                    className={`text-xs ${
-                      selectedReport === report.id
-                        ? "text-white/80"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {report.description}
-                  </p>
+                  {report.description}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-[#5A3FFF] animate-spin mb-4" />
+              <p className="text-gray-500">Loading report data...</p>
+            </div>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100">
+              <BarChart3 className="w-12 h-12 text-gray-300 mb-4" />
+              <p className="text-gray-500 font-medium">
+                No transaction data for this period
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Add transactions in the Budget Planner to see reports
+              </p>
+              <Link href="/financial-literacy/budget-planner">
+                <button className="mt-4 px-4 py-2 bg-[#5A3FFF] text-white text-sm rounded-xl hover:bg-[#4930CC] transition-colors">
+                  Go to Budget Planner
                 </button>
-              );
-            })}
-          </div>
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* ── Category Breakdown Tab ── */}
+              {selectedReport === "category" && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Expenses by Category
+                    </h2>
+                    <span className="text-sm text-gray-500">
+                      Total: {formatCurrency(totalExpenses)}
+                    </span>
+                  </div>
 
-          {/* Report Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Category Breakdown */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Expenses by Category
-                </h2>
-                <span className="text-sm text-gray-500">
-                  Total: {formatCurrency(totalExpenses)}
-                </span>
-              </div>
+                  {categoryBreakdown.length === 0 ? (
+                    <p className="text-sm text-gray-400 py-4">
+                      No expense transactions in this period
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {categoryBreakdown.map((cat) => (
+                        <div key={cat.category}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-700">
+                              {cat.category}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {formatCurrency(cat.amount)}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {cat.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div
+                              className="h-2 rounded-full transition-all"
+                              style={{
+                                width: `${cat.percentage}%`,
+                                backgroundColor: cat.color,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Simple Bar Chart */}
-              <div className="space-y-4">
-                {expensesByCategory.map((item) => (
-                  <div key={item.category}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700">
-                        {item.category}
+              {/* ── Monthly Overview Tab ── */}
+              {selectedReport === "monthly" && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Income vs Expenses
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-[#10B981]" />
+                        <span className="text-gray-500">Income</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-[#EF4444]" />
+                        <span className="text-gray-500">Expenses</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {monthlyData.length === 0 ? (
+                    <p className="text-sm text-gray-400 py-4">
+                      No dated transactions in this period
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex items-end gap-2 h-48">
+                        {monthlyData.map((m) => (
+                          <div
+                            key={m.month}
+                            className="flex-1 flex flex-col items-center gap-1"
+                          >
+                            <div className="flex items-end gap-1 w-full h-40">
+                              <div
+                                className="flex-1 bg-[#10B981] rounded-t-md transition-all"
+                                style={{
+                                  height: `${(m.income / maxBarValue) * 100}%`,
+                                }}
+                                title={`Income: ${formatCurrency(m.income)}`}
+                              />
+                              <div
+                                className="flex-1 bg-[#EF4444] rounded-t-md transition-all"
+                                style={{
+                                  height: `${(m.expenses / maxBarValue) * 100}%`,
+                                }}
+                                title={`Expenses: ${formatCurrency(m.expenses)}`}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500">{m.month}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Monthly data table */}
+                      <div className="mt-6 border-t border-gray-100 pt-4">
+                        <div className="grid grid-cols-4 text-xs font-medium text-gray-500 mb-2 px-1">
+                          <span>Month</span>
+                          <span className="text-right">Income</span>
+                          <span className="text-right">Expenses</span>
+                          <span className="text-right">Net</span>
+                        </div>
+                        {monthlyData.map((m) => {
+                          const net = m.income - m.expenses;
+                          return (
+                            <div key={m.month} className="grid grid-cols-4 text-sm py-1.5 px-1 border-b border-gray-50 last:border-0">
+                              <span className="text-gray-700">{m.month}</span>
+                              <span className="text-right text-green-600">{formatCurrency(m.income)}</span>
+                              <span className="text-right text-red-600">{formatCurrency(m.expenses)}</span>
+                              <span className={`text-right font-medium ${net >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                {formatCurrency(net)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── Trends Tab ── */}
+              {selectedReport === "trends" && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Spending Trends
+                    </h2>
+                    <span className="text-sm text-gray-500">
+                      {periodConfig.label}
+                    </span>
+                  </div>
+
+                  {monthlyData.length === 0 ? (
+                    <p className="text-sm text-gray-400 py-4">
+                      No dated transactions in this period
+                    </p>
+                  ) : (
+                    <>
+                      {/* Expense trend line chart (CSS-based) */}
+                      <div className="relative h-48 flex items-end gap-1 mb-4">
+                        {(() => {
+                          const maxExp = Math.max(...monthlyData.map((m) => m.expenses), 1);
+                          return monthlyData.map((m, i) => (
+                            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="w-full flex flex-col items-center h-40 justify-end">
+                                <div
+                                  className="w-full max-w-[40px] bg-gradient-to-t from-[#5A3FFF] to-[#8B7AFF] rounded-t-md transition-all relative group"
+                                  style={{ height: `${(m.expenses / maxExp) * 100}%`, minHeight: m.expenses > 0 ? "4px" : "0px" }}
+                                >
+                                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    {formatCurrency(m.expenses)}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-gray-500">{m.month}</span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+
+                      {/* Top spending categories for this period */}
+                      <div className="border-t border-gray-100 pt-4">
+                        <h3 className="text-sm font-medium text-gray-700 mb-3">Top Spending Categories</h3>
+                        <div className="space-y-2">
+                          {categoryBreakdown.slice(0, 5).map((cat, i) => (
+                            <div key={cat.category} className="flex items-center gap-3">
+                              <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                              <div
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              <span className="text-sm text-gray-700 flex-1">{cat.category}</span>
+                              <span className="text-sm font-medium text-gray-900">{formatCurrency(cat.amount)}</span>
+                              <span className="text-xs text-gray-500 w-10 text-right">{cat.percentage}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Average monthly spend */}
+                      <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Avg. monthly spending</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(summary.totalExpenses / Math.max(monthlyData.length, 1))}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── Period Comparison Tab ── */}
+              {selectedReport === "comparison" && (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                      <span className="text-sm text-gray-500">Total Income</span>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(summary.totalIncome)}
+                      </p>
+                      <span className="text-xs text-green-600">
+                        {computePercentChange(summary.totalIncome, previousSummary.totalIncome)} from last period
                       </span>
-                      <span className="text-sm text-gray-500">
-                        {formatCurrency(item.amount)} ({item.percentage}%)
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                      <span className="text-sm text-gray-500">Total Expenses</span>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(summary.totalExpenses)}
+                      </p>
+                      <span className="text-xs text-red-600">
+                        {computePercentChange(summary.totalExpenses, previousSummary.totalExpenses)} from last period
                       </span>
                     </div>
-                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${item.percentage}%`,
-                          backgroundColor: item.color,
-                        }}
-                      />
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                      <span className="text-sm text-gray-500">Net Savings</span>
+                      <p className={`text-2xl font-bold mt-1 ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {formatCurrency(summary.netSavings)}
+                      </p>
+                      <span className="text-xs text-green-600">
+                        {computePercentChange(summary.netSavings, previousSummary.netSavings)} from last period
+                      </span>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                      <span className="text-sm text-gray-500">Savings Rate</span>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {Math.round(summary.savingsRate)}%
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        Avg. {formatCurrency(summary.avgMonthlySavings)}/mo
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Income vs Expenses Chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Income vs Expenses
-                </h2>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#10B981]" />
-                    <span className="text-xs text-gray-500">Income</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#EF4444]" />
-                    <span className="text-xs text-gray-500">Expenses</span>
-                  </div>
-                </div>
-              </div>
+                  {/* Side-by-side comparison */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Current vs Previous Period
+                    </h2>
 
-              {/* Simple Bar Chart */}
-              <div className="flex items-end justify-between gap-2 h-48">
-                {monthlyData.map((data) => (
-                  <div
-                    key={data.month}
-                    className="flex-1 flex flex-col items-center gap-2"
-                  >
-                    <div className="flex gap-1 items-end h-40 w-full">
-                      {/* Income Bar */}
-                      <div
-                        className="flex-1 bg-[#10B981] rounded-t-lg transition-all duration-500"
-                        style={{
-                          height: `${(data.income / maxBarValue) * 100}%`,
-                        }}
-                      />
-                      {/* Expense Bar */}
-                      <div
-                        className="flex-1 bg-[#EF4444] rounded-t-lg transition-all duration-500"
-                        style={{
-                          height: `${(data.expenses / maxBarValue) * 100}%`,
-                        }}
-                      />
+                    <div className="space-y-4">
+                      {/* Income comparison */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm text-gray-600">Income</span>
+                          <span className="text-xs text-gray-500">
+                            {computePercentChange(summary.totalIncome, previousSummary.totalIncome)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <div className="w-full bg-gray-100 rounded-full h-3">
+                              <div
+                                className="h-3 rounded-full bg-[#10B981] transition-all"
+                                style={{ width: `${Math.min(100, summary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 mt-0.5">Current: {formatCurrency(summary.totalIncome)}</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="w-full bg-gray-100 rounded-full h-3">
+                              <div
+                                className="h-3 rounded-full bg-[#10B981]/40 transition-all"
+                                style={{ width: `${Math.min(100, previousSummary.totalIncome / Math.max(summary.totalIncome, previousSummary.totalIncome, 1) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 mt-0.5">Previous: {formatCurrency(previousSummary.totalIncome)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expenses comparison */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm text-gray-600">Expenses</span>
+                          <span className="text-xs text-gray-500">
+                            {computePercentChange(summary.totalExpenses, previousSummary.totalExpenses)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <div className="w-full bg-gray-100 rounded-full h-3">
+                              <div
+                                className="h-3 rounded-full bg-[#EF4444] transition-all"
+                                style={{ width: `${Math.min(100, summary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 mt-0.5">Current: {formatCurrency(summary.totalExpenses)}</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="w-full bg-gray-100 rounded-full h-3">
+                              <div
+                                className="h-3 rounded-full bg-[#EF4444]/40 transition-all"
+                                style={{ width: `${Math.min(100, previousSummary.totalExpenses / Math.max(summary.totalExpenses, previousSummary.totalExpenses, 1) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 mt-0.5">Previous: {formatCurrency(previousSummary.totalExpenses)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Net Savings comparison */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm text-gray-600">Net Savings</span>
+                          <span className="text-xs text-gray-500">
+                            {computePercentChange(summary.netSavings, previousSummary.netSavings)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1 p-3 bg-gray-50 rounded-xl text-center">
+                            <p className={`text-lg font-bold ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              {formatCurrency(summary.netSavings)}
+                            </p>
+                            <span className="text-xs text-gray-500">Current</span>
+                          </div>
+                          <div className="flex-1 p-3 bg-gray-50 rounded-xl text-center">
+                            <p className={`text-lg font-bold ${previousSummary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              {formatCurrency(previousSummary.netSavings)}
+                            </p>
+                            <span className="text-xs text-gray-500">Previous</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-500">{data.month}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Summary Stats */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Period Summary
-              </h2>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Total Income</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(33400)}
-                  </p>
-                  <p className="text-xs text-green-500 mt-1">
-                    +12% from last period
-                  </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Total Expenses</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {formatCurrency(20700)}
-                  </p>
-                  <p className="text-xs text-red-500 mt-1">
-                    +8% from last period
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Net Savings</p>
-                  <p className="text-2xl font-bold text-[#5A3FFF]">
-                    {formatCurrency(12700)}
-                  </p>
-                  <p className="text-xs text-green-500 mt-1">
-                    +18% from last period
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Avg. Monthly Savings</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(2117)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    38% savings rate
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
       </main>
     </div>

@@ -40,23 +40,18 @@ export default function QuickLinksSection({
               <Link
                 key={link.id}
                 href={link.href}
-                className={`group relative shadow-md overflow-hidden rounded-2xl p-6 transition-all hover:shadow-lg hover:scale-105 active:scale-95 flex flex-col justify-between min-h-[140px] ${link.color}`}
+                className={`group relative shadow-lg overflow-hidden rounded-2xl p-6 text-gray-900 transition-all hover:shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-br min-h-[127px] flex flex-col justify-between ${link.color}`}
               >
-                <div className="flex items-start z-10 mb-2">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                <div className="flex items-start">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl">
                     {link.icon}
                   </div>
                 </div>
-                <h3 className="font-semibold text-white text-base leading-snug z-10 w-[80%]">
-                  {link.title.split(" ").map((word, i) => (
-                    <React.Fragment key={i}>
-                      {word} {word === "Business" && i === 1 ? <br /> : ""}
-                      {word === "SWOT" ? <br /> : ""}
-                    </React.Fragment>
-                  ))}
+                <h3 className="font-semibold text-[#5B0A12] text-base">
+                  {link.title}
                 </h3>
                 {/* Decorative element */}
-                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-3xl z-0" />
+                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-3xl" />
               </Link>
             ))}
           </div>

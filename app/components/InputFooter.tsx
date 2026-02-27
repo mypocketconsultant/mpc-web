@@ -10,7 +10,7 @@ interface InputFooterProps {
   onSend?: (message: string) => void;
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
-  context: "career" | "life" | "study" | "business-consultancy";
+  context: "career" | "life" | "financial-literacy" | "study" | "business-consultancy";
   initialValue?: string;
   isRecording?: boolean;
   isTranscribing?: boolean;
@@ -62,13 +62,15 @@ export default function InputFooter({
 
   const handleInputClick = () => {
     let chatUrl = "/career/chat?context=career";
-    if (context === "life") {
+    if (context === "financial-literacy") {
+      chatUrl = "/financial-literacy/chat";
+    } else if (context === "life") {
       chatUrl = "/Life/chat";
     } else if (context === "study") {
       chatUrl = "/study/chat?context=study";
     } else if (context === "business-consultancy") {
       chatUrl =
-        "/modules/business-consultancy/chat?context=business-consultancy";
+        "/business-consultancy/chat?context=business-consultancy";
     }
     router.push(chatUrl);
   };

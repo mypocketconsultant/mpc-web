@@ -40,7 +40,7 @@ export default function DashboardLayout({
     {
       icon: Users,
       label: "Business Consultancy",
-      href: "/modules/business-consultancy",
+      href: "/business-consultancy",
     },
     { icon: BookOpen, label: "Study Support", href: "/study" },
     {
