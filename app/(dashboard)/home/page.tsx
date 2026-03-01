@@ -42,7 +42,7 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-6 py-8">
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Greeting Section */}
           <Greeting name={loading ? "User" : user?.firstName || "User"} />
 
@@ -77,7 +77,7 @@ export default function HomePage() {
       </main>
 
       {/* Chat Input Footer */}
-      <div className=" border-gray-200 bg-white p-6">
+      <div className="border-gray-200 bg-white px-3 sm:px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
           <InputFooter
             placeholder="Ask me to optimize your LinkedIn..."

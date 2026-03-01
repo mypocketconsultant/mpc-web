@@ -81,7 +81,7 @@ export default function LifeAdvisorPage() {
   ];
 
   const handlePromptSelect = (promptId: string) => {
-    const prompt = suggestedPrompts.find(p => p.id.toString() === promptId);
+    const prompt = suggestedPrompts.find((p) => p.id.toString() === promptId);
     if (prompt) {
       const encodedPrompt = encodeURIComponent(prompt.title);
       router.push(`/Life/chat?context=life&prompt=${encodedPrompt}`);
@@ -92,21 +92,21 @@ export default function LifeAdvisorPage() {
     <div className="flex flex-col h-full">
       <Header title="Life Advisor" />
       {/* Main Content */}
-      <main className="flex-1 overflow-auto max-w-[1200px] mx-auto scrollbar-hide">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 overflow-auto max-w-[1200px] mx-auto scrollbar-hide w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] my-6 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] my-3 sm:my-6 transition-colors">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Home</span>
             </button>
           </Link>
-          <h2 className="text-xl  font-medium text-gray-900 mb-8">
+          <h2 className="text-sm sm:text-base md:text-xl font-medium text-gray-900 mb-4 sm:mb-8">
             How are you feeling today
             {user?.firstName ? `, ${user.firstName}` : ""}?
           </h2>
           {/* Mood Question */}
-          <div className="mb-8">
+          <div className="mb-4 sm:mb-8">
             <MoodSelector />
           </div>
           {/* Quick Links Section */}
@@ -120,7 +120,7 @@ export default function LifeAdvisorPage() {
             tipsIcon={tipsIcon}
           />
 
-          <hr className="my-10" />
+          <hr className="my-6 sm:my-10" />
 
           {/* Today's Suggested Prompts Section */}
           <SuggestedPrompts

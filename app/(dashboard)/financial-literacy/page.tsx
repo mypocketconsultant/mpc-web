@@ -149,11 +149,11 @@ export default function FinancialLiteracyPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-2 max-[640px]:px-3 sm:px-6 py-4 max-[640px]:py-4 sm:py-8">
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 sm:mb-8 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 md:mb-8 transition-colors">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Go back home</span>
             </button>
           </Link>
@@ -166,7 +166,7 @@ export default function FinancialLiteracyPage() {
             tipsTitle="Daily tips"
           />
 
-          <hr className="my-8 sm:my-10" />
+          <hr className="my-4 sm:my-6 md:my-8" />
 
           {/* Today's Suggested Prompts Section */}
           <SuggestedPrompts
