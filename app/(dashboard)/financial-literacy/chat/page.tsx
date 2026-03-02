@@ -15,6 +15,7 @@ import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import FormattedMessage from "@/components/FormattedMessage";
 import ThinkingBubble from "@/components/ThinkingBubble";
+import FileUploadModal from "@/app/components/FileUploadModal";
 import { apiService } from "@/lib/api/apiService";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
@@ -130,6 +131,7 @@ function FinanceChatContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
 
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
   const { toast, showToast, hideToast } = useToast();
@@ -488,6 +490,7 @@ function FinanceChatContent() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4">
             <div className="flex items-center gap-1.5 sm:gap-3">
               <button
+                onClick={() => setIsFileModalOpen(true)}
                 className="flex-[0_0_auto] p-2 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors shrink-0"
                 aria-label="Attach file"
               >
@@ -543,6 +546,15 @@ function FinanceChatContent() {
         onNewChat={handleNewChat}
         module="finance"
         currentSessionId={sessionId}
+      />
+
+      <FileUploadModal
+        isOpen={isFileModalOpen}
+        onClose={() => setIsFileModalOpen(false)}
+        onUpload={(file) => {
+          setIsFileModalOpen(false);
+          showToast("success", `File "${file.name}" attached.`);
+        }}
       />
 
       <Toast toast={toast} onClose={hideToast} />

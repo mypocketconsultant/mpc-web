@@ -45,3 +45,11 @@ export async function publishCanvas(canvasId: string): Promise<CanvasDocument> {
   );
   return res?.data ?? res;
 }
+
+export async function deleteCanvas(canvasId: string): Promise<void> {
+  await apiService.delete(`/v1/business/canvases/${canvasId}`);
+}
+
+export async function deleteSwot(swotId: string): Promise<void> {
+  await apiService.delete(`/v1/business/swots/${swotId}`);
+}

@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface MoodSelectorProps {
   onMoodSelect?: (mood: number) => void;
+  initialMood?: number | null;
 }
 
-export default function MoodSelector({ onMoodSelect }: MoodSelectorProps) {
-  const [selectedMood, setSelectedMood] = useState<number | null>(null);
+export default function MoodSelector({ onMoodSelect, initialMood = null }: MoodSelectorProps) {
+  const [selectedMood, setSelectedMood] = useState<number | null>(initialMood);
+
+  useEffect(() => {
+    if (initialMood !== null) {
+      setSelectedMood(initialMood);
+    }
+  }, [initialMood]);
 
   const moods = [
     { emoji: "😢", label: "Very sad" },
@@ -40,18 +47,27 @@ export default function MoodSelector({ onMoodSelect }: MoodSelectorProps) {
 
       {/* Mood Emojis */}
       <div className="flex justify-between items-center mb-4 px-2">
-        {moods.map((mood, index) => (
-          <button
-            key={index}
-            onClick={() => handleMoodSelect(index)}
-            className={`text-3xl transition-all hover:scale-125 active:scale-95 ${
-              selectedMood === index ? "scale-125" : ""
-            }`}
-            title={mood.label}
-          >
-            {mood.emoji}
-          </button>
-        ))}
+        {moods.map((mood, index) => {
+          const isActive = selectedMood === index;
+          const isNearActive = selectedMood !== null && Math.abs(selectedMood - index) <= 1;
+
+          return (
+            <button
+              key={index}
+              onClick={() => handleMoodSelect(index)}
+              className={`text-3xl transition-all duration-200 ${
+                isActive
+                  ? "scale-125 opacity-100"
+                  : isNearActive
+                    ? "scale-100 opacity-70"
+                    : "scale-90 opacity-40"
+              }`}
+              title={mood.label}
+            >
+              {mood.emoji}
+            </button>
+          );
+        })}
       </div>
 
       {/* Slider Track */}

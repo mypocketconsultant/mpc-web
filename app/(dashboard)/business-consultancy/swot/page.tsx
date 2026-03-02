@@ -46,8 +46,8 @@ const BLOCK_META: SwotBlockMeta[] = [
 
 // ── Conversion helpers (backend SwotItem ↔ UI strings) ──
 
-function itemsToTexts(items: SwotItem[]): string[] {
-  return items.map((item) => item.text);
+function itemsToTexts(items: (SwotItem | string)[]): string[] {
+  return items.map((item) => (typeof item === "string" ? item : item.text));
 }
 
 function textsToItems(texts: string[]): SwotItem[] {

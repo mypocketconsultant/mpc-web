@@ -181,9 +181,52 @@ export default function CVBuilder() {
         }
       }
 
-      // Note: We don't fetch conversation messages here because the CV builder
-      // uses the career agent which stores conversations by resume_id, not by CV doc_id.
-      // Chat messages will be populated when the user sends a message.
+      // Restore conversation history for this CV session.
+      // Messages are split across two keys:
+      //   - uploadedResumeId: the initial build message (stored when CV was first created)
+      //   - cvId: all subsequent chat messages
+      // We fetch both and merge them in chronological order.
+      if (signal.aborted) return;
+      try {
+        const savedResumeId = sessionStorage.getItem('uploadedResumeId');
+        console.log('[CVBuilder] Fetching conversation — cvId:', fetchCvId, '| uploadedResumeId:', savedResumeId);
+
+        // Fetch both in parallel
+        const [cvConvResponse, resumeConvResponse] = await Promise.all([
+          axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/cv-builder/${fetchCvId}/conversation`,
+            { withCredentials: true, signal }
+          ),
+          savedResumeId
+            ? axios.get(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/cv-builder/${savedResumeId}/conversation`,
+                { withCredentials: true, signal }
+              )
+            : Promise.resolve(null),
+        ]);
+
+        const cvMessages: Message[] = cvConvResponse.data?.data?.messages ?? [];
+        const resumeMessages: Message[] = resumeConvResponse?.data?.data?.messages ?? [];
+
+        console.log('[CVBuilder] Messages under cvId:', cvMessages.length);
+        console.log('[CVBuilder] Messages under uploadedResumeId:', resumeMessages.length);
+
+        // Build messages come first (resume key), then chat messages (cv key)
+        const merged = [...resumeMessages, ...cvMessages];
+
+        if (merged.length > 0) {
+          console.log('[CVBuilder] Restoring', merged.length, 'total messages to chat');
+          setMessages(merged);
+        } else {
+          console.warn('[CVBuilder] No conversation messages found under either key');
+        }
+      } catch (convErr) {
+        if (axios.isCancel(convErr)) {
+          console.log('[CVBuilder] Conversation fetch cancelled');
+        } else {
+          console.error('[CVBuilder] Could not restore conversation:', convErr);
+        }
+      }
 
       setIsLoadingSession(false);
     } catch (error) {
@@ -771,102 +814,11 @@ export default function CVBuilder() {
 
           <hr className="my-10" />
 
-          {/* Build Options (shown only before first build) */}
-          {!cvId && (
-            <div className="mb-8 p-6 bg-gray-50 rounded-2xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">CV Options</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Doc Kind */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
-                  <select
-                    value={docKind}
-                    onChange={e => setDocKind(e.target.value as DocKind)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  >
-                    <option value="cv">CV / Resume</option>
-                    <option value="cover_letter">Cover Letter</option>
-                  </select>
-                </div>
-
-                {/* Target Role */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Role</label>
-                  <input
-                    type="text"
-                    value={targetRole}
-                    onChange={e => setTargetRole(e.target.value)}
-                    placeholder="e.g. Senior Frontend Developer"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* Country */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country Style</label>
-                  <select
-                    value={country}
-                    onChange={e => setCountry(e.target.value as CountryStyle)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  >
-                    <option value="UK">UK</option>
-                    <option value="US">US</option>
-                    <option value="NG">Nigeria</option>
-                    <option value="CA">Canada</option>
-                    <option value="AU">Australia</option>
-                    <option value="EU">EU</option>
-                  </select>
-                </div>
-
-                {/* Seniority */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Seniority Level</label>
-                  <input
-                    type="text"
-                    value={seniority}
-                    onChange={e => setSeniority(e.target.value)}
-                    placeholder="e.g. Senior, Mid-level, Junior"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* Industry */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
-                  <input
-                    type="text"
-                    value={industry}
-                    onChange={e => setIndustry(e.target.value)}
-                    placeholder="e.g. Technology, Finance"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* Tone */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tone</label>
-                  <select
-                    value={tone}
-                    onChange={e => setTone(e.target.value as ToneOption)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  >
-                    <option value="">Default</option>
-                    <option value="professional">Professional</option>
-                    <option value="friendly">Friendly</option>
-                    <option value="bold">Bold</option>
-                    <option value="formal">Formal</option>
-                    <option value="warm">Warm</option>
-                    <option value="confident">Confident</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-12 gap-6">
-            {/* Left Sidebar - AI Chat */}
+            {/* AI Chat Sidebar */}
             <div className="col-span-5 sticky top-10 h-fit">
               <AIEditSidebar
+                title="Chat with AI"
                 messages={messages}
                 inputValue={inputValue}
                 onInputChange={setInputValue}
@@ -971,16 +923,100 @@ export default function CVBuilder() {
                   ))}
                 </div>
               ) : (
-                /* Empty State */
-                <div className="flex flex-col items-center justify-center h-[400px] bg-gray-50 rounded-2xl">
-                  <div className="text-center max-w-md">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {docKind === 'cv' ? 'Build Your CV' : 'Write a Cover Letter'}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Fill in the options above, then tell the AI about the role you&apos;re applying for.
-                      The AI will generate a tailored {docKind === 'cv' ? 'CV' : 'cover letter'} for you.
-                    </p>
+                /* Empty State + CV Options Form */
+                <div className="p-6 bg-gray-50 rounded-2xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {docKind === 'cv' ? 'Build Your CV' : 'Write a Cover Letter'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Fill in the options below, then tell the AI about the role you&apos;re applying for.
+                    The AI will generate a tailored {docKind === 'cv' ? 'CV' : 'cover letter'} for you.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Doc Kind */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
+                      <select
+                        value={docKind}
+                        onChange={e => setDocKind(e.target.value as DocKind)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      >
+                        <option value="cv">CV / Resume</option>
+                        <option value="cover_letter">Cover Letter</option>
+                      </select>
+                    </div>
+
+                    {/* Target Role */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Target Role</label>
+                      <input
+                        type="text"
+                        value={targetRole}
+                        onChange={e => setTargetRole(e.target.value)}
+                        placeholder="e.g. Senior Frontend Developer"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {/* Country */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Country Style</label>
+                      <select
+                        value={country}
+                        onChange={e => setCountry(e.target.value as CountryStyle)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      >
+                        <option value="UK">UK</option>
+                        <option value="US">US</option>
+                        <option value="NG">Nigeria</option>
+                        <option value="CA">Canada</option>
+                        <option value="AU">Australia</option>
+                        <option value="EU">EU</option>
+                      </select>
+                    </div>
+
+                    {/* Seniority */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Seniority Level</label>
+                      <input
+                        type="text"
+                        value={seniority}
+                        onChange={e => setSeniority(e.target.value)}
+                        placeholder="e.g. Senior, Mid-level, Junior"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {/* Industry */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                      <input
+                        type="text"
+                        value={industry}
+                        onChange={e => setIndustry(e.target.value)}
+                        placeholder="e.g. Technology, Finance"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {/* Tone */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+                      <select
+                        value={tone}
+                        onChange={e => setTone(e.target.value as ToneOption)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      >
+                        <option value="">Default</option>
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="bold">Bold</option>
+                        <option value="formal">Formal</option>
+                        <option value="warm">Warm</option>
+                        <option value="confident">Confident</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               )}

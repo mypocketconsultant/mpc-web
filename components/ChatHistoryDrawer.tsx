@@ -38,17 +38,25 @@ export default function ChatHistoryDrawer({
   const fetchSessions = useCallback(async () => {
     setIsLoading(true);
     try {
+      const url = `/v1/chat-sessions?module=${module}&limit=50&offset=0`;
+      console.log("[ChatHistory] Fetching sessions from:", url);
+
       const response = await apiService.get<{
         status: string;
         data: {
           items: ChatSession[];
           total: number;
         };
-      }>(`/v1/chat-sessions?module=${module}&limit=50&offset=0`);
+      }>(url);
+
+      console.log("[ChatHistory] Raw API response:", response);
+      console.log("[ChatHistory] response.data:", response?.data);
+      console.log("[ChatHistory] response.data.items:", response?.data?.items);
+      console.log("[ChatHistory] items count:", response?.data?.items?.length ?? "undefined");
 
       setSessions(response?.data?.items || []);
     } catch (error) {
-      console.error("Failed to fetch sessions:", error);
+      console.error("[ChatHistory] Failed to fetch sessions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +129,7 @@ export default function ChatHistoryDrawer({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Chat History</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{module.charAt(0).toUpperCase() + module.slice(1)} Chat History</h2>
           <button
             onClick={onClose}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"

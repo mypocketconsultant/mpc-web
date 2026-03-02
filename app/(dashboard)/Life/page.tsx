@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react";
@@ -20,6 +20,7 @@ import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
 import MoodSelector from "./components/MoodSelector";
 import { useUser } from "@/hooks/useUser";
+import { apiService } from "@/lib/api/apiService";
 
 export default function LifeAdvisorPage() {
   const router = useRouter();
@@ -27,6 +28,28 @@ export default function LifeAdvisorPage() {
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const { user } = useUser();
+  const [todaysMood, setTodaysMood] = useState<number | null>(null);
+
+  useEffect(() => {
+    apiService
+      .get<{ data: { items: { entry_type: string; mood: string | null }[] } }>(
+        "/v1/life/journals?window=1d&limit=10"
+      )
+      .then((res) => {
+        console.log("[Life] journals response:", res);
+        const entry = res.data.items.find(
+          (item) =>
+            item.entry_type === "mood" &&
+            item.mood &&
+            /^\d+\/10$/.test(item.mood)
+        );
+        if (entry?.mood) {
+          const value = parseInt(entry.mood.split("/")[0]);
+          setTodaysMood(value - 1); // convert 1-10 to 0-9 index
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const quickLinks: QuickLink[] = [
     {
@@ -107,7 +130,7 @@ export default function LifeAdvisorPage() {
           </h2>
           {/* Mood Question */}
           <div className="mb-8">
-            <MoodSelector />
+            <MoodSelector initialMood={todaysMood} />
           </div>
           {/* Quick Links Section */}
           <QuickLinksSection

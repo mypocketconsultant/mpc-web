@@ -175,6 +175,9 @@ function BusinessConsultancyChatContent() {
           messages: Array<{ role: string; content: string; timestamp: string }>;
         };
       }>(`/v1/chat-sessions/${sid}`);
+      console.log("[mpc-web][loadSession] full response:", response);
+      console.log("[mpc-web][loadSession] response.data:", response?.data);
+      console.log("[mpc-web][loadSession] messages:", response?.data?.messages);
       const sessionData = response?.data;
       if (sessionData?.messages) {
         const loaded: Message[] = sessionData.messages.map(
@@ -217,14 +220,23 @@ function BusinessConsultancyChatContent() {
             break;
           }
           case "business.create_swot": {
+            const createdSwotId = metadata?.created_swot_id;
             showToast("success", "SWOT analysis created!", {
               label: "View SWOT",
-              onClick: () => router.push("/business-consultancy/swot"),
+              onClick: () => router.push(
+                createdSwotId
+                  ? `/business-consultancy/swot?swot_id=${createdSwotId}`
+                  : "/business-consultancy/swot"
+              ),
             });
             break;
           }
           case "business.update_swot": {
-            showToast("success", "SWOT updated.");
+            const updatedSwotId = metadata?.created_swot_id || (action.payload as any)?.swot_id;
+            showToast("success", "SWOT updated.", updatedSwotId ? {
+              label: "View SWOT",
+              onClick: () => router.push(`/business-consultancy/swot?swot_id=${updatedSwotId}`),
+            } : undefined);
             break;
           }
           case "business.publish_swot": {
@@ -279,7 +291,9 @@ function BusinessConsultancyChatContent() {
   // ── Send message handler ─────────────────────────────
 
   const handleSendMessage = async () => {
+    console.log("[mpc-web][handleSendMessage] called, inputValue:", inputValue.trim(), "isLoading:", isLoading);
     if (!inputValue.trim() || isLoading) return;
+    console.log("[mpc-web][handleSendMessage] proceeding with message send");
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -305,10 +319,10 @@ function BusinessConsultancyChatContent() {
       }>("/v1/business/chat", payload);
 
       const agentResponse = httpResponse.data;
-      console.log("[mpc-web][business.chat] \u2190", {
-        intent: agentResponse?.intent,
-        actions: agentResponse?.actions?.map((a: any) => a.type),
-      });
+      console.log("[mpc-web][business.chat] full httpResponse:", httpResponse);
+      console.log("[mpc-web][business.chat] agentResponse:", agentResponse);
+      console.log("[mpc-web][business.chat] metadata:", agentResponse?.metadata);
+      console.log("[mpc-web][business.chat] metadata.session_id:", agentResponse?.metadata?.session_id);
 
       // Capture session_id from response metadata
       const returnedSessionId = agentResponse?.metadata?.session_id as string;
@@ -341,6 +355,7 @@ function BusinessConsultancyChatContent() {
       // Process actions — show toasts, navigate, etc.
       processAgentActions(agentResponse);
     } catch (error) {
+      console.error("[mpc-web][business.chat] ERROR:", error);
       const errorText =
         error instanceof Error ? error.message : "Failed to get AI response";
       showToast("error", errorText);

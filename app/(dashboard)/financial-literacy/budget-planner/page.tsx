@@ -401,6 +401,13 @@ function PlanGroupEditor({
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState("");
 
+  // Sync localRows when the rows prop is updated from outside (e.g. after API refresh)
+  useEffect(() => {
+    if (!editing) {
+      setLocalRows(rows);
+    }
+  }, [rows, editing]);
+
   const addRow = () => {
     const amt = parseFloat(newAmount);
     if (!newName.trim() || isNaN(amt) || amt < 0) return;
@@ -702,6 +709,7 @@ export default function BudgetPlannerPage() {
     "all",
   );
   const [showAddTx, setShowAddTx] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   /* ---------------------------------------------------------------- */
   /*  Level 1 — fetch budget list                                     */
@@ -747,6 +755,40 @@ export default function BudgetPlannerPage() {
   }, []);
 
   /* ---------------------------------------------------------------- */
+  /*  Refresh selected budget + transactions from API                 */
+  /* ---------------------------------------------------------------- */
+
+  const refreshBudget = useCallback(
+    async (budgetId: string) => {
+      try {
+        // Re-fetch the budget document
+        const budgetRes: any = await apiService.get(
+          `/v1/finance/budgets/${budgetId}`,
+        );
+        const updatedBudget: BudgetDoc = budgetRes?.data || budgetRes;
+        setSelectedBudget(updatedBudget);
+        setBudgets((prev) =>
+          prev.map((b) => (b.id === updatedBudget.id ? updatedBudget : b)),
+        );
+      } catch (err) {
+        console.error("[BudgetPlanner] refreshBudget error", err);
+      }
+
+      try {
+        // Re-fetch transactions
+        const txRes: any = await apiService.get(
+          `/v1/finance/transactions?budget_id=${budgetId}&limit=200`,
+        );
+        const txData = txRes?.data || txRes;
+        setTransactions(txData?.items || []);
+      } catch (err) {
+        console.error("[BudgetPlanner] refreshBudget transactions error", err);
+      }
+    },
+    [],
+  );
+
+  /* ---------------------------------------------------------------- */
   /*  Plan row save (PATCH budget groups)                             */
   /* ---------------------------------------------------------------- */
 
@@ -779,18 +821,37 @@ export default function BudgetPlannerPage() {
         ...selectedBudget.groups,
         [groupName]: { rows: updatedRows },
       };
-      const res: any = await apiService.patch(
+      await apiService.patch(
         `/v1/finance/budgets/${selectedBudget.id}`,
         { groups: updatedGroups },
       );
-      const updated = res?.data || res;
-      setSelectedBudget(updated);
-      setBudgets((prev) =>
-        prev.map((b) => (b.id === updated.id ? updated : b)),
-      );
+
+      // Re-fetch fresh budget + transactions from API
+      await refreshBudget(selectedBudget.id);
     },
-    [selectedBudget],
+    [selectedBudget, refreshBudget],
   );
+
+  /* ---------------------------------------------------------------- */
+  /*  Publish budget                                                   */
+  /* ---------------------------------------------------------------- */
+
+  const publishBudget = useCallback(async () => {
+    if (!selectedBudget || selectedBudget.status === "published") return;
+    setPublishing(true);
+    try {
+      await apiService.patch(
+        `/v1/finance/budgets/${selectedBudget.id}`,
+        { status: "published" },
+      );
+      // Re-fetch fresh budget from API
+      await refreshBudget(selectedBudget.id);
+    } catch (err) {
+      console.error("[BudgetPlanner] publishBudget error", err);
+    } finally {
+      setPublishing(false);
+    }
+  }, [selectedBudget, refreshBudget]);
 
   /* ---------------------------------------------------------------- */
   /*  Helpers                                                          */
@@ -979,9 +1040,9 @@ export default function BudgetPlannerPage() {
         <AddTransactionModal
           budget={selectedBudget}
           onClose={() => setShowAddTx(false)}
-          onAdded={(tx) => {
-            setTransactions((prev) => [tx, ...prev]);
+          onAdded={() => {
             setShowAddTx(false);
+            refreshBudget(selectedBudget.id);
           }}
         />
       )}
@@ -1016,6 +1077,20 @@ export default function BudgetPlannerPage() {
                   View Report
                 </button>
               </Link>
+              {selectedBudget.status === "draft" && (
+                <button
+                  onClick={publishBudget}
+                  disabled={publishing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-full hover:bg-green-700 disabled:opacity-50 transition-colors"
+                >
+                  {publishing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  Publish
+                </button>
+              )}
               <span
                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   selectedBudget.status === "published"
@@ -1229,7 +1304,7 @@ export default function BudgetPlannerPage() {
         placeholder="Ask the AI about your budget..."
         onSend={() => {}}
         onAttach={() => {}}
-        context="life"
+        context="financial-literacy"
       />
     </div>
   );

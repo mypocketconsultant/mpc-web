@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
   Edit2,
   Trash2,
+  X,
   MoreVertical,
   Plus,
   FileText,
@@ -62,15 +63,13 @@ const BLOCK_META: BlockMeta[] = [
   { key: "cost_structure",         title: "Cost Structure",         placeholder: "Main expenses (staff, cloud, marketing, logistics)", color: "bg-indigo-100",  colSpan: 1 },
 ];
 
-const META_BY_KEY: Record<string, BlockMeta> = Object.fromEntries(
-  BLOCK_META.map((m) => [m.key, m])
-);
-
 // ── Conversion helpers ───────────────────────────────────
 
 /** Build local CanvasBlock[] from API blocks (Record<string, string[]>) */
 function apiBlocksToLocal(apiBlocks: ApiBlocks): CanvasBlock[] {
-  return BLOCK_META.map((meta) => {
+  const knownKeys = new Set(BLOCK_META.map((m) => m.key));
+
+  const fixedBlocks = BLOCK_META.map((meta) => {
     const items = apiBlocks[meta.key] ?? [];
     return {
       key: meta.key,
@@ -81,6 +80,22 @@ function apiBlocksToLocal(apiBlocks: ApiBlocks): CanvasBlock[] {
       colSpan: meta.colSpan,
     };
   });
+
+  const customBlocks: CanvasBlock[] = [];
+  for (const [key, items] of Object.entries(apiBlocks)) {
+    if (!knownKeys.has(key)) {
+      customBlocks.push({
+        key,
+        title: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        content: items.join("\n"),
+        placeholder: "Add your notes here...",
+        color: "bg-gray-100",
+        colSpan: 1,
+      });
+    }
+  }
+
+  return [...fixedBlocks, ...customBlocks];
 }
 
 /** Build API blocks (Record<string, string[]>) from local CanvasBlock[] */
@@ -130,6 +145,7 @@ function CanvasPageContent() {
 
   // UI states
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [newCardTitle, setNewCardTitle] = useState("");
 
   // Refs
   const menuRef = useRef<HTMLDivElement>(null);
@@ -230,6 +246,7 @@ function CanvasPageContent() {
     setBlocks((prev) =>
       prev.map((b) => (b.key === blockKey ? { ...b, content: newContent } : b))
     );
+    if (canvasStatus === "published") setCanvasStatus("draft");
   };
 
   const handleBlockBlur = () => {
@@ -251,6 +268,35 @@ function CanvasPageContent() {
         hideToast();
       },
     });
+  };
+
+  const handleAddCard = () => {
+    const trimmed = newCardTitle.trim();
+    if (!trimmed) return;
+    const slugified = trimmed.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!slugified) return;
+    const key = blocks.some((b) => b.key === slugified)
+      ? `${slugified}_${Date.now()}`
+      : slugified;
+    const newBlock: CanvasBlock = {
+      key,
+      title: trimmed,
+      content: "",
+      placeholder: "Add your notes here...",
+      color: "bg-gray-100",
+      colSpan: 1,
+    };
+    const updated = [...blocks, newBlock];
+    setBlocks(updated);
+    setNewCardTitle("");
+    if (canvasStatus === "published") setCanvasStatus("draft");
+    saveCanvas({ blocks: updated });
+  };
+
+  const handleRemoveBlock = (blockKey: string) => {
+    const updated = blocks.filter((b) => b.key !== blockKey);
+    setBlocks(updated);
+    saveCanvas({ blocks: updated });
   };
 
   // ── Publish ─────────────────────────────────────────
@@ -305,10 +351,25 @@ function CanvasPageContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleNewCanvas = () => {
+  const handleNewCanvas = async () => {
     setIsMenuOpen(false);
     sessionStorage.removeItem("currentCanvasId");
-    router.push("/business-consultancy/canvas?new=1");
+    setCanvasId(null);
+    setDocumentTitle("");
+    setCanvasStatus("draft");
+    setBlocks(defaultLocalBlocks());
+    setIsInitializing(true);
+    try {
+      const fresh = await createCanvas("");
+      console.log("[Canvas] POST createCanvas (new via menu):", JSON.stringify(fresh, null, 2));
+      setCanvasId(fresh.id);
+      sessionStorage.setItem("currentCanvasId", fresh.id);
+      window.history.replaceState(null, "", `/business-consultancy/canvas?canvas_id=${fresh.id}`);
+    } catch {
+      showToast("error", "Failed to create new canvas. Please try again.");
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const handleSavedCanvases = () => {
@@ -401,7 +462,10 @@ function CanvasPageContent() {
             type="text"
             placeholder="Add document title"
             value={documentTitle}
-            onChange={(e) => setDocumentTitle(e.target.value)}
+            onChange={(e) => {
+              setDocumentTitle(e.target.value);
+              if (canvasStatus === "published") setCanvasStatus("draft");
+            }}
             onBlur={() => saveCanvas({ title: documentTitle })}
             className="w-full text-2xl font-light text-gray-400 placeholder:text-gray-300 border-none outline-none bg-transparent"
           />
@@ -429,12 +493,21 @@ function CanvasPageContent() {
                     >
                       <Edit2 className="h-3 w-3" />
                     </button>
-                    <button
-                      className="p-1 hover:bg-white/20 rounded-md"
-                      onClick={() => handleClearBlock(block.key)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    {BLOCK_META.some((m) => m.key === block.key) ? (
+                      <button
+                        className="p-1 hover:bg-white/20 rounded-md"
+                        onClick={() => handleClearBlock(block.key)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    ) : (
+                      <button
+                        className="p-1 hover:bg-white/20 rounded-md"
+                        onClick={() => handleRemoveBlock(block.key)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -453,6 +526,24 @@ function CanvasPageContent() {
                 </div>
               </div>
             ))}
+
+            {/* Add Card */}
+            <div className="col-span-4 flex items-center gap-2 pt-2 p-3 border-2 border-dashed border-[#4A247c]/30 rounded-2xl bg-[#4A247c]/5">
+              <input
+                type="text"
+                placeholder="New card title..."
+                value={newCardTitle}
+                onChange={(e) => setNewCardTitle(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddCard(); }}
+                className="flex-1 text-sm text-gray-700 placeholder:text-[#4A247c]/40 border border-[#4A247c]/20 rounded-xl px-4 py-2 outline-none focus:border-[#4A247c]/60 bg-white"
+              />
+              <button
+                onClick={handleAddCard}
+                className="p-2 bg-[#4A247c] hover:bg-[#3A1C62] rounded-xl transition-colors text-white"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </main>
