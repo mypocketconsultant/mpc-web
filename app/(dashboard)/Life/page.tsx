@@ -129,13 +129,8 @@ export default function LifeAdvisorPage() {
             {user?.firstName ? `, ${user.firstName}` : ""}?
           </h2>
           {/* Mood Question */}
-<<<<<<< HEAD
-          <div className="mb-8">
+          <div className="mb-8 sm:mb-8">
             <MoodSelector initialMood={todaysMood} />
-=======
-          <div className="mb-4 sm:mb-8">
-            <MoodSelector />
->>>>>>> bc3caf818b08a86a8b5cc0e6ede8715232220c84
           </div>
           {/* Quick Links Section */}
           <QuickLinksSection
