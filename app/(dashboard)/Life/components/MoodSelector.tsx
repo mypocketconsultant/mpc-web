@@ -43,8 +43,7 @@ export default function MoodSelector({ onMoodSelect, initialMood = null }: MoodS
         </span>
       </div>
       {/* Mood Emojis */}
-<<<<<<< HEAD
-      <div className="flex justify-between items-center mb-4 px-2">
+      <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-2">
         {moods.map((mood, index) => {
           const isActive = selectedMood === index;
           const isNearActive = selectedMood !== null && Math.abs(selectedMood - index) <= 1;
@@ -66,21 +65,6 @@ export default function MoodSelector({ onMoodSelect, initialMood = null }: MoodS
             </button>
           );
         })}
-=======
-      <div className="flex justify-between items-center mb-3 sm:mb-4 px-1 sm:px-2">
-        {moods.map((mood, index) => (
-          <button
-            key={index}
-            onClick={() => handleMoodSelect(index)}
-            className={`text-lg sm:text-2xl md:text-3xl transition-all hover:scale-125 active:scale-95 ${
-              selectedMood === index ? "scale-125" : ""
-            }`}
-            title={mood.label}
-          >
-            {mood.emoji}
-          </button>
-        ))}
->>>>>>> bc3caf818b08a86a8b5cc0e6ede8715232220c84
       </div>
       {/* Slider Track */}
       <div className="relative">
