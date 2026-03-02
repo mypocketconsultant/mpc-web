@@ -36,11 +36,11 @@ export default function HomePage() {
 
   // Check for prompt from saved-resources page on mount
   useEffect(() => {
-    const savedPrompt = sessionStorage.getItem('careerPrompt');
+    const savedPrompt = sessionStorage.getItem("careerPrompt");
     if (savedPrompt) {
       setInputValue(savedPrompt);
       // Clear it so it doesn't persist on refresh
-      sessionStorage.removeItem('careerPrompt');
+      sessionStorage.removeItem("careerPrompt");
     }
   }, []);
 
@@ -108,7 +108,7 @@ export default function HomePage() {
   ];
 
   const handlePromptSelect = (promptId: string) => {
-    const prompt = suggestedPrompts.find(p => p.id.toString() === promptId);
+    const prompt = suggestedPrompts.find((p) => p.id.toString() === promptId);
     if (prompt) {
       const encodedPrompt = encodeURIComponent(prompt.title);
       router.push(`/career/chat?context=career&prompt=${encodedPrompt}`);
@@ -119,16 +119,16 @@ export default function HomePage() {
     <div className="flex flex-col  h-full ">
       <Header title={getTitleFromPath(pathname)} />
       {/* Main Content */}
-      <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF]  mb-8 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-8 transition-colors">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Go back home</span>
             </button>
           </Link>
-          <hr className="my-10" />
+          <hr className="my-4 sm:my-10" />
           {/* Quick Links Section */}
           <QuickLinksSection
             quickLinks={quickLinks}

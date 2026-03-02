@@ -108,35 +108,35 @@ export default function ExpandToolkit() {
   }, []);
 
   return (
-    <div className="w-full mt-20 mb-8">
-      <div className="flex items-start justify-between gap-6">
+    <div className="w-full mt-10 sm:mt-16 md:mt-20 mb-6 sm:mb-8">
+      <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
         {/* Main Toolkit Section */}
-        <div className="flex-1 bg-white shadow-md p-5 rounded-lg min-w-0">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">
+        <div className="flex-1 bg-white shadow-md p-3 sm:p-5 rounded-lg min-w-0 w-full">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
               Expand your toolkit.
             </h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => scroll("left")}
                 disabled={!canScrollLeft}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-4 h-4 text-gray-700" />
+                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-700" />
               </button>
               <button
                 onClick={() => scroll("right")}
                 disabled={!canScrollRight}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronRight className="w-4 h-4 text-gray-700" />
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-700" />
               </button>
             </div>
           </div>
 
           <div
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto  p-3  rounded-lg"
+            className="flex gap-3 sm:gap-4 overflow-x-auto p-2 sm:p-3 rounded-lg"
             onScroll={checkScroll}
             style={{
               scrollbarWidth: "none",
@@ -168,8 +168,8 @@ export default function ExpandToolkit() {
         </div>
 
         {/* Recommended Actions */}
-        <div className="w-60 bg-white p-3 py-5 shadow-md rounded-lg flex-shrink-0">
-          <h3 className="font-bold text-gray-900 mb-4 text-base">
+        <div className="w-full md:w-60 bg-white p-3 py-4 sm:py-5 shadow-md rounded-lg md:flex-shrink-0">
+          <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">
             Recommended actions
           </h3>
           <RecommendedAction />

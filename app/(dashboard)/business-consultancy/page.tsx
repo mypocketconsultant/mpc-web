@@ -85,9 +85,7 @@ export default function BusinessConsultancyPage() {
     const prompt = suggestedPrompts.find((p) => p.id === promptId);
     if (prompt) {
       const encodedPrompt = encodeURIComponent(prompt.title);
-      router.push(
-        `/business-consultancy/chat?prompt=${encodedPrompt}`,
-      );
+      router.push(`/business-consultancy/chat?prompt=${encodedPrompt}`);
     }
   };
 
@@ -97,16 +95,16 @@ export default function BusinessConsultancyPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide w-full">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 mb-4 sm:mb-8 transition-colors">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Go back home</span>
             </button>
           </Link>
 
-          <div className="w-full h-[1px] bg-gray-100 mb-10" />
+          <div className="w-full h-[1px] bg-gray-100 mb-4 sm:mb-10" />
 
           {/* Quick Links Section */}
           <QuickLinksSection
@@ -120,7 +118,7 @@ export default function BusinessConsultancyPage() {
             tipsTitle="Daily tips"
           />
 
-          <div className="hidden md:block w-full h-[1px] bg-gray-100 mt-12 mb-8" />
+          <div className="hidden md:block w-full h-[1px] bg-gray-100 mt-8 sm:mt-12 mb-4 sm:mb-8" />
 
           {/* Today's Section */}
           <SuggestedPrompts
@@ -136,9 +134,7 @@ export default function BusinessConsultancyPage() {
         placeholder="Ask me to suggest a business name..."
         onSend={(message) => {
           const encodedPrompt = encodeURIComponent(message);
-          router.push(
-            `/business-consultancy/chat?prompt=${encodedPrompt}`,
-          );
+          router.push(`/business-consultancy/chat?prompt=${encodedPrompt}`);
         }}
         onAttach={() => {}}
         context="business-consultancy"

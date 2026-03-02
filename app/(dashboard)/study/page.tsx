@@ -136,17 +136,17 @@ export default function StudySupportPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
           <Link href="/home">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 sm:mb-8 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 md:mb-8 transition-colors">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Go home</span>
             </button>
           </Link>
 
           {/* Greeting */}
-          <h2 className="text-lg sm:text-xl md:text-2xl font-medium text-[#5A3FFF] mb-8 sm:mb-10">
+          <h2 className="text-sm sm:text-lg md:text-2xl font-medium text-[#5A3FFF] mb-4 sm:mb-8 md:mb-10">
             Hey {user?.firstName || "there"}, let me be your class buddy. What
             do you need?
           </h2>
@@ -159,7 +159,7 @@ export default function StudySupportPage() {
             tipsTitle="Study tips"
           />
 
-          <hr className="my-8 sm:my-10" />
+          <hr className="my-6 sm:my-8 md:my-10" />
 
           {/* Today's Suggested Prompts Section */}
           <SuggestedPrompts
@@ -169,7 +169,9 @@ export default function StudySupportPage() {
               const prompt = suggestedPrompts.find((p) => p.id === id);
               if (prompt) {
                 const encodedPrompt = encodeURIComponent(prompt.title);
-                router.push(`/study/chat?context=study&prompt=${encodedPrompt}`);
+                router.push(
+                  `/study/chat?context=study&prompt=${encodedPrompt}`,
+                );
               }
             }}
           />

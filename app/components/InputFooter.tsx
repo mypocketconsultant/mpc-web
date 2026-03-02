@@ -10,7 +10,12 @@ interface InputFooterProps {
   onSend?: (message: string) => void;
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
-  context: "career" | "life" | "financial-literacy" | "study" | "business-consultancy";
+  context:
+    | "career"
+    | "life"
+    | "financial-literacy"
+    | "study"
+    | "business-consultancy";
   initialValue?: string;
   isRecording?: boolean;
   isTranscribing?: boolean;
@@ -69,8 +74,7 @@ export default function InputFooter({
     } else if (context === "study") {
       chatUrl = "/study/chat?context=study";
     } else if (context === "business-consultancy") {
-      chatUrl =
-        "/business-consultancy/chat?context=business-consultancy";
+      chatUrl = "/business-consultancy/chat?context=business-consultancy";
     }
     router.push(chatUrl);
   };
@@ -84,15 +88,15 @@ export default function InputFooter({
   };
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className="max-w-[1100px] mx-auto">
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 sm:gap-3 items-center">
           <button
             onClick={handleAttachClick}
-            className="flex-shrink-0 p-4 shadow-md hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex-shrink-0 p-2.5 sm:p-3 md:p-4 shadow-md hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Attach file"
           >
-            <Paperclip className="h-5 w-5 text-gray-600" />
+            <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
           </button>
           <input
             type="text"
@@ -101,12 +105,12 @@ export default function InputFooter({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             onClick={handleInputClick}
-            className="flex-1 rounded-full border shadow-md border-gray-300 bg-white px-4 py-4 placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer"
+            className="flex-1 rounded-full border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer"
           />
           <button
             onClick={onMicrophone}
             disabled={isTranscribing}
-            className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
               isRecording
                 ? "bg-red-500"
                 : isTranscribing
@@ -129,9 +133,9 @@ export default function InputFooter({
             }
           >
             {isTranscribing ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
             ) : (
-              <Mic className="h-5 w-5" />
+              <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
             )}
           </button>
         </div>
