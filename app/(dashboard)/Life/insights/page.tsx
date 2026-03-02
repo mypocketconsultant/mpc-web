@@ -78,6 +78,15 @@ interface ApiInsight {
   type: "positive" | "negative" | "neutral";
 }
 
+interface JournalEntry {
+  id: string;
+  entry_type: string;
+  mood: string | null;
+  energy_level: string | null;
+  text: string;
+  created_at: string;
+}
+
 export default function InsightsPage() {
   const router = useRouter();
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
@@ -236,6 +245,59 @@ export default function InsightsPage() {
     [],
   );
 
+  // Fallback: compute trends from journal entries if API returns no data
+  const computeJournalTrends = useCallback(async (period: string) => {
+    try {
+      const response: any = await apiService.get("/v1/life/journals?limit=100");
+      const items: JournalEntry[] = response?.data?.items || response?.items || [];
+      const moodEntries = items.filter(
+        (item: JournalEntry) => item.entry_type === "mood"
+      );
+
+      if (moodEntries.length === 0) return null;
+
+      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const dayData: Record<string, { moodSum: number; energySum: number; count: number }> = {};
+      dayNames.forEach((d) => {
+        dayData[d] = { moodSum: 0, energySum: 0, count: 0 };
+      });
+
+      const periodDays = parseInt(period);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - periodDays);
+
+      moodEntries.forEach((entry: JournalEntry) => {
+        const entryDate = new Date(entry.created_at);
+        if (entryDate < cutoff) return;
+
+        const dayName = dayNames[entryDate.getDay()];
+        const moodVal = entry.mood ? parseInt(entry.mood.split("/")[0]) : 0;
+        const energyVal = entry.energy_level ? parseInt(entry.energy_level.split("/")[0]) : 0;
+
+        dayData[dayName].moodSum += moodVal;
+        dayData[dayName].energySum += energyVal;
+        dayData[dayName].count += 1;
+      });
+
+      const trends: TrendData[] = [
+        "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN",
+      ].map((day) => ({
+        day,
+        mood1: dayData[day].count > 0
+          ? Math.round((dayData[day].moodSum / dayData[day].count) * 10)
+          : 0,
+        mood2: dayData[day].count > 0
+          ? Math.round((dayData[day].energySum / dayData[day].count) * 10)
+          : 0,
+      }));
+
+      return { trends, moodEntries };
+    } catch (error) {
+      console.error("[Insights] Failed to fetch journal trends:", error);
+      return null;
+    }
+  }, []);
+
   // Fetch insights data
   const fetchInsights = useCallback(
     async (period: string) => {
@@ -247,22 +309,43 @@ export default function InsightsPage() {
           `/v1/life/insights?window=${window}`,
         );
 
+        console.log("[Insights] Raw API response:", response);
+
         // Extract data from response (could be response.data or response.data.data)
         let data = response?.data;
         if (data && !data.metrics && data.data) {
           data = data.data;
         }
 
+        console.log("[Insights] Extracted data:", data);
+
+        let hasMetrics = false;
+        let hasTrends = false;
+
         if (data) {
           // Transform and set metrics
           if (data.metrics) {
             const transformedMetrics = transformMetrics(data.metrics);
             setMoodMetrics(transformedMetrics);
+            hasMetrics = true;
           }
 
-          // Set trends directly (API format matches component format)
-          if (data.trends) {
-            setMoodTrends(data.trends);
+          // Set trends — auto-scale if values appear to be on 1-10 scale
+          if (data.trends && Array.isArray(data.trends) && data.trends.length > 0) {
+            const maxVal = Math.max(
+              ...data.trends.map((t: any) => Math.max(t.mood1 || 0, t.mood2 || 0))
+            );
+            if (maxVal > 0 && maxVal <= 10) {
+              const scaled = data.trends.map((t: any) => ({
+                day: t.day,
+                mood1: (t.mood1 || 0) * 10,
+                mood2: (t.mood2 || 0) * 10,
+              }));
+              setMoodTrends(scaled);
+            } else {
+              setMoodTrends(data.trends);
+            }
+            hasTrends = true;
           }
 
           // Transform and set insights
@@ -271,13 +354,77 @@ export default function InsightsPage() {
             setAiInsights(transformedInsights);
           }
         }
+
+        // Fallback: if API returned no metrics or trends, compute from journals
+        if (!hasMetrics || !hasTrends) {
+          console.log("[Insights] Using journal fallback for", !hasMetrics ? "metrics" : "", !hasTrends ? "trends" : "");
+          const journalResult = await computeJournalTrends(period);
+          if (journalResult) {
+            if (!hasTrends && journalResult.trends) {
+              setMoodTrends(journalResult.trends);
+            }
+            if (!hasMetrics && journalResult.moodEntries.length > 0) {
+              const moods = journalResult.moodEntries.map((e) =>
+                parseInt(e.mood?.split("/")[0] || "0")
+              );
+              const energies = journalResult.moodEntries.map((e) =>
+                parseInt(e.energy_level?.split("/")[0] || "0")
+              );
+              const avgMood = moods.reduce((a, b) => a + b, 0) / moods.length;
+              const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
+              const moodMean = avgMood;
+              const variance = moods.reduce((sum, m) => sum + Math.pow(m - moodMean, 2), 0) / moods.length;
+              const stability = Math.max(0, Math.min(100, Math.round(100 - Math.sqrt(variance) * 10)));
+
+              const fallbackMetrics: ApiMetrics = {
+                avg_mood: { value: Math.round(avgMood * 10) / 10, change: 0, changeType: "positive" },
+                stability: { value: stability, change: 0, changeType: "positive" },
+                energy: { value: Math.round(avgEnergy * 10) / 10, change: 0, changeType: "positive" },
+              };
+              setMoodMetrics(transformMetrics(fallbackMetrics));
+            }
+          }
+        }
       } catch (error) {
+        console.error("[Insights] Failed to load insights:", error);
+
+        // Even if the insights API fails, try to get data from journals
+        try {
+          const journalResult = await computeJournalTrends(period);
+          if (journalResult) {
+            if (journalResult.trends) {
+              setMoodTrends(journalResult.trends);
+            }
+            if (journalResult.moodEntries.length > 0) {
+              const moods = journalResult.moodEntries.map((e) =>
+                parseInt(e.mood?.split("/")[0] || "0")
+              );
+              const energies = journalResult.moodEntries.map((e) =>
+                parseInt(e.energy_level?.split("/")[0] || "0")
+              );
+              const avgMood = moods.reduce((a, b) => a + b, 0) / moods.length;
+              const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
+              const moodMean = avgMood;
+              const variance = moods.reduce((sum, m) => sum + Math.pow(m - moodMean, 2), 0) / moods.length;
+              const stability = Math.max(0, Math.min(100, Math.round(100 - Math.sqrt(variance) * 10)));
+              const fallbackMetrics: ApiMetrics = {
+                avg_mood: { value: Math.round(avgMood * 10) / 10, change: 0, changeType: "positive" },
+                stability: { value: stability, change: 0, changeType: "positive" },
+                energy: { value: Math.round(avgEnergy * 10) / 10, change: 0, changeType: "positive" },
+              };
+              setMoodMetrics(transformMetrics(fallbackMetrics));
+            }
+          }
+        } catch (journalError) {
+          console.error("[Insights] Journal fallback also failed:", journalError);
+        }
+
         showToast("error", "Failed to load insights");
       } finally {
         setIsLoading(false);
       }
     },
-    [transformMetrics, transformInsights, showToast],
+    [transformMetrics, transformInsights, showToast, computeJournalTrends],
   );
 
   // Fetch on mount and when period changes

@@ -22,10 +22,12 @@ export interface DayData {
 interface PlannerCalendarProps {
   events?: DayData[];
   isLoading?: boolean;
-  onEntryClick?: (planId: string) => void;
+  onEntryClick?: (entryId: string, type?: "mood" | "goal") => void;
+  activeTab?: "mood" | "goal";
+  onTabChange?: (tab: "mood" | "goal") => void;
 }
 
-export default function PlannerCalendar({ events = [], isLoading, onEntryClick }: PlannerCalendarProps) {
+export default function PlannerCalendar({ events = [], isLoading, onEntryClick, activeTab = "goal", onTabChange }: PlannerCalendarProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -58,12 +60,25 @@ export default function PlannerCalendar({ events = [], isLoading, onEntryClick }
             <div className="flex items-center gap-3">
               {/* Mood Entries Button */}
               <div className="flex flow-row  items-center">
-                <button className="px-4 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-l-lg hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => onTabChange?.("mood")}
+                  className={`px-4 py-3 text-sm font-medium rounded-l-lg transition-colors ${
+                    activeTab === "mood"
+                      ? "text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                      : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
                   Mood Entries
                 </button>
 
-                {/* Your Goals Button - Active State */}
-                <button className="px-4 py-3 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-r-lg hover:bg-indigo-200 transition-colors">
+                <button
+                  onClick={() => onTabChange?.("goal")}
+                  className={`px-4 py-3 text-sm font-medium rounded-r-lg transition-colors ${
+                    activeTab === "goal"
+                      ? "text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                      : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
                   Your Goals
                 </button>
               </div>
@@ -83,16 +98,27 @@ export default function PlannerCalendar({ events = [], isLoading, onEntryClick }
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <span className="ml-3 text-gray-500">Loading plans...</span>
+                <span className="ml-3 text-gray-500">{activeTab === "mood" ? "Loading mood entries..." : "Loading plans..."}</span>
               </div>
             ) : events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <p className="text-gray-500 mb-4">No plans found</p>
-                <Link href="/Life/new-goal">
-                  <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
-                    Create your first goal
-                  </button>
-                </Link>
+                <p className="text-gray-500 mb-4">
+                  {activeTab === "mood" ? "No mood entries found" : "No plans found"}
+                </p>
+                {activeTab === "goal" && (
+                  <Link href="/Life/new-goal">
+                    <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                      Create your first goal
+                    </button>
+                  </Link>
+                )}
+                {activeTab === "mood" && (
+                  <Link href="/Life/mood-entry">
+                    <button className="px-4 py-2 text-sm font-medium text-white bg-pink-500 rounded-lg hover:bg-pink-600 transition-colors">
+                      Record your first mood
+                    </button>
+                  </Link>
+                )}
               </div>
             ) : (
               events.map((day) => (
@@ -141,10 +167,10 @@ export default function PlannerCalendar({ events = [], isLoading, onEntryClick }
                                   {entry.time}
                                 </span>
                                 <button
-                                  onClick={() => onEntryClick?.(entry.planId)}
+                                  onClick={() => onEntryClick?.(entry.planId, entry.type)}
                                   className="text-sm text-black hover:text-indigo-700 font-medium"
                                 >
-                                  Click to edit
+                                  {entry.type === "mood" ? "View entry" : "Click to edit"}
                                 </button>
                               </div>
                             </div>

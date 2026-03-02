@@ -30,15 +30,31 @@ interface Plan {
   updated_at?: string;
 }
 
+interface JournalEntry {
+  id: string;
+  entry_type: string;
+  mood: string | null;
+  energy_level: string | null;
+  text: string;
+  tags: string[];
+  created_at: string;
+}
+
 export default function LifePlannerPage() {
   const router = useRouter();
-  const [events, setEvents] = useState<DayData[]>([]);
+  const [goalEvents, setGoalEvents] = useState<DayData[]>([]);
+  const [moodEvents, setMoodEvents] = useState<DayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"mood" | "goal">("goal");
   const { toast, showToast } = useToast();
 
-  const handleEntryClick = (planId: string) => {
-    sessionStorage.setItem("currentGoalPlanId", planId);
-    router.push("/Life/new-goal");
+  const handleEntryClick = (entryId: string, type?: "mood" | "goal") => {
+    if (type === "mood") {
+      router.push("/Life/mood-entry");
+    } else {
+      sessionStorage.setItem("currentGoalPlanId", entryId);
+      router.push("/Life/new-goal");
+    }
   };
 
   useEffect(() => {
@@ -54,10 +70,10 @@ export default function LifePlannerPage() {
 
         // Transform plans to calendar events grouped by date
         const calendarEvents = transformPlansToCalendarEvents(plans);
-        setEvents(calendarEvents);
+        setGoalEvents(calendarEvents);
       } catch (error) {
         showToast("error", "Failed to load plans");
-        setEvents([]);
+        setGoalEvents([]);
       } finally {
         setIsLoading(false);
       }
@@ -65,6 +81,26 @@ export default function LifePlannerPage() {
 
     fetchPlans();
   }, [showToast]);
+
+  useEffect(() => {
+    const fetchMoodEntries = async () => {
+      try {
+        const response: any = await apiService.get("/v1/life/journals?limit=100");
+        let items: JournalEntry[] = response?.data?.items || response?.items || [];
+        if (!Array.isArray(items)) items = [];
+
+        // Filter to only mood entries
+        const moodEntries = items.filter(
+          (item) => item.entry_type === "mood"
+        );
+        const calendarEvents = transformMoodToCalendarEvents(moodEntries);
+        setMoodEvents(calendarEvents);
+      } catch (error) {
+        console.error("[Planner] Failed to load mood entries:", error);
+      }
+    };
+    fetchMoodEntries();
+  }, []);
 
   const transformPlansToCalendarEvents = (plans: Plan[]): DayData[] => {
     const monthNames = [
@@ -137,6 +173,66 @@ export default function LifePlannerPage() {
     });
   };
 
+  const transformMoodToCalendarEvents = (
+    entries: JournalEntry[]
+  ): DayData[] => {
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const groupedByDate: Record<string, { date: Date; entries: DayEntry[] }> =
+      {};
+
+    entries.forEach((entry, index) => {
+      const createdDate = new Date(entry.created_at);
+      const dateKey = createdDate.toISOString().split("T")[0];
+
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = { date: createdDate, entries: [] };
+      }
+
+      const moodValue = entry.mood ? entry.mood.split("/")[0] : "?";
+      const energyValue = entry.energy_level
+        ? entry.energy_level.split("/")[0]
+        : "?";
+
+      const dayEntry: DayEntry = {
+        id: index + 1,
+        planId: entry.id,
+        title: `Mood: ${moodValue}/10 | Energy: ${energyValue}/10`,
+        time: createdDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
+        description: entry.text || "No journal text",
+        type: "mood",
+        leftBorder: "border-l-4 border-l-pink-400",
+      };
+
+      groupedByDate[dateKey].entries.push(dayEntry);
+    });
+
+    const sortedDates = Object.keys(groupedByDate).sort();
+
+    return sortedDates.map((dateKey, index) => {
+      const { date, entries } = groupedByDate[dateKey];
+      const dayDate = new Date(date);
+      dayDate.setHours(0, 0, 0, 0);
+
+      return {
+        id: index + 1,
+        date: `${monthNames[date.getMonth()]} ${date.getDate()}`,
+        day: String(date.getDate()),
+        isToday: dayDate.getTime() === today.getTime(),
+        entries,
+      };
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <Header title="Life Planner" />
@@ -155,9 +251,11 @@ export default function LifePlannerPage() {
             {/* Right Column - Calendar - Full Width */}
             <div className="lg:col-span-2">
               <PlannerCalendar
-                events={events}
+                events={activeTab === "goal" ? goalEvents : moodEvents}
                 isLoading={isLoading}
                 onEntryClick={handleEntryClick}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
               />
             </div>
           </div>

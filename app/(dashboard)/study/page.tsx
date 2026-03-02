@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, History, BookOpen } from "lucide-react";
 import Image from "next/image";
+import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import chatIcon from "@/public/Robot.png";
 import SuggestedPrompts from "../career/components/SuggestedPrompts";
 import QuickLinksSection, {
@@ -18,6 +19,7 @@ export default function StudySupportPage() {
   const pathname = usePathname();
   const router = useRouter();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { user } = useUser();
 
   const quickLinks: QuickLink[] = [
@@ -132,18 +134,27 @@ export default function StudySupportPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title="Study Support" />
+      <Header title="Study Support" icon={<BookOpen className="h-6 w-6 text-[#5A3FFF]" />} />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
         <div className="max-w-[1100px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
-          <Link href="/home">
-            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 md:mb-8 transition-colors">
-              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>Go home</span>
+          <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+            <Link href="/home">
+              <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span>Go home</span>
+              </button>
+            </Link>
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+            >
+              <History className="w-4 h-4" />
+              Chat History
             </button>
-          </Link>
+          </div>
 
           {/* Greeting */}
           <h2 className="text-sm sm:text-lg md:text-2xl font-medium text-[#5A3FFF] mb-4 sm:mb-8 md:mb-10">
@@ -177,6 +188,20 @@ export default function StudySupportPage() {
           />
         </div>
       </main>
+
+      <ChatHistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onSelectSession={(sessionId) => {
+          setIsHistoryOpen(false);
+          router.push(`/study/chat?context=study&session_id=${sessionId}`);
+        }}
+        onNewChat={() => {
+          setIsHistoryOpen(false);
+          router.push("/study/chat?context=study");
+        }}
+        module="study"
+      />
 
       {/* Chat Input Footer */}
       <InputFooter

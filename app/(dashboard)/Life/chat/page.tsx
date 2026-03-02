@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Paperclip, Mic, History, Plus, Loader2 } from "lucide-react";
+import { ChevronLeft, Paperclip, Mic, History, Plus, Loader2, Download } from "lucide-react";
 import Header from "@/app/components/header";
 import { apiService } from "@/lib/api/apiService";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -32,6 +32,7 @@ function LifeChatPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
   const { toast, showToast, hideToast } = useToast();
 
@@ -188,6 +189,73 @@ function LifeChatPageContent() {
     loadSession(selectedSessionId);
   };
 
+  const handleGenerateNotes = async () => {
+    if (messages.length === 0) {
+      showToast("error", "Start a conversation first to generate notes.");
+      return;
+    }
+
+    setIsGeneratingNotes(true);
+    try {
+      // Try server-side export first
+      const exportRes: any = await apiService.post(
+        `/v1/life/chat/${sessionId}/export`,
+        { format: "pdf" }
+      );
+      const docId = exportRes?.data?.id || exportRes?.data?.data?.id || exportRes?.id;
+      if (docId) {
+        // Poll for document to be ready
+        for (let i = 0; i < 15; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          try {
+            const dlRes: any = await apiService.get(
+              `/v1/documents/${docId}/download`
+            );
+            const url =
+              dlRes?.data?.data?.download_url ||
+              dlRes?.data?.download_url ||
+              dlRes?.download_url;
+            if (url) {
+              window.open(url, "_blank");
+              showToast("success", "Notes downloaded successfully!");
+              return;
+            }
+          } catch (pollErr: any) {
+            if (pollErr?.response?.status === 409) continue;
+            break;
+          }
+        }
+        showToast("error", "Export is taking too long. Try again later.");
+        return;
+      }
+      // If no docId returned, fall through to client-side export
+      throw new Error("No document ID returned");
+    } catch (error: any) {
+      console.log("[Life Chat] Server export failed, using client-side fallback:", error?.response?.status || error?.message);
+      // Client-side fallback: download chat as text file
+      const content = messages
+        .map(
+          (m) =>
+            `[${m.type === "user" ? "You" : "AI Assistant"}]\n${m.content}`
+        )
+        .join("\n\n---\n\n");
+
+      const header = `Life Chat Notes\nGenerated: ${new Date().toLocaleString()}\n${"=".repeat(50)}\n\n`;
+      const blob = new Blob([header + content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `life-chat-notes-${new Date().toISOString().split("T")[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("success", "Notes downloaded as text file.");
+    } finally {
+      setIsGeneratingNotes(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#FAFAFA]">
       <Header title="Life Advisory" />
@@ -205,6 +273,18 @@ function LifeChatPageContent() {
             </Link>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleGenerateNotes}
+                disabled={messages.length === 0 || isGeneratingNotes}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingNotes ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                Notes
+              </button>
               <button
                 onClick={handleNewChat}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"

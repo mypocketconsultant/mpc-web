@@ -2,27 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, FileText, ArrowRightCircle, Loader2, Trash2 } from "lucide-react";
+import { ChevronLeft, FileText, ArrowRightCircle, Loader2, Trash2, Download } from "lucide-react";
 import Header from "@/app/components/header";
 import DailyTips from "../components/DailyTips";
 import tipsIcon from "@/public/tip.png";
 import { apiService } from "@/lib/api/apiService";
-import { deleteCanvas, deleteSwot } from "../canvas/canvasApi";
+import { deleteCanvas, deleteSwot, exportCanvas, exportSwot } from "../canvas/canvasApi";
 
 interface ResourceItem {
   id: string;
   type: "canvas" | "swot";
   name: string;
   resourceType: string;
-  href: string;
+  href?: string;
+  status?: string;
 }
 
 function ResourceRow({
   doc,
   onDelete,
+  onDownload,
+  isDownloading,
 }: {
   doc: ResourceItem;
   onDelete: (id: string, type: "canvas" | "swot") => void;
+  onDownload?: (id: string, type: "canvas" | "swot") => void;
+  isDownloading?: boolean;
 }) {
   return (
     <div className="flex items-center gap-4 hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors group">
@@ -30,8 +35,22 @@ function ResourceRow({
       <FileText className="text-gray-300 h-4 w-4 shrink-0" />
       <span className="text-gray-700 font-medium flex-1">{doc.name}</span>
       <span className="text-xs text-gray-400 shrink-0">{doc.resourceType}</span>
+      {onDownload && (
+        <button
+          onClick={() => onDownload(doc.id, doc.type)}
+          disabled={isDownloading}
+          className="p-1 text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all shrink-0 disabled:opacity-50"
+          title="Download as PDF"
+        >
+          {isDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+        </button>
+      )}
       <Link
-        href={doc.href}
+        href={doc.href || "#"}
         className="text-xs text-indigo-900 underline decoration-indigo-200 underline-offset-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
       >
         Edit
@@ -52,6 +71,7 @@ export default function ResourcesPage() {
   const [publishedResources, setPublishedResources] = useState<ResourceItem[]>([]);
   const [generatedDocuments, setGeneratedDocuments] = useState<ResourceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchResources() {
@@ -79,7 +99,7 @@ export default function ResourcesPage() {
           type: "canvas" as "canvas" | "swot",
           name: d.filename || d.title || "Untitled",
           resourceType: "Document",
-          href: d.storage?.url || "#",
+          status: d.status || "unknown",
         }));
         setGeneratedDocuments(docs);
       } catch (err: any) {
@@ -103,6 +123,46 @@ export default function ResourcesPage() {
       setPublishedResources((prev) => prev.filter((r) => r.id !== id));
     } catch (err: any) {
       console.error("[Resources] delete error:", err.message, err);
+    }
+  };
+
+  const handleDownload = async (id: string, type: "canvas" | "swot") => {
+    setDownloadingId(id);
+    try {
+      const exportRes = type === "canvas"
+        ? await exportCanvas(id)
+        : await exportSwot(id);
+      const docId = exportRes?.id;
+      if (!docId) {
+        alert("Export failed. Please try again.");
+        return;
+      }
+
+      const maxAttempts = 30;
+      for (let i = 0; i < maxAttempts; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        try {
+          const dlRes: any = await apiService.get(`/v1/documents/${docId}/download`);
+          const dlData = dlRes?.data?.data || dlRes?.data || dlRes;
+          const url = dlData?.download_url;
+          if (url) {
+            window.open(url, "_blank");
+            return;
+          }
+        } catch (pollErr: any) {
+          if (pollErr?.response?.status === 409) {
+            continue;
+          }
+          alert("Failed to download document. Please try again later.");
+          return;
+        }
+      }
+      alert("Document is taking too long to generate. Please try again later.");
+    } catch (err: any) {
+      console.error("[Resources] download error:", err.message, err);
+      alert("Export failed. Please try again.");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -160,7 +220,13 @@ export default function ResourcesPage() {
               ) : (
                 <div className="flex flex-col gap-4">
                   {publishedResources.map((doc) => (
-                    <ResourceRow key={doc.id} doc={doc} onDelete={handleDelete} />
+                    <ResourceRow
+                      key={doc.id}
+                      doc={doc}
+                      onDelete={handleDelete}
+                      onDownload={handleDownload}
+                      isDownloading={downloadingId === doc.id}
+                    />
                   ))}
                 </div>
               )}
@@ -185,12 +251,31 @@ export default function ResourcesPage() {
                       <ArrowRightCircle className="text-indigo-400 h-5 w-5 shrink-0" />
                       <FileText className="text-gray-300 h-4 w-4 shrink-0" />
                       <span className="text-gray-700 font-medium flex-1">{doc.name}</span>
-                      <Link
-                        href={doc.href}
-                        className="text-xs text-gray-400 underline decoration-gray-300 underline-offset-4"
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res: any = await apiService.get(
+                              `/v1/documents/${doc.id}/download`,
+                            );
+                            const dlData = res?.data?.data || res?.data || res;
+                            const url = dlData?.download_url;
+                            if (url) {
+                              window.open(url, "_blank");
+                            } else {
+                              alert("Download link not available yet. Please try again.");
+                            }
+                          } catch (err: any) {
+                            if (err?.response?.status === 409) {
+                              alert("Document is still being generated. Please wait and try again.");
+                            } else {
+                              alert("Failed to download document. Please try again later.");
+                            }
+                          }
+                        }}
+                        className="text-xs text-indigo-500 hover:text-indigo-700 underline decoration-indigo-300 underline-offset-4"
                       >
-                        see prompt history
-                      </Link>
+                        Download
+                      </button>
                     </div>
                   ))}
                 </div>

@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   title?: string;
+  icon?: React.ReactNode;
 }
 
-export default function Header({ title = "Home" }: HeaderProps) {
+export default function Header({ title = "Home", icon }: HeaderProps) {
   const router = useRouter();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,7 @@ export default function Header({ title = "Home" }: HeaderProps) {
       <div className="flex items-center justify-between py-3 sm:py-4">
         {/* Title */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+          {icon && <div className="flex-shrink-0">{icon}</div>}
           <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
             {title}
           </h1>

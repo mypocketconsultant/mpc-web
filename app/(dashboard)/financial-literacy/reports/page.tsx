@@ -66,6 +66,12 @@ interface CategoryBreakdown {
   color: string;
 }
 
+interface CurrencyGroup {
+  currency: string;
+  breakdown: CategoryBreakdown[];
+  subtotalExpenses: number;
+}
+
 interface MonthlyData {
   month: string;
   income: number;
@@ -145,10 +151,10 @@ const REPORT_TYPES = [
 
 // ── Helpers ───────────────────────────────────────────────
 
-function formatCurrency(amount: number): string {
+function formatCurrency(amount: number, currencyCode: string = "USD"): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: currencyCode,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -219,6 +225,22 @@ function buildCategoryBreakdown(
       color: CATEGORY_COLORS[category] || DEFAULT_COLOR,
     }))
     .sort((a, b) => b.amount - a.amount);
+}
+
+function buildCategoryBreakdownByCurrency(
+  transactions: Transaction[],
+): CurrencyGroup[] {
+  const currencies = [
+    ...new Set(transactions.map((t) => t.currency).filter(Boolean)),
+  ].sort();
+  return currencies.map((currency) => {
+    const currencyTx = transactions.filter((t) => t.currency === currency);
+    const breakdown = buildCategoryBreakdown(currencyTx);
+    const subtotalExpenses = currencyTx
+      .filter((t) => t.direction === "expense")
+      .reduce((sum, t) => sum + t.actual_amount, 0);
+    return { currency, breakdown, subtotalExpenses };
+  });
 }
 
 function buildMonthlyData(transactions: Transaction[]): MonthlyData[] {
@@ -300,6 +322,7 @@ function ReportsPageContent() {
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(
     urlBudgetId,
   );
+  const [userCurrency, setUserCurrency] = useState("USD");
   const [budgetDropdownOpen, setBudgetDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("6months");
@@ -333,9 +356,10 @@ function ReportsPageContent() {
     try {
       setLoading(true);
 
-      const [txRes, budgetRes]: any[] = await Promise.all([
+      const [txRes, budgetRes, meRes]: any[] = await Promise.all([
         apiService.get("/v1/finance/transactions?limit=200"),
         apiService.get("/v1/finance/budgets?limit=100"),
+        apiService.get("/v1/auth/me"),
       ]);
 
       const txData = txRes?.data || txRes;
@@ -345,6 +369,11 @@ function ReportsPageContent() {
       const budgetData = budgetRes?.data || budgetRes;
       const budgetItems: BudgetDoc[] = budgetData?.items || [];
       setBudgets(budgetItems);
+
+      const meData = meRes?.data || meRes;
+      if (meData?.preferredCurrency) {
+        setUserCurrency(meData.preferredCurrency);
+      }
 
       console.log(
         "[Reports] fetched",
@@ -376,6 +405,10 @@ function ReportsPageContent() {
   // ── Derived data ────────────────────────────────────────
   const selectedBudget = budgets.find((b) => b.id === selectedBudgetId) || null;
 
+  // Currency: prefer the selected budget's currency, fall back to user preference
+  const activeCurrency = selectedBudget?.currency || userCurrency;
+  const fmt = (amount: number) => formatCurrency(amount, activeCurrency);
+
   // Get plan row names from the selected budget (for category axis)
   const planRowNames = useMemo(() => {
     if (!selectedBudget) return undefined;
@@ -404,6 +437,23 @@ function ReportsPageContent() {
     filteredTransactions,
     planRowNames,
   );
+
+  // Detect mixed currencies (only relevant when All Budgets is selected)
+  const uniqueCurrencies = useMemo(
+    () => [
+      ...new Set(filteredTransactions.map((t) => t.currency).filter(Boolean)),
+    ],
+    [filteredTransactions],
+  );
+  const hasMixedCurrencies = !selectedBudgetId && uniqueCurrencies.length > 1;
+  const currencyGroups = useMemo(
+    () =>
+      hasMixedCurrencies
+        ? buildCategoryBreakdownByCurrency(filteredTransactions)
+        : [],
+    [hasMixedCurrencies, filteredTransactions],
+  );
+
   const monthlyData = buildMonthlyData(filteredTransactions);
   const summary = buildPeriodSummary(filteredTransactions);
   const previousSummary = buildPeriodSummary(previousPeriodTransactions);
@@ -465,7 +515,7 @@ function ReportsPageContent() {
         {
           title: "Cashflow Report",
           period: `${periodConfig.months}m`,
-          currency: "USD",
+          currency: activeCurrency,
           include_transactions: true,
           transaction_limit: 200,
         },
@@ -504,15 +554,29 @@ function ReportsPageContent() {
 
           if (pollData?.status === "ready") {
             if (pollRef.current) clearInterval(pollRef.current);
-            const downloadUrl = pollData?.storage?.url || null;
-            setExportStatus({
-              docId,
-              status: "ready",
-              downloadUrl,
-              error: null,
-            });
-            if (downloadUrl) {
-              window.open(downloadUrl, "_blank");
+            try {
+              const dlRes: any = await apiService.get(
+                `/v1/documents/${docId}/download`,
+              );
+              const dlData = dlRes?.data?.data || dlRes?.data || dlRes;
+              const downloadUrl = dlData?.download_url || null;
+              setExportStatus({
+                docId,
+                status: "ready",
+                downloadUrl,
+                error: null,
+              });
+              if (downloadUrl) {
+                window.open(downloadUrl, "_blank");
+              }
+            } catch (dlErr: any) {
+              console.error("[Reports] download endpoint error:", dlErr.message);
+              setExportStatus({
+                docId,
+                status: "ready",
+                downloadUrl: null,
+                error: "Download link unavailable",
+              });
             }
           } else if (pollData?.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
@@ -729,12 +793,63 @@ function ReportsPageContent() {
                     <h2 className="text-lg font-semibold text-gray-900">
                       Expenses by Category
                     </h2>
-                    <span className="text-sm text-gray-500">
-                      Total: {formatCurrency(totalExpenses)}
-                    </span>
+                    {!hasMixedCurrencies && (
+                      <span className="text-sm text-gray-500">
+                        Total: {fmt(totalExpenses)}
+                      </span>
+                    )}
                   </div>
 
-                  {categoryBreakdown.length === 0 ? (
+                  {hasMixedCurrencies ? (
+                    <div className="divide-y divide-gray-100">
+                      {currencyGroups.map((group) => (
+                        <div key={group.currency} className="py-4 first:pt-0 last:pb-0">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                              {group.currency}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {formatCurrency(group.subtotalExpenses, group.currency)}
+                            </span>
+                          </div>
+                          {group.breakdown.filter((c) => c.amount > 0).length === 0 ? (
+                            <p className="text-sm text-gray-400">No expenses</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {group.breakdown
+                                .filter((c) => c.amount > 0)
+                                .map((cat) => (
+                                  <div key={cat.category}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-sm text-gray-700">
+                                        {cat.category}
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-900">
+                                          {formatCurrency(cat.amount, group.currency)}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {cat.percentage}%
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2">
+                                      <div
+                                        className="h-2 rounded-full transition-all"
+                                        style={{
+                                          width: `${cat.percentage}%`,
+                                          backgroundColor: cat.color,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : categoryBreakdown.length === 0 ? (
                     <p className="text-sm text-gray-400 py-4">
                       No expense transactions in this period
                     </p>
@@ -748,7 +863,7 @@ function ReportsPageContent() {
                             </span>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900">
-                                {formatCurrency(cat.amount)}
+                                {fmt(cat.amount)}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {cat.percentage}%
@@ -790,7 +905,11 @@ function ReportsPageContent() {
                     </div>
                   </div>
 
-                  {monthlyData.length === 0 ? (
+                  {hasMixedCurrencies ? (
+                    <p className="text-sm text-gray-400 py-8 text-center">
+                      Select a specific budget to view this chart — charts can only display one currency at a time.
+                    </p>
+                  ) : monthlyData.length === 0 ? (
                     <p className="text-sm text-gray-400 py-4">
                       No dated transactions in this period
                     </p>
@@ -808,14 +927,14 @@ function ReportsPageContent() {
                                 style={{
                                   height: `${(m.income / maxBarValue) * 100}%`,
                                 }}
-                                title={`Income: ${formatCurrency(m.income)}`}
+                                title={`Income: ${fmt(m.income)}`}
                               />
                               <div
                                 className="flex-1 bg-[#EF4444] rounded-t-md transition-all"
                                 style={{
                                   height: `${(m.expenses / maxBarValue) * 100}%`,
                                 }}
-                                title={`Expenses: ${formatCurrency(m.expenses)}`}
+                                title={`Expenses: ${fmt(m.expenses)}`}
                               />
                             </div>
                             <span className="text-xs text-gray-500">
@@ -842,15 +961,15 @@ function ReportsPageContent() {
                             >
                               <span className="text-gray-700">{m.month}</span>
                               <span className="text-right text-green-600">
-                                {formatCurrency(m.income)}
+                                {fmt(m.income)}
                               </span>
                               <span className="text-right text-red-600">
-                                {formatCurrency(m.expenses)}
+                                {fmt(m.expenses)}
                               </span>
                               <span
                                 className={`text-right font-medium ${net >= 0 ? "text-green-600" : "text-red-600"}`}
                               >
-                                {formatCurrency(net)}
+                                {fmt(net)}
                               </span>
                             </div>
                           );
@@ -873,7 +992,11 @@ function ReportsPageContent() {
                     </span>
                   </div>
 
-                  {monthlyData.length === 0 ? (
+                  {hasMixedCurrencies ? (
+                    <p className="text-sm text-gray-400 py-8 text-center">
+                      Select a specific budget to view this chart — charts can only display one currency at a time.
+                    </p>
+                  ) : monthlyData.length === 0 ? (
                     <p className="text-sm text-gray-400 py-4">
                       No dated transactions in this period
                     </p>
@@ -900,7 +1023,7 @@ function ReportsPageContent() {
                                   }}
                                 >
                                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                    {formatCurrency(m.expenses)}
+                                    {fmt(m.expenses)}
                                   </div>
                                 </div>
                               </div>
@@ -934,7 +1057,7 @@ function ReportsPageContent() {
                                 {cat.category}
                               </span>
                               <span className="text-sm font-medium text-gray-900">
-                                {formatCurrency(cat.amount)}
+                                {fmt(cat.amount)}
                               </span>
                               <span className="text-xs text-gray-500 w-10 text-right">
                                 {cat.percentage}%
@@ -951,7 +1074,7 @@ function ReportsPageContent() {
                             Avg. monthly spending
                           </span>
                           <span className="text-sm font-semibold text-gray-900">
-                            {formatCurrency(
+                            {fmt(
                               summary.totalExpenses /
                                 Math.max(monthlyData.length, 1),
                             )}
@@ -966,6 +1089,14 @@ function ReportsPageContent() {
               {/* ── Period Comparison Tab ── */}
               {selectedReport === "comparison" && (
                 <div className="space-y-6">
+                  {hasMixedCurrencies ? (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+                      <p className="text-sm text-gray-400">
+                        Select a specific budget to view this report — period comparison requires a single currency.
+                      </p>
+                    </div>
+                  ) : (
+                  <>
                   {/* Summary Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -973,7 +1104,7 @@ function ReportsPageContent() {
                         Total Income
                       </span>
                       <p className="text-2xl font-bold text-gray-900 mt-1">
-                        {formatCurrency(summary.totalIncome)}
+                        {fmt(summary.totalIncome)}
                       </p>
                       <span className="text-xs text-green-600">
                         {computePercentChange(
@@ -989,7 +1120,7 @@ function ReportsPageContent() {
                         Total Expenses
                       </span>
                       <p className="text-2xl font-bold text-gray-900 mt-1">
-                        {formatCurrency(summary.totalExpenses)}
+                        {fmt(summary.totalExpenses)}
                       </p>
                       <span className="text-xs text-red-600">
                         {computePercentChange(
@@ -1005,7 +1136,7 @@ function ReportsPageContent() {
                       <p
                         className={`text-2xl font-bold mt-1 ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
                       >
-                        {formatCurrency(summary.netSavings)}
+                        {fmt(summary.netSavings)}
                       </p>
                       <span className="text-xs text-green-600">
                         {computePercentChange(
@@ -1024,7 +1155,7 @@ function ReportsPageContent() {
                         {Math.round(summary.savingsRate)}%
                       </p>
                       <span className="text-xs text-gray-500">
-                        Avg. {formatCurrency(summary.avgMonthlySavings)}/mo
+                        Avg. {fmt(summary.avgMonthlySavings)}/mo
                       </span>
                     </div>
                   </div>
@@ -1058,7 +1189,7 @@ function ReportsPageContent() {
                               />
                             </div>
                             <span className="text-xs text-gray-500 mt-0.5">
-                              Current: {formatCurrency(summary.totalIncome)}
+                              Current: {fmt(summary.totalIncome)}
                             </span>
                           </div>
                           <div className="flex-1">
@@ -1072,7 +1203,7 @@ function ReportsPageContent() {
                             </div>
                             <span className="text-xs text-gray-500 mt-0.5">
                               Previous:{" "}
-                              {formatCurrency(previousSummary.totalIncome)}
+                              {fmt(previousSummary.totalIncome)}
                             </span>
                           </div>
                         </div>
@@ -1102,7 +1233,7 @@ function ReportsPageContent() {
                               />
                             </div>
                             <span className="text-xs text-gray-500 mt-0.5">
-                              Current: {formatCurrency(summary.totalExpenses)}
+                              Current: {fmt(summary.totalExpenses)}
                             </span>
                           </div>
                           <div className="flex-1">
@@ -1116,7 +1247,7 @@ function ReportsPageContent() {
                             </div>
                             <span className="text-xs text-gray-500 mt-0.5">
                               Previous:{" "}
-                              {formatCurrency(previousSummary.totalExpenses)}
+                              {fmt(previousSummary.totalExpenses)}
                             </span>
                           </div>
                         </div>
@@ -1140,7 +1271,7 @@ function ReportsPageContent() {
                             <p
                               className={`text-lg font-bold ${summary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
                             >
-                              {formatCurrency(summary.netSavings)}
+                              {fmt(summary.netSavings)}
                             </p>
                             <span className="text-xs text-gray-500">
                               Current
@@ -1150,7 +1281,7 @@ function ReportsPageContent() {
                             <p
                               className={`text-lg font-bold ${previousSummary.netSavings >= 0 ? "text-green-600" : "text-red-600"}`}
                             >
-                              {formatCurrency(previousSummary.netSavings)}
+                              {fmt(previousSummary.netSavings)}
                             </p>
                             <span className="text-xs text-gray-500">
                               Previous
@@ -1160,6 +1291,8 @@ function ReportsPageContent() {
                       </div>
                     </div>
                   </div>
+                  </>
+                  )}
                 </div>
               )}
             </>

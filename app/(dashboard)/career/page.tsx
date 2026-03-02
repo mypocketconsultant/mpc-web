@@ -14,6 +14,7 @@ import {
   Bell,
   Paperclip,
   FileText,
+  Briefcase,
 } from "lucide-react";
 import Image from "next/image";
 import resumeIcon from "@/public/daily.png";
@@ -25,14 +26,17 @@ import SuggestedPrompts, {
   SuggestedPrompt,
 } from "./components/SuggestedPrompts";
 import QuickLinksSection, { QuickLink } from "./components/QuickLinksSection";
+import { History } from "lucide-react";
 import Header from "@/app/components/header";
 import InputFooter from "@/app/components/InputFooter";
+import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 
 export default function HomePage() {
   const router = useRouter();
   const pathname = usePathname();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Check for prompt from saved-resources page on mount
   useEffect(() => {
@@ -117,17 +121,26 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col  h-full ">
-      <Header title={getTitleFromPath(pathname)} />
+      <Header title={getTitleFromPath(pathname)} icon={<Briefcase className="h-6 w-6 text-[#5A3FFF]" />} />
       {/* Main Content */}
       <main className="flex-1 overflow-auto max-w-[1100px] mx-auto scrollbar-hide w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Go back home */}
-          <Link href="/home">
-            <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-8 transition-colors">
-              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>Go back home</span>
+          <div className="flex items-center justify-between mb-4 sm:mb-8">
+            <Link href="/home">
+              <button className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span>Go back home</span>
+              </button>
+            </Link>
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+            >
+              <History className="w-4 h-4" />
+              Chat History
             </button>
-          </Link>
+          </div>
           <hr className="my-4 sm:my-10" />
           {/* Quick Links Section */}
           <QuickLinksSection
@@ -155,6 +168,20 @@ export default function HomePage() {
           />
         </div>
       </main>
+
+      <ChatHistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onSelectSession={(sessionId) => {
+          setIsHistoryOpen(false);
+          router.push(`/career/chat?context=career&session_id=${sessionId}`);
+        }}
+        onNewChat={() => {
+          setIsHistoryOpen(false);
+          router.push("/career/chat?context=career");
+        }}
+        module="career"
+      />
 
       {/* Chat Input Footer */}
       <InputFooter

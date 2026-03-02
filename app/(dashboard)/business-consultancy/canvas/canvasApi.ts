@@ -53,3 +53,19 @@ export async function deleteCanvas(canvasId: string): Promise<void> {
 export async function deleteSwot(swotId: string): Promise<void> {
   await apiService.delete(`/v1/business/swots/${swotId}`);
 }
+
+export async function exportCanvas(canvasId: string): Promise<{ id: string; status: string }> {
+  const res: any = await apiService.post(
+    `/v1/business/canvases/${canvasId}/export`,
+    {}
+  );
+  return res?.data ?? res;
+}
+
+export async function exportSwot(swotId: string): Promise<{ id: string; status: string }> {
+  const res: any = await apiService.post(
+    `/v1/business/swots/${swotId}/export`,
+    {}
+  );
+  return res?.data ?? res;
+}

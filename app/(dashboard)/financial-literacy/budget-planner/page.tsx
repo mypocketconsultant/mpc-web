@@ -86,13 +86,15 @@ const currentPeriod = () => {
 function NewBudgetModal({
   onClose,
   onCreated,
+  defaultCurrency,
 }: {
   onClose: () => void;
   onCreated: (b: BudgetDoc) => void;
+  defaultCurrency?: string;
 }) {
   const [title, setTitle] = useState("");
   const [period, setPeriod] = useState(currentPeriod());
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(defaultCurrency || "USD");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -422,7 +424,14 @@ function PlanGroupEditor({
   const save = async () => {
     setSaving(true);
     try {
-      await onSave(localRows);
+      let rowsToSave = localRows;
+      const amt = parseFloat(newAmount);
+      if (newName.trim() && !isNaN(amt) && amt >= 0) {
+        rowsToSave = [...localRows, { name: newName.trim(), target_amount: amt }];
+      }
+      await onSave(rowsToSave);
+      setNewName("");
+      setNewAmount("");
       setEditing(false);
     } finally {
       setSaving(false);
@@ -514,12 +523,6 @@ function PlanGroupEditor({
           onChange={(e) => setNewAmount(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addRow()}
         />
-        <button
-          onClick={addRow}
-          className="bg-[#5A3FFF] text-white rounded-lg p-1.5 hover:bg-[#4930e8] transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       <div className="flex gap-2">
@@ -585,9 +588,21 @@ function BudgetChart({
     }
   }
 
-  // Only render if there's something to show
+  // Show empty state if no data
   const hasData = chartData.some((d) => d.planned > 0 || d.actual > 0);
-  if (!hasData) return null;
+  if (!hasData) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="p-5 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900">Overview</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Planned vs actual per line item</p>
+        </div>
+        <div className="p-8 text-center">
+          <p className="text-sm text-gray-400">Add items to your plan to see the overview chart.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Compute Y-axis label width based on longest row name
   const maxLabelLen = Math.max(...chartData.map((d) => d.item.length), 4);
@@ -701,6 +716,9 @@ export default function BudgetPlannerPage() {
   const [loadingBudgets, setLoadingBudgets] = useState(true);
   const [showNewBudget, setShowNewBudget] = useState(false);
 
+  // User currency preference
+  const [userCurrency, setUserCurrency] = useState("USD");
+
   // Level 2 — selected budget + its transactions
   const [selectedBudget, setSelectedBudget] = useState<BudgetDoc | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -710,6 +728,24 @@ export default function BudgetPlannerPage() {
   );
   const [showAddTx, setShowAddTx] = useState(false);
   const [publishing, setPublishing] = useState(false);
+
+  /* ---------------------------------------------------------------- */
+  /*  Fetch user currency preference on mount                         */
+  /* ---------------------------------------------------------------- */
+
+  useEffect(() => {
+    async function fetchUserCurrency() {
+      try {
+        const res: any = await apiService.get("/v1/auth/me");
+        const data = res?.data?.data || res?.data || res;
+        const pref = data?.user?.preferredCurrency;
+        if (pref) setUserCurrency(pref);
+      } catch (err) {
+        console.error("[BudgetPlanner] Failed to fetch user currency preference", err);
+      }
+    }
+    fetchUserCurrency();
+  }, []);
 
   /* ---------------------------------------------------------------- */
   /*  Level 1 — fetch budget list                                     */
@@ -888,6 +924,7 @@ export default function BudgetPlannerPage() {
               setShowNewBudget(false);
               openBudget(b);
             }}
+            defaultCurrency={userCurrency}
           />
         )}
 
@@ -909,13 +946,34 @@ export default function BudgetPlannerPage() {
                   Tap a budget to see its plan and transactions.
                 </p>
               </div>
-              <button
-                onClick={() => setShowNewBudget(true)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-[#5A3FFF] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium hover:bg-[#4930e8] transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                New Budget
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={userCurrency}
+                  onChange={async (e) => {
+                    const newCurrency = e.target.value;
+                    setUserCurrency(newCurrency);
+                    try {
+                      await apiService.patch("/v1/auth/me", { preferredCurrency: newCurrency });
+                    } catch (err) {
+                      console.error("[BudgetPlanner] Failed to save currency preference", err);
+                    }
+                  }}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 bg-white focus:border-[#5A3FFF] outline-none"
+                >
+                  <option value="USD">USD</option>
+                  <option value="NGN">NGN</option>
+                  <option value="GBP">GBP</option>
+                  <option value="EUR">EUR</option>
+                  <option value="CAD">CAD</option>
+                </select>
+                <button
+                  onClick={() => setShowNewBudget(true)}
+                  className="flex items-center gap-1.5 sm:gap-2 bg-[#5A3FFF] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium hover:bg-[#4930e8] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Budget
+                </button>
+              </div>
             </div>
 
             {loadingBudgets ? (
@@ -1143,7 +1201,9 @@ export default function BudgetPlannerPage() {
           </div>
 
           {/* Overview chart */}
-          <BudgetChart budget={selectedBudget} transactions={transactions} />
+          {!loadingTx && (
+            <BudgetChart budget={selectedBudget} transactions={transactions} />
+          )}
 
           {/* Plan — budget groups with inline editing */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
