@@ -25,14 +25,14 @@ export default function SuggestedPrompts({
   onSelect,
 }: SuggestedPromptsProps) {
   return (
-    <div className="w-full my-10">
-      <h3 className="text-center text-sm mt text-gray-500 mb-4">
+    <div className="w-full my-6 sm:my-10">
+      <h3 className="text-center text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
         Today&apos;s suggested prompt
       </h3>
-      
-      <div className="grid grid-cols-1 mt-10 md:grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-1 mt-4 sm:mt-10 md:grid-cols-3 gap-3 sm:gap-4">
         {prompts.map((prompt) => {
-          const className = `flex flex-col items-start gap-3 p-5 rounded-2xl transition-all border bg-blue-100 ${
+          const className = `flex flex-col items-start gap-2 sm:gap-3 p-3 sm:p-5 rounded-2xl transition-all border bg-blue-100 ${
             selectedPrompt === prompt.id
               ? "border-[#9B7FFF] shadow-md"
               : "border-gray-200 hover:shadow-md"
@@ -42,22 +42,22 @@ export default function SuggestedPrompts({
             <>
               {/* Icon */}
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0"
+                className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ backgroundColor: prompt.iconColor }}
               >
                 {prompt.iconImage ? (
-                  <img 
-                    src={prompt.iconImage} 
-                    alt="" 
-                    className="w-12 h-12 object-contain" 
+                  <img
+                    src={prompt.iconImage}
+                    alt=""
+                    className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
                   />
                 ) : (
-                  <span className="text-2xl">{prompt.icon}</span>
+                  <span className="text-xl sm:text-2xl">{prompt.icon}</span>
                 )}
               </div>
 
               {/* Title */}
-              <span className="text-left text-sm font-semibold text-gray-900 leading-tight">
+              <span className="text-left text-xs sm:text-sm font-semibold text-gray-900 leading-tight">
                 {prompt.title}
               </span>
             </>
@@ -66,9 +66,7 @@ export default function SuggestedPrompts({
           if (prompt.href) {
             return (
               <Link key={prompt.id} href={prompt.href}>
-                <div className={className}>
-                  {content}
-                </div>
+                <div className={className}>{content}</div>
               </Link>
             );
           }

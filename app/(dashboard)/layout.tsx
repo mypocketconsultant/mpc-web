@@ -76,36 +76,35 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar - hidden on mobile by default, slides in as overlay */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 bg-white shadow-lg border-r border-gray-200 overflow-y-auto transition-all duration-300 ease-in-out md:static md:translate-x-0 ${
           sidebarOpen
-            ? "w-64 translate-x-0"
-            : "w-20 -translate-x-full md:translate-x-0"
+            ? "w-56 sm:w-64 translate-x-0"
+            : "w-0 -translate-x-full md:w-20 md:translate-x-0"
         }`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Header */}
-        <div className="flex flex-col gap-8 px-4 pt-6 pb-2">
+        <div className="flex flex-col gap-6 px-3 pt-5 pb-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="self-start p-2 mb-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="self-start p-2 mb-1 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Menu"
           >
-            {/* Hamburger icon SVG */}
-            <RiMenuFold2Line className="text-2xl" />
+            <RiMenuFold2Line className="text-xl sm:text-2xl" />
           </button>
           <img
             src="/LogoSqu.png"
             alt="My Pocket Consultant"
-            className="w-32 h-auto mx-auto"
+            className="w-24 sm:w-32 h-auto mx-auto"
           />
         </div>
 
         {/* Navigation */}
-        <nav className="p-6 space-y-6">
+        <nav className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Main Menu */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             {menuItems.map((item) => (
               <NavLink
                 key={item.href}
@@ -118,11 +117,11 @@ export default function DashboardLayout({
           {/* Modules Section */}
           <div>
             {sidebarOpen && (
-              <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-3 py-2 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Modules
               </h3>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {modules.map((item) => (
                 <NavLink
                   key={item.href}
@@ -142,11 +141,11 @@ export default function DashboardLayout({
           {/* Settings Section */}
           <div>
             {sidebarOpen && (
-              <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="px-3 py-2 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Settings
               </h3>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {settings.map((item) => (
                 <NavLink
                   key={item.href}
@@ -159,7 +158,7 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Mobile overlay */}
+      {/* Mobile overlay backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
@@ -167,21 +166,21 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content — always full width on mobile */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar for mobile */}
-        <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+        <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-3 py-2.5 flex items-center gap-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-1.5 hover:bg-gray-100 rounded-lg"
           >
             {sidebarOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
             )}
           </button>
-          <span className="text-sm font-semibold text-gray-900">MyPocket</span>
+          <span className="text-xs font-semibold text-gray-900">MyPocket</span>
         </div>
 
         {/* Page content */}
@@ -193,10 +192,10 @@ export default function DashboardLayout({
         </main>
 
         {/* Footer */}
-        <div className="bg-white border-t border-gray-200 px-6 py-4">
-          <h1 className="text-center text-sm text-gray-600">
+        <div className="bg-white border-t border-gray-200 px-4 py-2 sm:px-6 sm:py-4">
+          <p className="text-center text-xs sm:text-sm text-gray-600">
             My Pocket Consultant v 1.0
-          </h1>
+          </p>
         </div>
       </div>
     </div>
