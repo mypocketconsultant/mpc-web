@@ -37,7 +37,7 @@ export default function FormSection3({
 
         <div className="mb-2 w-full">
           <CustomDropdown
-            options={["USA", "Canada", "UK", "Australia"]}
+            options={["USA", "Canada", "UK", "Australia","Nigeria"]}
             placeholder="Select your country"
             value={country}
             onChange={(value: string) => setCountry(value)}
