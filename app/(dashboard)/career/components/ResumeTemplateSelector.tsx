@@ -8,6 +8,7 @@ interface ProfileData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  email: string;
 }
 
 interface EducationData {
@@ -39,14 +40,57 @@ interface ResumeTemplateSelectorProps {
 
 const templates = [
   {
-    id: "classic",
-    name: "Classic Template",
+    id: "template_1",
+    name: "Classic",
+    description: "Traditional serif Harvard-style resume",
   },
   {
-    id: "modern",
-    name: "Modern Template",
+    id: "template_2",
+    name: "Modern",
+    description: "Clean sans-serif professional resume",
   },
 ];
+
+function buildPdfPayload(
+  templateId: string,
+  resumeTitle: string,
+  profile: ProfileData,
+  educations: EducationData[],
+  experience: ExperienceData[],
+  skills: string[],
+) {
+  return {
+    template_id: templateId,
+    filename: `${resumeTitle || "resume"}.pdf`,
+    data: {
+      contact: {
+        full_name: `${profile.firstName} ${profile.lastName}`.trim(),
+        phone: profile.phoneNumber || undefined,
+        email: profile.email || undefined,
+      },
+      education: educations.map((edu) => ({
+        institution: edu.nameOfSchool,
+        degree: [edu.certification, edu.fieldOfStudy]
+          .filter(Boolean)
+          .join(", ") || undefined,
+        graduation_date: edu.year || undefined,
+      })),
+      experience: experience.map((exp) => ({
+        organization: exp.company,
+        title: exp.role || undefined,
+        location: exp.location || undefined,
+        dates: exp.date || undefined,
+        bullets: exp.descriptionExperience
+          ? exp.descriptionExperience.split("\n").filter((s) => s.trim())
+          : undefined,
+      })),
+      skills:
+        skills.length > 0
+          ? [{ label: "Skills", value: skills.join(", ") }]
+          : [],
+    },
+  };
+}
 
 export default function ResumeTemplateSelector({
   isOpen,
@@ -58,7 +102,7 @@ export default function ResumeTemplateSelector({
   experience,
   skills,
 }: ResumeTemplateSelectorProps) {
-  const [selectedId, setSelectedId] = useState<string>("classic");
+  const [selectedId, setSelectedId] = useState<string>("template_1");
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen) return null;
@@ -70,30 +114,42 @@ export default function ResumeTemplateSelector({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      // Call API with template parameter
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/${resumeId}/export-pdf`,
+      const payload = buildPdfPayload(
+        selectedId,
+        resumeTitle,
+        profile,
+        educations,
+        experience,
+        skills,
+      );
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/resume-builder/generate-pdf`,
+        payload,
         {
-          params: {
-            template: selectedId, // Pass selected template to backend
-          },
-          responseType: "blob",
           withCredentials: true,
         },
       );
 
-      // Create download link
-      const pdfBlob = response.data as Blob;
-      const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+      const downloadUrl = response.data?.data?.download_url;
+      if (!downloadUrl) {
+        throw new Error("No download URL returned");
+      }
+
+      // Fetch the Cloudinary URL as blob to guarantee download behavior
+      const pdfResponse = await fetch(downloadUrl);
+      const blob = await pdfResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = pdfBlobUrl;
-      link.download = `${resumeTitle || "resume"}_${selectedId}.pdf`;
+      link.href = blobUrl;
+      link.download =
+        response.data?.data?.filename ||
+        `${resumeTitle || "resume"}_${selectedId}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(pdfBlobUrl);
+      URL.revokeObjectURL(blobUrl);
 
-      // Close modal after successful download
       onClose();
     } catch (error) {
       alert("Failed to download resume. Please try again.");
@@ -143,7 +199,7 @@ export default function ResumeTemplateSelector({
 
                 {/* Template Preview */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="aspect-[8.5/11] relative bg-gray-50">
+                  <div className="aspect-[8.5/11] relative bg-white">
                     <TemplatePreview
                       templateId={template.id}
                       profile={profile}
@@ -151,6 +207,10 @@ export default function ResumeTemplateSelector({
                       experience={experience}
                       skills={skills}
                     />
+                  </div>
+                  <div className="px-4 py-3 border-t border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">{template.name}</p>
+                    <p className="text-xs text-gray-500">{template.description}</p>
                   </div>
                 </div>
               </button>
@@ -190,125 +250,98 @@ function TemplatePreview({
   experience,
   skills,
 }: TemplatePreviewProps) {
-  if (templateId === "classic") {
+  const fullName =
+    `${profile.firstName || ""} ${profile.lastName || ""}`.trim() ||
+    "Your Name";
+  const contactParts = [profile.email, profile.phoneNumber].filter(Boolean);
+
+  const bullets = (text: string) =>
+    text
+      .split("\n")
+      .filter((s) => s.trim());
+
+  if (templateId === "template_1") {
+    /* ─── Classic: Times New Roman, serif, Harvard-style ─── */
     return (
-      <div className="w-full h-full p-8 text-left overflow-hidden">
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="text-center border-b border-gray-300 pb-3">
-            <h3 className="text-lg font-bold">
-              {profile.firstName || "First"} {profile.lastName || "Last"}
-            </h3>
-            <p className="text-[10px] text-gray-600">
-              {profile.phoneNumber || "phone number"}
-            </p>
-          </div>
-
-          {/* Education */}
-          {educations.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold mb-2">EDUCATION</h4>
-              {educations.slice(0, 2).map((edu, idx) => (
-                <div key={idx} className="space-y-1 mb-2">
-                  <div className="flex justify-between text-[9px]">
-                    <p className="font-semibold">
-                      {edu.nameOfSchool || "University Name"}
-                    </p>
-                    <p>{edu.year || "Year"}</p>
-                  </div>
-                  <div className="flex justify-between text-[8px] text-gray-600">
-                    <p>
-                      {edu.certification || "Degree"},{" "}
-                      {edu.fieldOfStudy || "Field of Study"}
-                    </p>
-                  </div>
-                  {edu.descriptionGraduation && (
-                    <p className="text-[8px] text-gray-600 truncate">
-                      {edu.descriptionGraduation}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Experience */}
-          {experience.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold mb-2">EXPERIENCE</h4>
-              {experience.slice(0, 2).map((exp, idx) => (
-                <div key={idx} className="space-y-1 mb-2">
-                  <div className="flex justify-between text-[9px]">
-                    <p className="font-semibold">{exp.company || "Company"}</p>
-                    <p>{exp.location || "Location"}</p>
-                  </div>
-                  <div className="flex justify-between text-[8px] text-gray-600">
-                    <p className="font-semibold">{exp.role || "Position"}</p>
-                    <p className="italic">{exp.date || "Date"}</p>
-                  </div>
-                  {exp.descriptionExperience && (
-                    <p className="text-[7px] text-gray-600 line-clamp-2">
-                      {exp.descriptionExperience}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Skills */}
-          {skills.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold mb-1">SKILLS</h4>
-              <p className="text-[8px] text-gray-600">{skills.join(", ")}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Modern template
-  return (
-    <div className="w-full h-full p-8 text-left overflow-hidden">
-      <div className="space-y-3">
+      <div
+        className="w-full h-full text-left overflow-hidden text-black"
+        style={{
+          fontFamily: '"Times New Roman", Times, serif',
+          fontSize: "10.5px",
+          lineHeight: 1.45,
+          padding: "28px 36px",
+        }}
+      >
         {/* Header */}
-        <div className="text-center pb-3">
-          <h3 className="text-lg font-bold mb-1">
-            {profile.firstName || "First"} {profile.lastName || "Last"}
+        <div className="text-center" style={{ marginBottom: 6 }}>
+          <h3
+            style={{
+              fontSize: 15,
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "1.5px",
+              marginBottom: 4,
+            }}
+          >
+            {fullName}
           </h3>
-          <p className="text-[10px] text-gray-600">
-            {profile.phoneNumber || "phone number"}
+          <p style={{ fontSize: "9.5px", color: "#000" }}>
+            {contactParts.length > 0 ? contactParts.join(" | ") : "contact info"}
           </p>
         </div>
+
+        {/* Divider */}
+        <hr style={{ border: "none", borderTop: "1px solid #000", margin: "6px 0" }} />
 
         {/* Education */}
         {educations.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">
-              EDUCATION
-            </h4>
+            <div
+              style={{
+                fontSize: "10.5px",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                letterSpacing: "0.6px",
+                marginTop: 10,
+                marginBottom: 5,
+                borderBottom: "1px solid #000",
+                paddingBottom: 1,
+              }}
+            >
+              Education
+            </div>
             {educations.slice(0, 2).map((edu, idx) => (
-              <div key={idx} className="space-y-1 mb-2">
-                <div className="flex justify-between text-[9px]">
-                  <div>
-                    <p className="font-semibold">
-                      {edu.nameOfSchool || "University Name"}
-                    </p>
-                    <p className="text-gray-600">
-                      {edu.certification || "Degree"},{" "}
-                      {edu.fieldOfStudy || "Field"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p>{edu.year || "Year"}</p>
-                  </div>
+              <div key={idx} style={{ marginBottom: 7 }}>
+                <div className="flex justify-between items-baseline">
+                  <span style={{ fontWeight: "bold", fontSize: "10.5px" }}>
+                    {edu.nameOfSchool || "University Name"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontStyle: "italic",
+                      whiteSpace: "nowrap",
+                      marginLeft: 8,
+                    }}
+                  >
+                    {(edu as any).location || ""}
+                  </span>
                 </div>
-                {edu.descriptionGraduation && (
-                  <p className="text-[8px] text-gray-600 truncate">
-                    {edu.descriptionGraduation}
-                  </p>
-                )}
+                <div className="flex justify-between items-baseline" style={{ marginTop: 1 }}>
+                  <span style={{ fontStyle: "italic", fontSize: "10px" }}>
+                    {[edu.certification, edu.fieldOfStudy].filter(Boolean).join(", ") || "Degree"}
+                  </span>
+                  <span
+                    style={{
+                      fontStyle: "italic",
+                      fontSize: "10px",
+                      whiteSpace: "nowrap",
+                      marginLeft: 8,
+                    }}
+                  >
+                    {edu.year || "Year"}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -317,39 +350,280 @@ function TemplatePreview({
         {/* Experience */}
         {experience.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-2 pb-1">
-              EXPERIENCE
-            </h4>
+            <div
+              style={{
+                fontSize: "10.5px",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                letterSpacing: "0.6px",
+                marginTop: 10,
+                marginBottom: 5,
+                borderBottom: "1px solid #000",
+                paddingBottom: 1,
+              }}
+            >
+              Experience
+            </div>
             {experience.slice(0, 2).map((exp, idx) => (
-              <div key={idx} className="mb-2">
-                <div className="flex justify-between text-[9px] mb-1">
-                  <p className="font-semibold">{exp.company || "Company"}</p>
-                  <p>{exp.location || "Location"}</p>
+              <div key={idx} style={{ marginBottom: 7 }}>
+                <div className="flex justify-between items-baseline">
+                  <span style={{ fontWeight: "bold", fontSize: "10.5px" }}>
+                    {exp.company || "Company"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontStyle: "italic",
+                      whiteSpace: "nowrap",
+                      marginLeft: 8,
+                    }}
+                  >
+                    {exp.location || "Location"}
+                  </span>
                 </div>
-                <div className="flex justify-between text-[8px] text-gray-600 mb-1">
-                  <p className="font-semibold">{exp.role || "Position"}</p>
-                  <p className="italic">{exp.date || "Date"}</p>
+                <div className="flex justify-between items-baseline" style={{ marginTop: 1 }}>
+                  <span style={{ fontStyle: "italic", fontSize: "10px" }}>
+                    {exp.role || "Position"}
+                  </span>
+                  <span
+                    style={{
+                      fontStyle: "italic",
+                      fontSize: "10px",
+                      whiteSpace: "nowrap",
+                      marginLeft: 8,
+                    }}
+                  >
+                    {exp.date || "Date"}
+                  </span>
                 </div>
                 {exp.descriptionExperience && (
-                  <p className="text-[7px] text-gray-600 leading-tight line-clamp-2">
-                    {exp.descriptionExperience}
-                  </p>
+                  <ul style={{ marginLeft: 16, marginTop: 3 }}>
+                    {bullets(exp.descriptionExperience)
+                      .slice(0, 3)
+                      .map((b, i) => (
+                        <li
+                          key={i}
+                          style={{ fontSize: "10px", marginBottom: 2 }}
+                          className="list-disc"
+                        >
+                          <span className="line-clamp-1">{b}</span>
+                        </li>
+                      ))}
+                  </ul>
                 )}
               </div>
             ))}
           </div>
         )}
 
-        {/* Skills */}
+        {/* Skills & Interests */}
         {skills.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold border-b border-gray-300 mb-1 pb-1">
-              SKILLS
-            </h4>
-            <p className="text-[8px] text-gray-600">{skills.join(", ")}</p>
+            <div
+              style={{
+                fontSize: "10.5px",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                letterSpacing: "0.6px",
+                marginTop: 10,
+                marginBottom: 5,
+                borderBottom: "1px solid #000",
+                paddingBottom: 1,
+              }}
+            >
+              Skills &amp; Interests
+            </div>
+            <div style={{ marginTop: 2 }}>
+              <div style={{ fontSize: "10px", marginBottom: 3 }}>
+                <span style={{ fontWeight: "bold" }}>Skills:</span>{" "}
+                {skills.join(", ")}
+              </div>
+            </div>
           </div>
         )}
       </div>
+    );
+  }
+
+  /* ─── Modern: Arial, sans-serif, clean professional ─── */
+  return (
+    <div
+      className="w-full h-full text-left overflow-hidden"
+      style={{
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "10px",
+        color: "#1a1a1a",
+        lineHeight: 1.5,
+        padding: "28px 38px",
+      }}
+    >
+      {/* Header */}
+      <div className="text-center" style={{ marginBottom: 10 }}>
+        <h3
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            letterSpacing: "2px",
+            textTransform: "uppercase",
+            marginBottom: 5,
+            color: "#000",
+          }}
+        >
+          {fullName}
+        </h3>
+        <p style={{ fontSize: "9px", color: "#333", letterSpacing: "0.3px" }}>
+          {contactParts.length > 0 ? contactParts.join(" | ") : "contact info"}
+        </p>
+      </div>
+
+      {/* Divider */}
+      <hr style={{ border: "none", borderTop: "1.5px solid #000", margin: "7px 0" }} />
+
+      {/* Education */}
+      {educations.length > 0 && (
+        <div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginTop: 12,
+              marginBottom: 6,
+              color: "#000",
+            }}
+          >
+            Education
+          </div>
+          {educations.slice(0, 2).map((edu, idx) => (
+            <div key={idx} style={{ marginBottom: 8 }}>
+              <div className="flex justify-between items-baseline">
+                <span style={{ fontWeight: "bold", fontSize: "10px" }}>
+                  {edu.nameOfSchool || "University Name"}
+                </span>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    color: "#444",
+                    whiteSpace: "nowrap",
+                    marginLeft: 8,
+                  }}
+                >
+                  {(edu as any).location || ""}
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline" style={{ marginTop: 1 }}>
+                <span style={{ fontStyle: "italic", fontSize: "9.5px", color: "#333" }}>
+                  {[edu.certification, edu.fieldOfStudy].filter(Boolean).join(", ") || "Degree"}
+                </span>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    color: "#555",
+                    whiteSpace: "nowrap",
+                    marginLeft: 8,
+                  }}
+                >
+                  {edu.year || "Year"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Experience */}
+      {experience.length > 0 && (
+        <div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginTop: 12,
+              marginBottom: 6,
+              color: "#000",
+            }}
+          >
+            Experience
+          </div>
+          {experience.slice(0, 2).map((exp, idx) => (
+            <div key={idx} style={{ marginBottom: 8 }}>
+              <div className="flex justify-between items-baseline">
+                <span style={{ fontWeight: "bold", fontSize: "10px" }}>
+                  {exp.company || "Company"}
+                </span>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    color: "#444",
+                    whiteSpace: "nowrap",
+                    marginLeft: 8,
+                  }}
+                >
+                  {exp.location || "Location"}
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline" style={{ marginTop: 1 }}>
+                <span style={{ fontStyle: "italic", fontSize: "9.5px", color: "#333" }}>
+                  {exp.role || "Position"}
+                </span>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    color: "#555",
+                    whiteSpace: "nowrap",
+                    marginLeft: 8,
+                  }}
+                >
+                  {exp.date || "Date"}
+                </span>
+              </div>
+              {exp.descriptionExperience && (
+                <ul style={{ marginLeft: 15, marginTop: 4 }}>
+                  {bullets(exp.descriptionExperience)
+                    .slice(0, 3)
+                    .map((b, i) => (
+                      <li
+                        key={i}
+                        style={{ fontSize: "9.5px", color: "#222", marginBottom: 2 }}
+                        className="list-disc"
+                      >
+                        <span className="line-clamp-1">{b}</span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Skills & Interests */}
+      {skills.length > 0 && (
+        <div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginTop: 12,
+              marginBottom: 6,
+              color: "#000",
+            }}
+          >
+            Skills &amp; Interests
+          </div>
+          <div style={{ marginTop: 2 }}>
+            <div style={{ fontSize: "9.5px", marginBottom: 3 }}>
+              <span style={{ fontWeight: "bold" }}>Skills:</span>{" "}
+              {skills.join(", ")}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

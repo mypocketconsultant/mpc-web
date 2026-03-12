@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { apiService } from "@/lib/api/apiService";
 import axios from "axios";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
@@ -52,15 +53,11 @@ export default function LoginPage() {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await result.user.getIdToken();
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
-        { idToken },
-        { withCredentials: true },
-      );
+      await apiService.post("/v1/auth/login", { idToken });
 
       setValidationErrors({});
       showToast("success", "Login successful!");
-      router.push("/home");
+      window.location.href = "/home";
     } catch (error: any) {
       let errorMessage = "Login failed. Please try again.";
 
@@ -89,14 +86,13 @@ export default function LoginPage() {
       const idToken = await result.user.getIdToken();
 
       // Call unified /google endpoint
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/google`,
+      const response = await apiService.post<{ profileRequired?: boolean }>(
+        "/v1/auth/google",
         { idToken },
-        { withCredentials: true },
       );
 
       // Check if profile is required (new user)
-      if (response.data?.profileRequired) {
+      if ((response as any)?.profileRequired) {
         // New user — redirect to getting-started
         sessionStorage.setItem("googleIdToken", idToken);
         router.push("/auth/getting-started?authType=google");
@@ -106,7 +102,7 @@ export default function LoginPage() {
       // Existing user — logged in successfully
       setValidationErrors({});
       showToast("success", "Login successful!");
-      router.push("/home");
+      window.location.href = "/home";
     } catch (error: any) {
       if (error.code === "auth/popup-closed-by-user") {
         // User closed the popup - no action needed
@@ -215,6 +211,17 @@ export default function LoginPage() {
                   {validationErrors.password}
                 </p>
               )}
+            </div>
+
+            {/* Forgot password link */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => router.push("/auth/forgot-password")}
+                className="text-xs text-[#5A3FFF] hover:underline font-medium"
+              >
+                Forgot Password?
+              </button>
             </div>
 
             {/* Submit error */}

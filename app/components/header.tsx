@@ -34,32 +34,25 @@ export default function Header({ title = "Home", icon }: HeaderProps) {
       // Step 1: Call backend logout endpoint to clear auth_token cookie
       const apiService = (await import("@/lib/api/apiService")).apiService;
       await apiService.post("/v1/auth/logout", {});
+    } catch {
+      // Continue with client-side cleanup even if backend call fails
+    }
 
+    try {
       // Step 2: Sign out from Firebase
       const { auth } = await import("@/lib/firebase");
       const { signOut } = await import("firebase/auth");
       await signOut(auth);
-
-      // Step 3: Clear all sessionStorage items used by the app
-      sessionStorage.removeItem("currentResumeId");
-      sessionStorage.removeItem("currentGoalPlanId");
-      sessionStorage.removeItem("currentGoalId");
-      sessionStorage.removeItem("processingUploadId");
-      sessionStorage.removeItem("googleIdToken");
-
-      // Step 4: Redirect to login
-      router.push("/auth/log-in");
-    } catch (error) {
-      // Still redirect even if there's an error
-      sessionStorage.removeItem("currentResumeId");
-      sessionStorage.removeItem("currentGoalPlanId");
-      sessionStorage.removeItem("currentGoalId");
-      sessionStorage.removeItem("processingUploadId");
-      sessionStorage.removeItem("googleIdToken");
-      router.push("/auth/log-in");
-    } finally {
-      setIsProfileDropdownOpen(false);
+    } catch {
+      // Continue with cleanup even if Firebase signout fails
     }
+
+    // Step 3: Clear all client-side storage
+    sessionStorage.clear();
+    localStorage.removeItem("signup-storage");
+
+    // Step 4: Full page redirect to ensure clean state
+    window.location.href = "/auth/log-in";
   };
 
   return (

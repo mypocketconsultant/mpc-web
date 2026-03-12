@@ -35,6 +35,7 @@ interface ProfileData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  email: string;
 }
 
 interface EducationData {
@@ -77,6 +78,7 @@ export default function ResumeBuilder() {
     firstName: '',
     lastName: '',
     phoneNumber: '',
+    email: '',
   });
   const [educations, setEducations] = useState<EducationData[]>([]);
   const [experience, setExperience] = useState<ExperienceData[]>([]);
@@ -243,7 +245,7 @@ export default function ResumeBuilder() {
     // Reset all form state
     setResumeId(null);
     setDocumentTitle('');
-    setProfile({ firstName: '', lastName: '', phoneNumber: '' });
+    setProfile({ firstName: '', lastName: '', phoneNumber: '', email: '' });
     setEducations([]);
     setExperience([]);
     setSkills([]);
@@ -328,7 +330,7 @@ export default function ResumeBuilder() {
         // Populate form state from loaded data
         const formData = response.data.data.formData;
         if (formData.documentTitle) setDocumentTitle(formData.documentTitle);
-        if (formData.profile) setProfile(formData.profile);
+        if (formData.profile) setProfile({ email: '', ...formData.profile });
         if (formData.educations) setEducations(formData.educations);
         if (formData.experience) setExperience(formData.experience);
         if (formData.skills) setSkills(formData.skills);
@@ -410,7 +412,7 @@ export default function ResumeBuilder() {
         skillsCount: responseData.formData.skills?.length,
       });
       if (responseData.formData.documentTitle) setDocumentTitle(responseData.formData.documentTitle);
-      if (responseData.formData.profile) setProfile(responseData.formData.profile);
+      if (responseData.formData.profile) setProfile({ email: '', ...responseData.formData.profile });
       if (responseData.formData.educations) setEducations(responseData.formData.educations);
       if (responseData.formData.experience) setExperience(responseData.formData.experience);
       if (responseData.formData.skills) setSkills(responseData.formData.skills);

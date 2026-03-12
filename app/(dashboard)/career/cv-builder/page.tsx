@@ -73,6 +73,17 @@ export default function CVBuilder() {
   const [industry, setIndustry] = useState('');
   const [tone, setTone] = useState<ToneOption | ''>('');
 
+  // Sender info (for cv_template PDF generation)
+  const [senderName, setSenderName] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [senderJobTitle, setSenderJobTitle] = useState('');
+
+  // Recipient info (for cv_template PDF generation)
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientTitle, setRecipientTitle] = useState('');
+  const [recipientCompany, setRecipientCompany] = useState('');
+
   // Section editing
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -417,6 +428,13 @@ export default function CVBuilder() {
     setTone('');
     setEditingIndex(null);
     setEditContent('');
+    setSenderName('');
+    setSenderEmail('');
+    setSenderPhone('');
+    setSenderJobTitle('');
+    setRecipientName('');
+    setRecipientTitle('');
+    setRecipientCompany('');
 
     showToast('success', 'Ready to create a new CV!');
   };
@@ -758,6 +776,84 @@ export default function CVBuilder() {
     }
   };
 
+  /**
+   * Generate a styled cover letter PDF using Sarah's cv_template.
+   * Calls POST /v1/cv-builder/generate-pdf
+   */
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handlePdfDownload = async () => {
+    if (!cvDocument) return;
+
+    if (!senderName.trim()) {
+      showToast('error', 'Please enter your full name before downloading.');
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    try {
+      // Map cvDocument.sections content into letter paragraphs
+      const paragraphs = cvDocument.sections
+        .map(s => s.content.trim())
+        .filter(Boolean);
+
+      const payload = {
+        template_id: 'cv_template' as const,
+        filename: `${cvDocument.title || 'cover_letter'}.pdf`,
+        data: {
+          sender: {
+            full_name: senderName.trim(),
+            email: senderEmail.trim() || undefined,
+            phone: senderPhone.trim() || undefined,
+            job_title: senderJobTitle.trim() || undefined,
+          },
+          recipient: (recipientName.trim() || recipientTitle.trim() || recipientCompany.trim())
+            ? {
+                name: recipientName.trim() || undefined,
+                title: recipientTitle.trim() || undefined,
+                company: recipientCompany.trim() || undefined,
+              }
+            : undefined,
+          letter: {
+            paragraphs,
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            sign_off: 'Sincerely,',
+          },
+        },
+      };
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/cv-builder/generate-pdf`,
+        payload,
+        { withCredentials: true }
+      );
+
+      const downloadUrl = response.data?.data?.download_url;
+      if (!downloadUrl) {
+        throw new Error('No download URL returned');
+      }
+
+      // Fetch Cloudinary URL as blob for reliable download
+      const pdfResponse = await fetch(downloadUrl);
+      const blob = await pdfResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = response.data?.data?.filename || `${cvDocument.title || 'cover_letter'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+
+      showToast('success', 'Cover letter PDF downloaded!');
+    } catch (error) {
+      console.error('[CVBuilder] PDF download error:', error);
+      showToast('error', 'Failed to generate PDF. Please try again.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       {/* Loading Overlay */}
@@ -860,12 +956,94 @@ export default function CVBuilder() {
                         DOCX
                       </button>
                       <button
-                        onClick={() => handleExport('pdf')}
-                        className="px-3 py-2 text-sm bg-[#5A3FFF] text-white rounded-lg hover:bg-[#4A2FEF] transition-colors flex items-center gap-1"
+                        onClick={handlePdfDownload}
+                        disabled={isDownloadingPdf}
+                        className="px-3 py-2 text-sm bg-[#5A3FFF] text-white rounded-lg hover:bg-[#4A2FEF] transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Download className="w-4 h-4" />
-                        PDF
+                        {isDownloadingPdf ? 'Generating...' : 'PDF'}
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Sender & Recipient Info (for PDF generation) */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="font-semibold text-gray-900 mb-4">Your Details (for PDF)</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+                        <input
+                          type="text"
+                          value={senderName}
+                          onChange={e => setSenderName(e.target.value)}
+                          placeholder="e.g. John Doe"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Job Title</label>
+                        <input
+                          type="text"
+                          value={senderJobTitle}
+                          onChange={e => setSenderJobTitle(e.target.value)}
+                          placeholder="e.g. Frontend Developer"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={senderEmail}
+                          onChange={e => setSenderEmail(e.target.value)}
+                          placeholder="e.g. john@email.com"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+                        <input
+                          type="tel"
+                          value={senderPhone}
+                          onChange={e => setSenderPhone(e.target.value)}
+                          placeholder="e.g. +234 800 000 0000"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                    </div>
+
+                    <h3 className="font-semibold text-gray-900 mt-5 mb-4">Recipient (optional)</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={recipientName}
+                          onChange={e => setRecipientName(e.target.value)}
+                          placeholder="e.g. Jane Smith"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={recipientTitle}
+                          onChange={e => setRecipientTitle(e.target.value)}
+                          placeholder="e.g. Hiring Manager"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Company</label>
+                        <input
+                          type="text"
+                          value={recipientCompany}
+                          onChange={e => setRecipientCompany(e.target.value)}
+                          placeholder="e.g. Google"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5A3FFF]/30 focus:border-[#5A3FFF]"
+                        />
+                      </div>
                     </div>
                   </div>
 

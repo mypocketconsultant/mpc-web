@@ -12,20 +12,6 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const workspaceId = sessionStorage.getItem("lastWorkspace");
-    if (workspaceId) {
-      config.headers["X-Workspace-Id"] = workspaceId;
-    }
-
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -34,15 +20,17 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Sign out from Firebase
         const { auth } = await import("@/lib/firebase");
         await auth.signOut();
-      } catch (logoutError) {
-        // Ignore logout errors
-      } finally {
-        // Always redirect to login on 401
-        window.location.href = "/auth/log-in";
+      } catch {
+        // Continue even if Firebase signout fails
       }
+
+      // Clear all client-side storage
+      sessionStorage.clear();
+      localStorage.removeItem("signup-storage");
+
+      window.location.href = "/auth/log-in";
 
       return Promise.reject(error);
     }

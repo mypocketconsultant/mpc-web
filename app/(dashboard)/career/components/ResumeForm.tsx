@@ -9,6 +9,7 @@ interface ProfileData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  email: string;
 }
 
 interface EducationData {
@@ -91,6 +92,7 @@ const INITIAL_PROFILE: ProfileData = {
   firstName: "",
   lastName: "",
   phoneNumber: "",
+  email: "",
 };
 
 const INITIAL_EDUCATION: EducationData = {
@@ -622,6 +624,17 @@ function ProfileForm({ profile, onChange }: ProfileFormProps): JSX.Element {
             )}
           </div>
         </div>
+      </div>
+      <div>
+        <input
+          type="email"
+          placeholder="Email address"
+          value={profile.email}
+          onChange={(e) => onChange("email", e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] text-gray-900"
+          aria-label="Email address"
+        />
+        <label className="block text-xs text-gray-600 mt-2">Email (optional)</label>
       </div>
     </>
   );
