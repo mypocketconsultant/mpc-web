@@ -5,8 +5,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { apiService } from "@/lib/api/apiService";
 import axios from "axios";
 import { useToast } from "@/hooks/useToast";
@@ -78,11 +78,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } =
-        await import("firebase/auth");
-      const provider = new GoogleAuthProvider();
-
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
       // Call unified /google endpoint
@@ -104,14 +100,26 @@ export default function LoginPage() {
       showToast("success", "Login successful!");
       window.location.href = "/home";
     } catch (error: any) {
+      console.error("[GoogleLogin] Error:", {
+        code: error.code,
+        message: error.message,
+        name: error.name,
+        responseData: error.response?.data,
+      });
+
       if (error.code === "auth/popup-closed-by-user") {
-        // User closed the popup - no action needed
         return;
       }
 
       let errorMessage = "Google login failed";
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.message || errorMessage;
+      } else if (error.code === "auth/popup-blocked") {
+        errorMessage = "Popup was blocked. Please allow popups or try opening this page directly in your browser.";
+      } else if (error.code === "auth/cancelled-popup-request") {
+        errorMessage = "Authentication was cancelled. Please try again.";
+      } else if (error.code === "auth/unauthorized-domain") {
+        errorMessage = "This domain is not authorized. Please contact support.";
       } else if (error.message) {
         errorMessage = error.message;
       }

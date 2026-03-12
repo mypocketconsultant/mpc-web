@@ -37,14 +37,27 @@ export default function SignupPage() {
         router.push("/home");
       }
     } catch (error: any) {
-      // Handle specific errors
+      console.error("[GoogleSignUp] Error:", {
+        code: error.code,
+        message: error.message,
+        name: error.name,
+        responseData: error.response?.data,
+      });
+
       if (error.code === "auth/popup-closed-by-user") {
-        // User closed the popup - no action needed
         return;
       }
 
-      const errorMessage =
-        error.response?.data?.message || "Google authentication failed";
+      let errorMessage = "Google authentication failed";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.code === "auth/popup-blocked") {
+        errorMessage = "Popup was blocked. Please allow popups or try opening this page directly in your browser.";
+      } else if (error.code === "auth/cancelled-popup-request") {
+        errorMessage = "Authentication was cancelled. Please try again.";
+      } else if (error.code === "auth/unauthorized-domain") {
+        errorMessage = "This domain is not authorized. Please contact support.";
+      }
       showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
