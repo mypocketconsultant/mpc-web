@@ -134,16 +134,16 @@ export default function StudyPlannerPage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           {/* Back button */}
           <Link href="/study">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors">
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Study Support / Study Planner</span>
             </button>
           </Link>
 
           {/* Two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left column - Chat sidebar */}
-            <div className="lg:col-span-1 h-[calc(100vh-220px)] min-h-[500px]">
+            <div className="lg:col-span-1 h-[60vh] lg:h-[calc(100vh-220px)] min-h-[400px] sm:min-h-[500px]">
               <StudyChatSidebar
                 title="Create study plan with Ai"
                 onSendMessage={handleSendMessage}

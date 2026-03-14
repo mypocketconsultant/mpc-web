@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,6 +10,7 @@ import {
   Loader2,
   History,
   Plus,
+  Send,
 } from "lucide-react";
 import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
@@ -56,12 +57,12 @@ function ChatMessage({ message }: { message: Message }) {
 
   return (
     <div
-      className={`flex gap-3 ${isAI ? "justify-start" : "justify-end"} mb-4`}
+      className={`flex gap-2 sm:gap-3 ${isAI ? "justify-start" : "justify-end"} mb-3 sm:mb-4`}
     >
       {isAI && (
-        <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
+        <div className="shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
           <svg
-            className="w-4 h-4 text-white"
+            className="w-3 h-3 sm:w-4 sm:h-4 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -81,7 +82,7 @@ function ChatMessage({ message }: { message: Message }) {
           isAI
             ? "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF] rounded-2xl rounded-tl-md"
             : "bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl rounded-tr-md"
-        } px-4 py-3 shadow-sm`}
+        } px-3 py-2 sm:px-4 sm:py-3 shadow-sm`}
       >
         <FormattedMessage
           content={message.content}
@@ -99,9 +100,9 @@ function ChatMessage({ message }: { message: Message }) {
       </div>
 
       {!isAI && (
-        <div className="shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+        <div className="shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-200 flex items-center justify-center">
           <svg
-            className="w-4 h-4 text-gray-600"
+            className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -135,7 +136,15 @@ function BusinessConsultancyChatContent() {
   const { toast, showToast, hideToast } = useToast();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -205,9 +214,14 @@ function BusinessConsultancyChatContent() {
       for (const action of actions) {
         switch (action.type) {
           case "business.create_canvas": {
+            const createdCanvasId = metadata?.created_canvas_id;
             showToast("success", "Canvas model created!", {
               label: "View Canvas",
-              onClick: () => router.push("/business-consultancy/canvas"),
+              onClick: () => router.push(
+                createdCanvasId
+                  ? `/business-consultancy/canvas?canvas_id=${createdCanvasId}`
+                  : "/business-consultancy/canvas"
+              ),
             });
             break;
           }
@@ -407,19 +421,19 @@ function BusinessConsultancyChatContent() {
                 </span>
               </button>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 New Chat
               </button>
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
               >
-                <History className="w-4 h-4" />
+                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 History
               </button>
             </div>
@@ -487,29 +501,45 @@ function BusinessConsultancyChatContent() {
 
           {/* Input Area */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4">
-            <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex items-end gap-1.5 sm:gap-3">
               <button
-                className="flex-[0_0_auto] p-2 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors shrink-0"
+                className="flex-[0_0_auto] p-1.5 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors shrink-0 mb-0.5"
                 aria-label="Attach file"
               >
-                <Paperclip className="h-5 w-5 text-gray-500" />
+                <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
 
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
+                rows={1}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  autoResize();
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me to suggest a business name.."
-                className="flex-1 min-w-0 bg-gray-50 rounded-full px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
+                className="flex-1 min-w-0 bg-gray-50 rounded-2xl px-3 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all resize-none overflow-hidden max-h-[120px]"
                 disabled={isLoading}
               />
 
               <button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isLoading}
+                className={`flex-[0_0_auto] shrink-0 h-9 w-9 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                  inputValue.trim() && !isLoading
+                    ? "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+
+              <button
                 onClick={handleMicrophone}
                 disabled={isTranscribing}
-                className={`flex-[0_0_auto] shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                className={`flex-[0_0_auto] shrink-0 h-9 w-9 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
                   isRecording
                     ? "bg-red-500"
                     : isTranscribing
@@ -527,9 +557,9 @@ function BusinessConsultancyChatContent() {
                 aria-label="Voice input"
               >
                 {isTranscribing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                 ) : (
-                  <Mic className="h-5 w-5" />
+                  <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </button>
             </div>

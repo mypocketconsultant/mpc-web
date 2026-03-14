@@ -302,10 +302,10 @@ function SwotPageContent() {
         )}
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-8">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-4 sm:mb-8 flex-wrap">
           <Link href="/business-consultancy">
             <button className="flex items-center hover:text-gray-900 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Business Consultancy</span>
             </button>
           </Link>
@@ -316,12 +316,12 @@ function SwotPageContent() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handlePublish}
               disabled={isPublishing || swotStatus === "published"}
-              className="bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2"
             >
               {isPublishing && <Loader2 className="h-4 w-4 animate-spin" />}
               {isPublishing ? "Publishing..." : swotStatus === "published" ? "Published" : "Publish"}
@@ -371,24 +371,24 @@ function SwotPageContent() {
             value={documentTitle}
             onChange={(e) => setDocumentTitle(e.target.value)}
             onBlur={() => saveSwot({ title: documentTitle })}
-            className="w-full text-xl font-light text-gray-400 placeholder:text-gray-300 border-none outline-none bg-transparent"
+            className="w-full text-base sm:text-xl font-light text-gray-400 placeholder:text-gray-300 border-none outline-none bg-transparent"
           />
           <div className="w-full h-[1px] bg-gray-200 mt-2" />
         </div>
 
         {/* SWOT Grid */}
-        <div className="flex-1 w-full max-w-[1000px] mx-auto grid grid-cols-2 grid-rows-2">
+        <div className="flex-1 w-full max-w-[1000px] mx-auto grid grid-cols-1 sm:grid-cols-2 sm:grid-rows-2">
           {BLOCK_META.map((block, blockIndex) => (
             <div
               key={block.key}
-              className={`relative flex flex-col min-h-[250px] p-6
-                ${blockIndex === 0 ? "border-r border-b border-gray-200" : ""}
+              className={`relative flex flex-col min-h-[180px] sm:min-h-[250px] p-3 sm:p-6
+                ${blockIndex === 0 ? "border-b border-gray-200 sm:border-r" : ""}
                 ${blockIndex === 1 ? "border-b border-gray-200" : ""}
-                ${blockIndex === 2 ? "border-r border-gray-200" : ""}
+                ${blockIndex === 2 ? "border-b sm:border-b-0 border-gray-200 sm:border-r" : ""}
               `}
             >
               {/* Text items */}
-              <div className="w-full flex flex-wrap gap-2 px-2 mb-4">
+              <div className="w-full flex flex-wrap gap-1.5 sm:gap-2 px-1 sm:px-2 mb-3 sm:mb-4">
                 {quadrants[block.key].map((text, i) => (
                   <div key={i} className="group flex items-center gap-1">
                     {editingCell?.key === block.key && editingCell?.index === i ? (
@@ -421,7 +421,7 @@ function SwotPageContent() {
               {/* Center Title Badge */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <div
-                  className={`px-6 py-2 rounded-xl font-bold tracking-wider text-sm shadow-sm ${block.colorClass}`}
+                  className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold tracking-wider text-xs sm:text-sm shadow-sm ${block.colorClass}`}
                 >
                   {block.title}
                 </div>

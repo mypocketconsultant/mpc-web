@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus } from "lucide-react";
+import { ChevronLeft, Mic, Paperclip, Loader2, History, Plus, Send } from "lucide-react";
 import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import Header from "@/app/components/header";
 import ChatMessage, { Message } from "../components/ChatMessage";
@@ -44,7 +44,15 @@ function StudyChatContent() {
   const { toast, showToast, hideToast } = useToast();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedClass = classes.find((c) => c.id === selectedClassId);
@@ -344,35 +352,35 @@ function StudyChatContent() {
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-4 flex flex-col h-full">
           {/* Back button / Breadcrumb + History actions */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-4">
             <Link href="/study">
-              <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
-                <ChevronLeft className="h-4 w-4" />
-                <span>{breadcrumbTitle}</span>
+              <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors">
+                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="truncate max-w-[220px] sm:max-w-none">{breadcrumbTitle}</span>
               </button>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 New Chat
               </button>
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
               >
-                <History className="w-4 h-4" />
+                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 History
               </button>
             </div>
           </div>
 
-          {/* Two-column layout */}
-          <div className="flex-1 flex gap-6 overflow-hidden">
-            {/* Left column - Class selection */}
-            <div className="w-64 flex-shrink-0">
+          {/* Two-column layout — sidebar hidden on mobile */}
+          <div className="flex-1 flex gap-4 lg:gap-6 overflow-hidden">
+            {/* Left column - Class selection (hidden on mobile/tablet) */}
+            <div className="hidden lg:block w-64 flex-shrink-0">
               {isLoadingClasses ? (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full flex items-center justify-center">
                   <Loader2 className="w-6 h-6 text-[#5A3FFF] animate-spin" />
@@ -391,7 +399,7 @@ function StudyChatContent() {
             {/* Right column - Chat */}
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Chat Area */}
-              <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+              <div className="flex-1 overflow-y-auto bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-3 sm:mb-4">
                 {isLoadingMessages ? (
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-6 h-6 text-[#5A3FFF] animate-spin" />
@@ -438,12 +446,12 @@ function StudyChatContent() {
               </div>
 
               {/* Input Area */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4">
                 {/* Attached file preview */}
                 {attachedFile && (
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-2 bg-[#F3F0FF] rounded-lg border border-[#E8E0FF]">
-                      <span className="text-sm font-medium text-gray-800">
+                  <div className="mb-2 sm:mb-3 flex items-center gap-2">
+                    <div className="inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#F3F0FF] rounded-lg border border-[#E8E0FF]">
+                      <span className="text-xs sm:text-sm font-medium text-gray-800 truncate max-w-[150px] sm:max-w-none">
                         {attachedFile.name}
                       </span>
                       <span className="text-xs text-gray-500">
@@ -459,13 +467,13 @@ function StudyChatContent() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-end gap-1.5 sm:gap-3">
                   <button
                     onClick={handleAttachClick}
-                    className="flex-shrink-0 p-3 hover:bg-gray-100 rounded-xl transition-colors"
+                    className="flex-shrink-0 p-1.5 sm:p-3 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors mb-0.5"
                     aria-label="Attach file"
                   >
-                    <Paperclip className="h-5 w-5 text-gray-500" />
+                    <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                   </button>
 
                   <input
@@ -476,25 +484,41 @@ function StudyChatContent() {
                     accept=".pdf,.doc,.docx,.txt,.mp3,.wav,.mp4,.jpg,.jpeg,.png,.gif"
                   />
 
-                  <input
+                  <textarea
                     ref={inputRef}
-                    type="text"
+                    rows={1}
                     value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
+                    onChange={(e) => {
+                      setInputValue(e.target.value);
+                      autoResize();
+                    }}
                     onKeyDown={handleKeyPress}
                     placeholder={
                       selectedClass
                         ? `Ask about ${selectedClass.name.toLowerCase()}...`
                         : "Ask a study question..."
                     }
-                    className="flex-1 bg-gray-50 rounded-full px-5 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all"
+                    className="flex-1 min-w-0 bg-gray-50 rounded-2xl px-3 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:bg-white transition-all resize-none overflow-hidden max-h-[120px]"
                     disabled={isLoading}
                   />
 
                   <button
+                    onClick={handleSendMessage}
+                    disabled={(!inputValue.trim() && !attachedFile) || isLoading}
+                    className={`flex-shrink-0 h-9 w-9 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                      (inputValue.trim() || attachedFile) && !isLoading
+                        ? "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
+                        : "bg-gray-300 cursor-not-allowed"
+                    }`}
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+
+                  <button
                     onClick={handleMicrophone}
                     disabled={isTranscribing}
-                    className={`flex-shrink-0 h-12 w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
+                    className={`flex-shrink-0 h-9 w-9 sm:h-12 sm:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
                       isRecording
                         ? "bg-red-500"
                         : isTranscribing
@@ -512,9 +536,9 @@ function StudyChatContent() {
                     aria-label="Voice input"
                   >
                     {isTranscribing ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                     ) : (
-                      <Mic className="h-5 w-5" />
+                      <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
                     )}
                   </button>
                 </div>

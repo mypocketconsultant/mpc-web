@@ -395,10 +395,10 @@ function CanvasPageContent() {
         )}
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-8">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-4 sm:mb-8 flex-wrap">
           <Link href="/business-consultancy">
             <button className="flex items-center hover:text-gray-900 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Business Consultancy</span>
             </button>
           </Link>
@@ -409,12 +409,12 @@ function CanvasPageContent() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handlePublish}
               disabled={isPublishing || canvasStatus === "published"}
-              className="bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-gradient-to-r from-[#4A247c] to-[#2E154E] hover:from-[#3A1C62] hover:to-[#220F3A] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2"
             >
               {isPublishing && <Loader2 className="h-4 w-4 animate-spin" />}
               {isPublishing ? "Publishing..." : canvasStatus === "published" ? "Published" : "Publish"}
@@ -457,7 +457,7 @@ function CanvasPageContent() {
         </div>
 
         {/* Title Input */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <input
             type="text"
             placeholder="Add document title"
@@ -467,19 +467,18 @@ function CanvasPageContent() {
               if (canvasStatus === "published") setCanvasStatus("draft");
             }}
             onBlur={() => saveCanvas({ title: documentTitle })}
-            className="w-full text-2xl font-light text-gray-400 placeholder:text-gray-300 border-none outline-none bg-transparent"
+            className="w-full text-lg sm:text-2xl font-light text-gray-400 placeholder:text-gray-300 border-none outline-none bg-transparent"
           />
           <div className="w-full h-[1px] bg-gray-100 mt-2" />
         </div>
 
         {/* Canvas Grid */}
         <div className="flex-1 overflow-auto pb-8">
-          <div className="grid grid-cols-4 gap-4 auto-rows-min pb-4 max-w-[1100px] mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 auto-rows-min pb-4 max-w-[1100px] mx-auto">
             {blocks.map((block) => (
               <div
                 key={block.key}
-                className="bg-white rounded-2xl flex flex-col shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
-                style={{ gridColumn: `span ${block.colSpan}` }}
+                className={`bg-white rounded-xl sm:rounded-2xl flex flex-col shadow-sm border border-gray-100 overflow-hidden min-h-[120px] sm:min-h-[140px] ${block.colSpan === 2 ? "lg:col-span-2" : ""}`}
               >
                 {/* Card Header */}
                 <div className={`flex justify-between items-center px-4 py-2 ${block.color}`}>
@@ -528,14 +527,14 @@ function CanvasPageContent() {
             ))}
 
             {/* Add Card */}
-            <div className="col-span-4 flex items-center gap-2 pt-2 p-3 border-2 border-dashed border-[#4A247c]/30 rounded-2xl bg-[#4A247c]/5">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-4 flex items-center gap-2 pt-2 p-3 border-2 border-dashed border-[#4A247c]/30 rounded-xl sm:rounded-2xl bg-[#4A247c]/5">
               <input
                 type="text"
                 placeholder="New card title..."
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddCard(); }}
-                className="flex-1 text-sm text-gray-700 placeholder:text-[#4A247c]/40 border border-[#4A247c]/20 rounded-xl px-4 py-2 outline-none focus:border-[#4A247c]/60 bg-white"
+                className="flex-1 text-xs sm:text-sm text-gray-700 placeholder:text-[#4A247c]/40 border border-[#4A247c]/20 rounded-lg sm:rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 outline-none focus:border-[#4A247c]/60 bg-white"
               />
               <button
                 onClick={handleAddCard}

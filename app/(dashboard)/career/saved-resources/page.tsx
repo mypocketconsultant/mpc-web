@@ -102,24 +102,24 @@ export default function SavedResourcesPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-8 py-8">
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
           {/* Breadcrumb */}
           <Link
             href="/career"
-            className="flex items-center gap-2 text-gray-700 hover:text-[#5A3FFF] transition-colors mb-8 font-medium text-sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors mb-4 sm:mb-8 font-medium"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Career Advisory / Saved Resources
           </Link>
 
-          <hr className="my-14" />
+          <hr className="my-4 sm:my-8 md:my-14" />
 
-          <div className="flex justify-between gap-8">
+          <div className="flex flex-col md:flex-row md:justify-between gap-4 sm:gap-6 md:gap-8">
             {/* Left Content - Recent Documents */}
-            <div className="w-[500px]">
-              <div className=" rounded-3xl p-8 ">
-                <div className="flex items-center gap-5 mb-8">
-                  <h2 className="text-lg font-bold text-gray-900">
+            <div className="w-full md:w-[500px]">
+              <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8">
+                <div className="flex items-center gap-3 sm:gap-5 mb-4 sm:mb-8">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">
                     Recent documents
                   </h2>
                   {total > 0 && (
@@ -185,7 +185,7 @@ export default function SavedResourcesPage() {
             </div>
 
             {/* Right Sidebar - Daily Tips */}
-            <div className="w-80 flex-shrink-0">
+            <div className="w-full md:w-80 md:flex-shrink-0">
               <DailyTips dailyTip={dailyTip} tipsIcon={tipsIcon} />
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function SavedResourcesPage() {
       </main>
 
       {/* Chat Input Footer */}
-      <div className="border-t border-gray-200 bg-white p-6">
+      <div className="border-t border-gray-200 bg-white p-3 sm:p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
           <InputFooter
             placeholder="Ask me to optimize your LinkedIn..."

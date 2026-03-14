@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Mic, Paperclip, FileText } from "lucide-react";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -40,6 +40,15 @@ export default function FoodAI({
   const [input, setInput] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
 
   const handleSubmit = () => {
     if (input.trim() && !isLoading) {
@@ -73,12 +82,12 @@ export default function FoodAI({
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col">
+    <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-100 h-[60vh] lg:h-[calc(100vh-14rem)] flex flex-col">
       {/* Header */}
-      <h3 className="font-bold text-gray-900 mb-6 text-lg">{title}</h3>
+      <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 text-base sm:text-lg">{title}</h3>
 
       {/* Scrollable Chat Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-6 min-h-0">
+      <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-4 sm:mb-6 min-h-0">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-gray-400 text-center">
@@ -90,8 +99,8 @@ export default function FoodAI({
             <div key={message.id}>
               {message.type === "user" ? (
                 /* User Message Bubble */
-                <div className="flex justify-end mb-4">
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 max-w-[85%]">
+                <div className="flex justify-end mb-3 sm:mb-4">
+                  <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-5 max-w-[90%] sm:max-w-[85%]">
                     <p className="text-sm text-gray-700 text-right mb-3">
                       {message.content}
                     </p>
@@ -114,8 +123,8 @@ export default function FoodAI({
                 </div>
               ) : (
                 /* Assistant Message Bubble */
-                <div className="flex justify-start mb-4">
-                  <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
+                <div className="flex justify-start mb-3 sm:mb-4">
+                  <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%]">
                     <p className="text-sm text-gray-800">{message.content}</p>
                   </div>
                 </div>
@@ -126,8 +135,8 @@ export default function FoodAI({
 
         {/* Loading Bubble */}
         {isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="bg-gray-50 rounded-2xl p-5 max-w-[85%]">
+          <div className="flex justify-start mb-3 sm:mb-4">
+            <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%]">
               <div className="flex items-center gap-1">
                 <div
                   className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
@@ -148,31 +157,35 @@ export default function FoodAI({
       </div>
 
       {/* Chat Input - Fixed at Bottom */}
-      <div className="pt-4 border-t border-gray-100 flex-shrink-0">
-        <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 hover:border-gray-300 transition-colors">
+      <div className="pt-3 sm:pt-4 border-t border-gray-100 flex-shrink-0">
+        <div className="flex gap-1.5 sm:gap-2 items-end bg-white rounded-2xl border border-gray-200 px-1.5 sm:px-2 py-1.5 sm:py-2 hover:border-gray-300 transition-colors">
           <button
             onClick={handleAttachClick}
             disabled={isLoading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed mb-0.5"
             aria-label="Attach file"
           >
-            <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
+            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 rotate-45" />
           </button>
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
+            rows={1}
             placeholder={placeholder}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onChange={(e) => {
+              setInput(e.target.value);
+              autoResize();
+            }}
+            onKeyDown={handleKeyPress}
             disabled={isLoading}
-            className="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-0 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-transparent focus:outline-none placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-hidden max-h-[120px]"
           />
 
           <button
             onClick={handleMicrophoneClick}
             disabled={isLoading || isTranscribing}
-            className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
               isRecording ? "animate-pulse" : ""
             }`}
             style={{
@@ -184,7 +197,7 @@ export default function FoodAI({
             }}
             aria-label="Voice input"
           >
-            <Mic className="w-5 h-5 text-white" />
+            <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </button>
         </div>
       </div>

@@ -167,20 +167,20 @@ export default function SavedResourcesPage() {
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6">
           {/* Back button */}
           <Link href="/study">
-            <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors">
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Study Support / Saved Resources</span>
             </button>
           </Link>
 
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
-                <Bookmark className="w-7 h-7 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#5A3FFF] to-[#300878] flex items-center justify-center">
+                <Bookmark className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                   Saved Resources
                 </h1>
                 <p className="text-gray-500 text-sm">
@@ -191,7 +191,7 @@ export default function SavedResourcesPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
@@ -260,16 +260,16 @@ export default function SavedResourcesPage() {
                 return (
                   <div
                     key={resource.id}
-                    className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group ${
+                    className={`bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-5 hover:shadow-md transition-shadow group ${
                       isDeleting ? "opacity-50 pointer-events-none" : ""
                     }`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div
-                        className={`w-10 h-10 rounded-xl ${colorClasses} flex items-center justify-center`}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${colorClasses} flex items-center justify-center`}
                       >
-                        <IconComponent className="w-5 h-5" />
+                        <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
 
                       {/* More Menu */}

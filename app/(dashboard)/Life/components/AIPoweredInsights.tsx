@@ -45,15 +45,15 @@ export default function AIPoweredInsights({
 
   if (isLoading) {
     return (
-      <div className="space-y-4 mt-14">
-        <h2 className="text-xl font-semibold text-gray-900">
+      <div className="space-y-3 sm:space-y-4 mt-8 sm:mt-14">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
           Ai-Powered Insights
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-gray-100 rounded-2xl p-5 shadow-sm animate-pulse"
+              className="bg-gray-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm animate-pulse"
             >
               <div className="w-7 h-7 bg-gray-200 rounded-full" />
               <div className="h-5 bg-gray-200 rounded mt-4 w-32" />
@@ -67,16 +67,16 @@ export default function AIPoweredInsights({
   }
 
   return (
-    <div className="space-y-4 mt-14">
-      <h2 className="text-xl font-semibold text-gray-900">
+    <div className="space-y-3 sm:space-y-4 mt-8 sm:mt-14">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
         Ai-Powered Insights
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
         {displayInsights.map((insight) => (
           <div
             key={insight.id}
-            className={`${insight.cardBg} rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
+            className={`${insight.cardBg} rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
           >
             {/* Icon */}
             <div>
@@ -85,17 +85,17 @@ export default function AIPoweredInsights({
                 alt={insight.title}
                 width={26}
                 height={26}
-                className="object-contain"
+                className="object-contain w-5 h-5 sm:w-[26px] sm:h-[26px]"
               />
             </div>
 
             {/* Title */}
-            <h3 className={`text-lg font-medium mt-4 ${insight.titleColor} mb-3`}>
+            <h3 className={`text-base sm:text-lg font-medium mt-3 sm:mt-4 ${insight.titleColor} mb-2 sm:mb-3`}>
               {insight.title}
             </h3>
 
             {/* Description */}
-            <p className="text-sm text-gray-800 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-800 leading-relaxed">
               {insight.description}
             </p>
           </div>

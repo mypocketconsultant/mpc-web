@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Paperclip, Mic, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Paperclip, Mic, Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import FileUploadModal from "./FileUploadModal";
 
@@ -38,7 +38,6 @@ export default function InputFooter({
   const router = useRouter();
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use controlled value if provided, otherwise use internal state
   const inputValue = value !== undefined ? value : internalValue;
@@ -58,7 +57,7 @@ export default function InputFooter({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -87,26 +86,54 @@ export default function InputFooter({
     onAttach?.(file);
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
+
+  const canSend = inputValue.trim().length > 0;
+
   return (
-    <div className="p-3 sm:p-4 md:p-6">
+    <div className="p-2 sm:p-4 md:p-6">
       <div className="max-w-[1100px] mx-auto">
-        <div className="flex gap-2 sm:gap-3 items-center">
+        <div className="flex gap-1.5 sm:gap-3 items-end">
           <button
             onClick={handleAttachClick}
-            className="flex-shrink-0 p-2.5 sm:p-3 md:p-4 shadow-md hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex-shrink-0 p-2 sm:p-3 md:p-4 shadow-md hover:bg-gray-100 rounded-lg transition-colors mb-0.5"
             aria-label="Attach file"
           >
             <Paperclip className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
           </button>
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
+            rows={1}
             placeholder={placeholder}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              autoResize();
+            }}
+            onKeyDown={handleKeyDown}
             onClick={handleInputClick}
-            className="flex-1 rounded-full border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer"
+            className="flex-1 min-w-0 rounded-2xl border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer resize-none overflow-hidden max-h-[120px]"
           />
+          <button
+            onClick={handleSend}
+            disabled={!canSend}
+            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+              canSend
+                ? "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
+                : "bg-gray-300 cursor-not-allowed"
+            }`}
+            aria-label="Send message"
+          >
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
           <button
             onClick={onMicrophone}
             disabled={isTranscribing}

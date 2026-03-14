@@ -515,11 +515,11 @@ export default function InsightsPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto max-w-full">
-        <div className="max-w-[1300px] mx-auto px-6 py-6">
+        <div className="max-w-[1300px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
           {/* Breadcrumb */}
           <Link href="/Life">
-            <button className="flex items-center my-6 gap-2 text-sm text-gray-700 hover:text-[#5A3FFF] mb-6 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button className="flex items-center my-4 sm:my-6 gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] mb-4 sm:mb-6 transition-colors">
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Life Advisory / Insights and reports</span>
             </button>
           </Link>

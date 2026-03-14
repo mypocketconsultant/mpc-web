@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Mic, Paperclip, FileText } from "lucide-react";
+import React, { useState, useRef, useCallback } from "react";
+import { Mic, Paperclip, FileText, Send, Loader2 } from "lucide-react";
 import FormattedMessage from "@/components/FormattedMessage";
 import FileUploadModal from "@/app/components/FileUploadModal";
 import ResumePdfModal from "./ResumePdfModal";
@@ -92,6 +92,16 @@ export default function AIEditSidebar({
     setIsPdfModalOpen(true);
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
+
   const handleSend = () => {
     if (inputValue.trim()) {
       // Always pass intent prop to parent - don't rely on prop being undefined
@@ -131,13 +141,13 @@ export default function AIEditSidebar({
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[calc(100vh-14rem)] flex flex-col relative">
+    <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-100 h-[60vh] lg:h-[calc(100vh-14rem)] flex flex-col relative">
       {/* Upload Loading Overlay - only for uploading file */}
       {isUploadingFile && (
-        <div className="absolute inset-0 bg-white/80 rounded-3xl flex items-center justify-center z-10">
+        <div className="absolute inset-0 bg-white/80 rounded-2xl sm:rounded-3xl flex items-center justify-center z-10">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-xs sm:text-sm font-medium text-gray-700">
               Uploading resume...
             </p>
           </div>
@@ -145,12 +155,12 @@ export default function AIEditSidebar({
       )}
 
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="font-bold text-gray-900 text-lg">{title}</h3>
+      <div className="mb-3 sm:mb-4 md:mb-6">
+        <h3 className="font-bold text-gray-900 text-base sm:text-lg">{title}</h3>
       </div>
 
       {/* Scrollable Chat Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-6 min-h-0">
+      <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-3 sm:mb-4 md:mb-6 min-h-0">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-gray-400 text-center">
@@ -184,7 +194,7 @@ export default function AIEditSidebar({
                   <div key={message.id}>
                     <div className="flex justify-start mb-4">
                       <div
-                        className={`rounded-2xl p-5 max-w-[85%] space-y-4 ${
+                        className={`rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%] space-y-3 sm:space-y-4 ${
                           hasAnalysis
                             ? "bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100"
                             : "bg-gray-50"
@@ -307,7 +317,7 @@ export default function AIEditSidebar({
                   {message.type === "user" ? (
                     /* User Message Bubble */
                     <div className="flex justify-end mb-4">
-                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl shadow-md hover:shadow-lg transition-shadow p-5 max-w-[85%]">
+                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-shadow p-3 sm:p-5 max-w-[90%] sm:max-w-[85%]">
                         <div className="text-right mb-3">
                           <FormattedMessage content={message.content} variant="dark" />
                         </div>
@@ -336,7 +346,7 @@ export default function AIEditSidebar({
                         onClick={(e) => {
                           handleResumeLinkClick(e, message);
                         }}
-                        className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-2xl p-4 max-w-[85%] hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 max-w-[90%] sm:max-w-[85%] hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
                           <FileText className="w-3.5 h-3.5 text-blue-600" />
@@ -349,7 +359,7 @@ export default function AIEditSidebar({
                   ) : message.type === "loading" ? (
                     /* Thinking Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className="bg-gradient-to-br from-[#F8F7FF] to-[#FEFEFF] rounded-2xl p-5 max-w-[85%] shadow-sm border border-[#E8E4FF]">
+                      <div className="bg-gradient-to-br from-[#F8F7FF] to-[#FEFEFF] rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%] shadow-sm border border-[#E8E4FF]">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <div
@@ -374,7 +384,7 @@ export default function AIEditSidebar({
                   ) : message.isError ? (
                     /* Error Message Bubble */
                     <div className="flex justify-start mb-4">
-                      <div className="bg-red-50 rounded-2xl p-5 max-w-[85%] border border-red-200">
+                      <div className="bg-red-50 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%] border border-red-200">
                         <p className="text-sm text-red-700">
                           {message.content}
                         </p>
@@ -384,7 +394,7 @@ export default function AIEditSidebar({
                     /* Assistant Message Bubble */
                     <div className="flex justify-start mb-4">
                       <div
-                        className={`rounded-2xl p-5 max-w-[85%] shadow-sm hover:shadow-lg transition-shadow ${
+                        className={`rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[90%] sm:max-w-[85%] shadow-sm hover:shadow-lg transition-shadow ${
                           message.analysisPlan
                             ? "bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100"
                             : "bg-gradient-to-br from-white to-[#FEFEFF] border border-[#E8E4FF]"
@@ -490,31 +500,48 @@ export default function AIEditSidebar({
       </div>
 
       {/* Chat Input - Fixed at Bottom */}
-      <div className="pt-4 border-t border-gray-100 flex-shrink-0">
-        <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-2 py-2 transition-colors hover:border-gray-300">
+      <div className="pt-2 sm:pt-3 md:pt-4 border-t border-gray-100 flex-shrink-0">
+        <div className="flex gap-1.5 sm:gap-2 items-end bg-white rounded-2xl border border-gray-200 px-1.5 sm:px-2 py-1.5 sm:py-2 transition-colors hover:border-gray-300">
           {onFileUpload && (
             <button
               onClick={handleAttachClick}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 mb-0.5"
               aria-label="Attach file"
             >
-              <Paperclip className="w-5 h-5 text-gray-600 rotate-45" />
+              <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 rotate-45" />
             </button>
           )}
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
+            rows={1}
             placeholder={placeholder}
             value={inputValue}
-            onChange={(e) => onInputChange?.(e.target.value)}
+            onChange={(e) => {
+              onInputChange?.(e.target.value);
+              autoResize();
+            }}
             onKeyDown={handleKeyPress}
-            className="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400"
+            className="flex-1 min-w-0 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-transparent focus:outline-none placeholder:text-gray-400 resize-none overflow-hidden max-h-[120px]"
           />
+
+          <button
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className={`flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full text-white transition-all flex items-center justify-center ${
+              inputValue.trim()
+                ? "bg-[#5A3FFF] hover:bg-[#4A2FEF] hover:shadow-md active:scale-95"
+                : "bg-gray-300 cursor-not-allowed"
+            }`}
+            aria-label="Send message"
+          >
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
 
           <button
             onClick={handleMicrophoneClick}
             disabled={isTranscribing}
-            className={`p-2.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
               isRecording ? "animate-pulse" : ""
             }`}
             style={{
@@ -526,7 +553,11 @@ export default function AIEditSidebar({
             }}
             aria-label="Voice input"
           >
-            <Mic className="w-5 h-5 text-white" />
+            {isTranscribing ? (
+              <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />
+            ) : (
+              <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+            )}
           </button>
         </div>
       </div>

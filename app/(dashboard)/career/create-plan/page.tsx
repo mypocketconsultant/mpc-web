@@ -143,36 +143,21 @@ export default function CreatePlanPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide relative">
-        <div className="max-w-[1400px] mx-auto px-8 py-8">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
           {/* Breadcrumb */}
           <Link
             href="/career"
-            className="flex items-center gap-2 text-gray-700 hover:text-[#5A3FFF] transition-colors mb-8 font-medium text-sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors mb-4 sm:mb-8 font-medium"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Career Advisory / Career Planner
           </Link>
 
-          <hr className="my-10" />
+          <hr className="my-4 sm:my-6 md:my-10" />
 
-          <div className="gap-6">
-            {/* Left Sidebar - AI Chat */}
-            {/* <div className="col-span-5 sticky top-10 h-fit">
-              <AIEditSidebar
-                title="Plan with AI"
-                messages={messages}
-                inputValue={inputValue}
-                onInputChange={setInputValue}
-                onSend={handleSend}
-                emptyStateMessage="Ask me to help create your career plan for the week or month..."
-                onToggleExpanded={toggleMessageExpanded}
-                placeholder="Describe your career goal..."
-                intent="planner_create"
-              />
-            </div> */}
-
-            {/* Right Side - Timeline Widget */}
-            <div className="col-span-7">
+          <div className="gap-4 sm:gap-6">
+            {/* Timeline Widget */}
+            <div>
               <TimelineWidget
                 items={planItems}
                 currentWeek={getWeekDateRange(currentWeekStart)}

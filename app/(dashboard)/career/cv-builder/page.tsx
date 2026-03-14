@@ -859,10 +859,10 @@ export default function CVBuilder() {
       {/* Loading Overlay */}
       {(isBuilding || (isLoadingSession && cvId) || isProcessingUpload) && (
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999]">
-          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-lg">
-            <div className="w-12 h-12 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin" />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-8 mx-4 flex flex-col items-center gap-3 sm:gap-4 shadow-lg">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 border-[#5A3FFF] border-t-transparent rounded-full animate-spin" />
             <div className="text-center">
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-base sm:text-lg font-semibold text-gray-900">
                 {isBuilding
                   ? docKind === 'cv' ? 'Building your CV' : 'Writing your Cover Letter'
                   : isProcessingUpload
@@ -886,33 +886,33 @@ export default function CVBuilder() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto scrollbar-hide">
-        <div className="max-w-[1100px] mx-auto px-8 py-8">
+        <div className="max-w-[1100px] mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
           {/* Breadcrumb and New CV Button */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4 sm:mb-8">
             <Link
               href="/career"
-              className="flex items-center gap-2 text-gray-700 hover:text-[#5A3FFF] transition-colors font-medium text-sm"
+              className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700 hover:text-[#5A3FFF] transition-colors font-medium"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Career Advisory / CV Builder
             </Link>
 
             {cvId && (
               <button
                 onClick={handleNewCV}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium text-gray-700"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 New CV
               </button>
             )}
           </div>
 
-          <hr className="my-10" />
+          <hr className="my-4 sm:my-6 md:my-10" />
 
-          <div className="grid grid-cols-12 gap-6">
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6">
             {/* AI Chat Sidebar */}
-            <div className="col-span-5 sticky top-10 h-fit">
+            <div className="lg:col-span-5 lg:sticky lg:top-10 lg:h-fit order-2 lg:order-1">
               <AIEditSidebar
                 title="Chat with AI"
                 messages={messages}
@@ -931,45 +931,45 @@ export default function CVBuilder() {
             </div>
 
             {/* Right Side - CV Preview / Sections */}
-            <div className="col-span-7">
+            <div className="lg:col-span-7 order-1 lg:order-2">
               {cvDocument ? (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Document Header */}
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">{cvDocument.title}</h2>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">{cvDocument.title}</h2>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">
                         {cvDocument.type === 'cv' ? 'Curriculum Vitae' : 'Cover Letter'} &middot; {cvDocument.status}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <button
                         onClick={() => handleExport('text')}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         TXT
                       </button>
                       <button
                         onClick={() => handleExport('docx')}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         DOCX
                       </button>
                       <button
                         onClick={handlePdfDownload}
                         disabled={isDownloadingPdf}
-                        className="px-3 py-2 text-sm bg-[#5A3FFF] text-white rounded-lg hover:bg-[#4A2FEF] transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-[#5A3FFF] text-white rounded-lg hover:bg-[#4A2FEF] transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         {isDownloadingPdf ? 'Generating...' : 'PDF'}
                       </button>
                     </div>
                   </div>
 
                   {/* Sender & Recipient Info (for PDF generation) */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 mb-4">Your Details (for PDF)</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-5 shadow-sm">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-3 sm:mb-4">Your Details (for PDF)</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
                         <input
@@ -1012,8 +1012,8 @@ export default function CVBuilder() {
                       </div>
                     </div>
 
-                    <h3 className="font-semibold text-gray-900 mt-5 mb-4">Recipient (optional)</h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base mt-4 sm:mt-5 mb-3 sm:mb-4">Recipient (optional)</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
                         <input
@@ -1051,7 +1051,7 @@ export default function CVBuilder() {
                   {cvDocument.sections.map((section, index) => (
                     <div
                       key={index}
-                      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+                      className="bg-white border border-gray-200 rounded-xl p-3 sm:p-5 shadow-sm"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold text-gray-900">{section.name}</h3>
@@ -1102,16 +1102,16 @@ export default function CVBuilder() {
                 </div>
               ) : (
                 /* Empty State + CV Options Form */
-                <div className="p-6 bg-gray-50 rounded-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="p-4 sm:p-6 bg-gray-50 rounded-xl sm:rounded-2xl">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2">
                     {docKind === 'cv' ? 'Build Your CV' : 'Write a Cover Letter'}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-6">
+                  <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
                     Fill in the options below, then tell the AI about the role you&apos;re applying for.
                     The AI will generate a tailored {docKind === 'cv' ? 'CV' : 'cover letter'} for you.
                   </p>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {/* Doc Kind */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>

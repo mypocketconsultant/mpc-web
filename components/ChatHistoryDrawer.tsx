@@ -123,29 +123,29 @@ export default function ChatHistoryDrawer({
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-[340px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-[340px] max-w-[90vw] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{module.charAt(0).toUpperCase() + module.slice(1)} Chat History</h2>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-200">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">{module.charAt(0).toUpperCase() + module.slice(1)} Chat History</h2>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* New Chat Button */}
-        <div className="px-5 py-3 border-b border-gray-100">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <button
             onClick={() => {
               onNewChat();
               onClose();
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-[#5A3FFF] rounded-lg hover:bg-[#4A2FEF] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2.5 text-sm font-medium text-white bg-[#5A3FFF] rounded-lg hover:bg-[#4A2FEF] transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Chat
@@ -168,7 +168,7 @@ export default function ChatHistoryDrawer({
                 <div
                   key={session.id}
                   onClick={() => onSelectSession(session.id)}
-                  className={`group flex items-start gap-3 px-5 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  className={`group flex items-start gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors ${
                     currentSessionId === session.id
                       ? "bg-[#F0EDFF] border-r-2 border-[#5A3FFF]"
                       : ""
@@ -178,7 +178,7 @@ export default function ChatHistoryDrawer({
 
                   <div className="flex-1 min-w-0">
                     {editingId === session.id ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="text"
                           value={editTitle}
@@ -188,7 +188,7 @@ export default function ChatHistoryDrawer({
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#5A3FFF]"
+                          className="flex-1 min-w-0 text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] focus:border-transparent"
                           autoFocus
                         />
                         <button
@@ -196,9 +196,9 @@ export default function ChatHistoryDrawer({
                             e.stopPropagation();
                             handleRename(session.id);
                           }}
-                          className="p-0.5 text-green-600 hover:text-green-700"
+                          className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
                         >
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
@@ -217,23 +217,23 @@ export default function ChatHistoryDrawer({
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Actions — always visible on mobile, hover-reveal on desktop */}
+                  <div className="flex items-center gap-1 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingId(session.id);
                         setEditTitle(session.title);
                       }}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      className="p-1.5 hover:bg-gray-200 rounded transition-colors"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-gray-500" />
+                      <Edit3 className="w-4 h-4 text-gray-500" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
-                      className="p-1 hover:bg-red-50 rounded transition-colors"
+                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
                 </div>

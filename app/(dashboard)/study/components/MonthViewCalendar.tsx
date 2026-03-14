@@ -125,10 +125,10 @@ export default function MonthViewCalendar({
   }, [calendarDays]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <button
             onClick={goToPreviousMonth}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200"
@@ -144,7 +144,7 @@ export default function MonthViewCalendar({
             <ChevronRight className="h-4 w-4 text-gray-600" />
           </button>
 
-          <span className="text-base font-medium text-gray-900">
+          <span className="text-xs sm:text-base font-medium text-gray-900">
             {formatDateRange()}
           </span>
 
@@ -189,7 +189,7 @@ export default function MonthViewCalendar({
 
         <button
           onClick={onCreatePlan}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white rounded-xl font-medium text-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-[#5A3FFF] to-[#300878] text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
         >
           <Plus className="h-4 w-4" />
           Create Study Plan

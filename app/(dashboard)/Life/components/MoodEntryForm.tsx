@@ -207,44 +207,44 @@ export default function MoodEntryForm() {
 
   return (
     <div className="flex justify-center items-start w-full">
-      <div className=" bg-white rounded-3xl w-full max-w-[600px] shadow-xs border border-gray-100">
+      <div className=" bg-white rounded-2xl sm:rounded-3xl w-full max-w-[600px] shadow-xs border border-gray-100">
         {/* Header */}
-        <div className="flex items-center justify-between p-6  border-gray-100">
+        <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-gray-100">
           <button
             onClick={handleSave}
             disabled={isSubmitting}
-            className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="px-3 sm:px-5 py-1.5 sm:py-2 bg-indigo-600 text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : "Publish"}
           </button>
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <X className="w-6 h-6 text-gray-700" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-4 sm:p-6 md:p-8">
           {/* Title */}
-          <h1 className="text-4xl font-medium text-black mb-8 font-sans">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium text-black mb-5 sm:mb-8 font-sans">
             How are you feeling today?
           </h1>
 
           {/* Overall Mood Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-base font-semibold text-gray-700">
+          <div className="mb-5 sm:mb-8">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <label className="text-sm sm:text-base font-semibold text-gray-700">
                 Overall Mood
               </label>
-              <span className="text-base font-bold text-red-500">
+              <span className="text-sm sm:text-base font-bold text-red-500">
                 {overallMood}/10
               </span>
             </div>
 
             {/* Emoji Row */}
-            <div className="flex justify-center items-center mb-4 px-1  rounded-lg">
+            <div className="flex justify-center items-center mb-3 sm:mb-4 px-1 rounded-lg">
               {moodEmojis.map((emoji, index) => {
                 const moodValue = index + 1;
                 const isActive = overallMood === moodValue;
@@ -254,7 +254,7 @@ export default function MoodEntryForm() {
                   <button
                     key={index}
                     onClick={() => setOverallMood(moodValue)}
-                    className={`text-3xl transition-all duration-200 ${
+                    className={`text-xl sm:text-3xl transition-all duration-200 ${
                       isActive
                         ? "scale-125 opacity-100"
                         : isNearActive
@@ -311,12 +311,12 @@ export default function MoodEntryForm() {
           </div>
 
           {/* Energy Levels Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-base font-semibold text-gray-700">
+          <div className="mb-5 sm:mb-8">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <label className="text-sm sm:text-base font-semibold text-gray-700">
                 Energy Levels
               </label>
-              <span className="text-base font-bold text-red-500">
+              <span className="text-sm sm:text-base font-bold text-red-500">
                 {energyLevel}/10 ⚡
               </span>
             </div>
@@ -362,17 +362,17 @@ export default function MoodEntryForm() {
           </div>
 
           {/* Journal Entry */}
-          <div className="mb-6 relative">
+          <div className="mb-4 sm:mb-6 relative">
             <textarea
               value={journalText}
               onChange={(e) => setJournalText(e.target.value)}
               placeholder="Tell me in your own words"
-              className="w-full h-35 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none pr-14"
+              className="w-full h-35 px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none pr-14"
             />
             <button
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isTranscribing}
-              className={`absolute right-9 top-3 w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+              className={`absolute right-3 sm:right-9 top-2.5 sm:top-3 w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
                 isRecording
                   ? "bg-red-600 animate-pulse"
                   : "bg-indigo-600 hover:bg-indigo-700"
@@ -385,17 +385,17 @@ export default function MoodEntryForm() {
                     : "Start recording"
               }
             >
-              <Mic className="w-6 h-6 text-white" />
+              <Mic className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </button>
             {isRecording && (
-              <div className="absolute right-24 top-3 flex items-center gap-2">
+              <div className="absolute right-14 sm:right-24 top-2.5 sm:top-3 flex items-center gap-2">
                 <span className="text-xs font-medium text-red-600">
                   Recording...
                 </span>
               </div>
             )}
             {isTranscribing && (
-              <div className="absolute right-24 top-3 flex items-center gap-2">
+              <div className="absolute right-14 sm:right-24 top-2.5 sm:top-3 flex items-center gap-2">
                 <span className="text-xs font-medium text-indigo-600">
                   Transcribing...
                 </span>
@@ -404,7 +404,7 @@ export default function MoodEntryForm() {
           </div>
 
           {/* Date and Tags Section */}
-          <div className="border-t border-gray-100 pt-6">
+          <div className="border-t border-gray-100 pt-4 sm:pt-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-xs text-gray-400 mb-1">Date</p>
@@ -438,7 +438,7 @@ export default function MoodEntryForm() {
       {/* Toast Notification */}
       {toast && (
         <div
-          className="fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-fade-in"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-lg animate-fade-in"
           style={{
             backgroundColor: toast.type === "success" ? "#D1FAE5" : "#FEE2E2",
           }}

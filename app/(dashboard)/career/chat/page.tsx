@@ -276,39 +276,41 @@ function ChatPageContent() {
       <Header title={getTitleFromPath(pathname)} />
 
       <main className="flex-1 overflow-auto">
-        <div className="max-w-[1100px] w-full mx-auto px-8 py-6">
+        <div className="max-w-[1100px] w-full mx-auto px-3 sm:px-6 md:px-8 py-3 sm:py-6">
           {/* Breadcrumb + Actions */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
             <Link
               href="/career"
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+              className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 hover:text-blue-600 transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
-              {context === "career" ? "Career Advisory" : "Life Chat"} / Chat
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="truncate max-w-[200px] sm:max-w-none">
+                {context === "career" ? "Career Advisory" : "Life Chat"} / Chat
+              </span>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 New Chat
               </button>
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
               >
-                <History className="w-4 h-4" />
+                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 History
               </button>
             </div>
           </div>
 
-          <hr className="mb-8 border-gray-200" />
+          <hr className="mb-4 sm:mb-8 border-gray-200" />
 
           {/* Chat Messages */}
-          <div className="space-y-6 mb-8">
+          <div className="space-y-3 sm:space-y-6 mb-4 sm:mb-8">
             {isLoadingSession ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">Loading conversation...</p>
@@ -330,24 +332,24 @@ function ChatPageContent() {
                   }`}
                 >
                   {message.type === "ai" ? (
-                    <div className="max-w-[700px]">
-                      <div className="bg-gradient-to-br from-white to-[#FEFEFF] rounded-2xl p-6 shadow-md border border-[#E8E4FF] hover:shadow-lg transition-shadow">
+                    <div className="max-w-[85%] sm:max-w-[700px]">
+                      <div className="bg-gradient-to-br from-white to-[#FEFEFF] rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-md border border-[#E8E4FF] hover:shadow-lg transition-shadow">
                         <FormattedMessage content={message.content} variant="light" />
                         {message.link && (
-                          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[#E8E4FF]">
-                            <span className="text-xl">
+                          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-[#E8E4FF]">
+                            <span className="text-base sm:text-xl">
                               {typeof message.link === "object"
                                 ? message.link.icon || "📄"
                                 : "🔗"}
                             </span>
                             {typeof message.link === "object" ? (
-                              <button className="text-gray-900 font-semibold hover:text-[#5A3FFF] transition-colors">
+                              <button className="text-gray-900 text-sm font-semibold hover:text-[#5A3FFF] transition-colors">
                                 {message.link.text}
                               </button>
                             ) : (
                               <a
                                 href={message.link}
-                                className="text-[#5A3FFF] text-sm hover:underline break-all font-medium"
+                                className="text-[#5A3FFF] text-xs sm:text-sm hover:underline break-all font-medium"
                               >
                                 {message.link}
                               </a>
@@ -357,7 +359,7 @@ function ChatPageContent() {
                         {message.actionLink && (
                           <a
                             href={message.actionLink.url}
-                            className="inline-block mt-3 text-[#5A3FFF] text-sm font-semibold hover:text-[#4A2FEF] transition-colors"
+                            className="inline-block mt-2 sm:mt-3 text-[#5A3FFF] text-xs sm:text-sm font-semibold hover:text-[#4A2FEF] transition-colors"
                           >
                             {message.actionLink.text} →
                           </a>
@@ -365,8 +367,8 @@ function ChatPageContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="max-w-[700px]">
-                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                    <div className="max-w-[85%] sm:max-w-[700px]">
+                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-md hover:shadow-lg transition-shadow">
                         <FormattedMessage content={message.content} variant="dark" />
                         {message.attachment && (
                           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/20">

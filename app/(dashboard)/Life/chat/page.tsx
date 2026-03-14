@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Paperclip, Mic, History, Plus, Loader2, Download } from "lucide-react";
+import { ChevronLeft, Paperclip, Mic, History, Plus, Loader2, Download, Send } from "lucide-react";
 import Header from "@/app/components/header";
 import { apiService } from "@/lib/api/apiService";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -35,6 +35,15 @@ function LifeChatPageContent() {
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput();
   const { toast, showToast, hideToast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    }
+  }, []);
 
   useEffect(() => {
     // Check for session_id in URL
@@ -256,54 +265,56 @@ function LifeChatPageContent() {
     }
   };
 
+  const canSend = inputValue.trim().length > 0;
+
   return (
     <div className="flex flex-col h-full bg-[#FAFAFA]">
       <Header title="Life Advisory" />
 
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-[1200px] w-full mx-auto px-8 py-6">
+      <main className="flex-1 overflow-auto pb-24 sm:pb-28">
+        <div className="max-w-[1200px] w-full mx-auto px-3 sm:px-6 md:px-8 py-3 sm:py-6">
           {/* Breadcrumb + Actions */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-4 sm:mb-8">
             <Link
               href="/Life"
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#5A3FFF] transition-colors"
+              className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 hover:text-[#5A3FFF] transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Life Advisory / Chat
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={handleGenerateNotes}
                 disabled={messages.length === 0 || isGeneratingNotes}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingNotes ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
                 Notes
               </button>
               <button
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 New Chat
               </button>
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
               >
-                <History className="w-4 h-4" />
+                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 History
               </button>
             </div>
           </div>
 
           {/* Chat Messages */}
-          <div className="space-y-6 mb-32">
+          <div className="space-y-3 sm:space-y-6">
             {isLoadingSession ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">Loading conversation...</p>
@@ -323,16 +334,16 @@ function LifeChatPageContent() {
                   }`}
                 >
                   {message.type === "ai" ? (
-                    <div className="max-w-[600px]">
-                      <div className="bg-gradient-to-br from-white to-[#FEFEFF] rounded-2xl p-6 shadow-md border border-[#E8E4FF] hover:shadow-lg transition-shadow">
+                    <div className="max-w-[85%] sm:max-w-[600px]">
+                      <div className="bg-gradient-to-br from-white to-[#FEFEFF] rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-md border border-[#E8E4FF] hover:shadow-lg transition-shadow">
                         <FormattedMessage content={message.content} variant="light" />
                         {message.document && (
-                          <div className="mt-4 pt-4 border-t border-[#E8E4FF]">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">
+                          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-[#E8E4FF]">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <span className="text-base sm:text-xl">
                                 {message.document.icon}
                               </span>
-                              <span className="text-sm font-semibold text-gray-900">
+                              <span className="text-xs sm:text-sm font-semibold text-gray-900">
                                 {message.document.title}
                               </span>
                             </div>
@@ -341,8 +352,8 @@ function LifeChatPageContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="max-w-[600px]">
-                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                    <div className="max-w-[85%] sm:max-w-[600px]">
+                      <div className="bg-gradient-to-br from-[#5A3FFF] to-[#7B61FF] rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-md hover:shadow-lg transition-shadow">
                         <FormattedMessage content={message.content} variant="dark" />
                       </div>
                     </div>
@@ -355,21 +366,25 @@ function LifeChatPageContent() {
         </div>
       </main>
 
-      {/* Fixed Bottom Input */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="max-w-[900px] mx-auto px-8 py-6">
-          <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-full px-4 py-3 shadow-sm hover:border-gray-300 transition-colors">
+      {/* Sticky Bottom Input — respects sidebar on desktop */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 z-10">
+        <div className="max-w-[900px] mx-auto px-3 sm:px-6 md:px-8 py-3 sm:py-4">
+          <div className="flex items-end gap-1.5 sm:gap-3 bg-white border border-gray-200 rounded-2xl px-2 sm:px-4 py-2 sm:py-3 shadow-sm hover:border-gray-300 transition-colors">
             <button
               onClick={handleAttach}
-              className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="flex-shrink-0 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors mb-0.5"
             >
-              <Paperclip className="w-5 h-5 text-gray-600" />
+              <Paperclip className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
 
-            <input
-              type="text"
+            <textarea
+              ref={textareaRef}
+              rows={1}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                autoResize();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -377,13 +392,26 @@ function LifeChatPageContent() {
                 }
               }}
               placeholder="Ask me to create a plan to boost my mood..."
-              className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-gray-400"
+              className="flex-1 min-w-0 text-xs sm:text-sm bg-transparent focus:outline-none placeholder:text-gray-400 resize-none overflow-hidden max-h-[120px] py-1"
             />
+
+            <button
+              onClick={() => handleSend(inputValue)}
+              disabled={!canSend}
+              className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full text-white transition-all flex items-center justify-center ${
+                canSend
+                  ? "bg-[#5A3FFF] hover:bg-[#4A2FEF] hover:shadow-lg hover:scale-105 active:scale-95"
+                  : "bg-gray-300 cursor-not-allowed"
+              }`}
+              aria-label="Send message"
+            >
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
             <button
               onClick={handleMicrophone}
               disabled={isTranscribing}
-              className={`flex-shrink-0 p-3 text-white rounded-full transition-colors ${
+              className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full text-white transition-all flex items-center justify-center ${
                 isRecording
                   ? "bg-red-500"
                   : isTranscribing
@@ -400,9 +428,9 @@ function LifeChatPageContent() {
               }
             >
               {isTranscribing ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               ) : (
-                <Mic className="w-5 h-5" />
+                <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
             </button>
           </div>
