@@ -58,6 +58,7 @@ export default function LoginPage() {
       setValidationErrors({});
       showToast("success", "Login successful!");
       window.location.href = "/home";
+      // router.push('/home')
     } catch (error: any) {
       let errorMessage = "Login failed. Please try again.";
 
@@ -98,7 +99,8 @@ export default function LoginPage() {
       // Existing user — logged in successfully
       setValidationErrors({});
       showToast("success", "Login successful!");
-      window.location.href = "/home";
+      // window.location.href = "/home";
+      router.push('/home')
     } catch (error: any) {
       console.error("[GoogleLogin] Error:", {
         code: error.code,
@@ -258,6 +260,7 @@ export default function LoginPage() {
 
           {/* Google login button */}
           <button
+          // onClick={()=> router.push('/home')}
             onClick={handleGoogleLogin}
             disabled={isLoading}
             className="w-full bg-white text-[#6549CC] font-bold font-railway text-sm rounded-lg shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-4 py-3 flex items-center justify-center gap-2 border border-gray-200"

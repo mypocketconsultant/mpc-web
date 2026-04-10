@@ -15,7 +15,11 @@ interface InputFooterProps {
     | "life"
     | "financial-literacy"
     | "study"
-    | "business-consultancy";
+    | "business-consultancy"
+    | "faith"
+    | "social";
+   
+
   initialValue?: string;
   isRecording?: boolean;
   isTranscribing?: boolean;
@@ -23,7 +27,7 @@ interface InputFooterProps {
   onValueChange?: (value: string) => void;
 }
 
-export default function InputFooter({
+export default function InputFooterWithMic({
   placeholder = "Ask me to optimize your LinkedIn...",
   onSend,
   onAttach,
@@ -38,7 +42,6 @@ export default function InputFooter({
   const router = useRouter();
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
 
   // Use controlled value if provided, otherwise use internal state
   const inputValue = value !== undefined ? value : internalValue;
@@ -75,6 +78,10 @@ export default function InputFooter({
       chatUrl = "/study/chat?context=study";
     } else if (context === "business-consultancy") {
       chatUrl = "/business-consultancy/chat?context=business-consultancy";
+    }else if(context === 'faith'){
+      "/faith/chat?context=faith";
+    }else if(context === 'social'){
+      chatUrl = "/social-impact/chat?context=social";
     }
     router.push(chatUrl);
   };
@@ -121,10 +128,9 @@ export default function InputFooter({
             }}
             onKeyDown={handleKeyDown}
             onClick={handleInputClick}
-            className="flex-1 min-w-0 rounded-2xl border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer resize-none overflow-hidden max-h-[120px]"
+            className="flex-1 min-w-0 rounded-2xl border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer resize-none overflow-hidden max-h-[140px]"
           />
-          {canSend ? (
-            <button
+          {/* <button
             onClick={handleSend}
             disabled={!canSend}
             className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
@@ -135,17 +141,17 @@ export default function InputFooter({
             aria-label="Send message"
           >
             <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button>
-          ):(
-              <button
+          </button> */}
+          <button
             onClick={onMicrophone}
             disabled={isTranscribing}
-            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-2xl text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
               isRecording
                 ? "bg-red-500"
                 : isTranscribing
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-br from-purple-600 to-purple-800"
+                  : 'bg-[conic-gradient(from_230.46deg_at_73.85%_5.97%,#300878_-5.19deg,#5A3FFF_133.27deg,#D4AF37_254.42deg,#300878_354.81deg,#5A3FFF_493.27deg)]'
+                //   : "bg-gradient-to-br from-purple-600 to-purple-800"
             }`}
             style={
               isRecording
@@ -168,50 +174,6 @@ export default function InputFooter({
               <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
             )}
           </button>
-          )}
-          {/* <button
-            onClick={handleSend}
-            disabled={!canSend}
-            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
-              canSend
-                ? "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
-            aria-label="Send message"
-          >
-            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button> */}
-          {/* <button
-            onClick={onMicrophone}
-            disabled={isTranscribing}
-            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
-              isRecording
-                ? "bg-red-500"
-                : isTranscribing
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-br from-purple-600 to-purple-800"
-            }`}
-            style={
-              isRecording
-                ? {
-                    animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                  }
-                : undefined
-            }
-            aria-label={
-              isRecording
-                ? "Stop recording"
-                : isTranscribing
-                  ? "Transcribing..."
-                  : "Voice input"
-            }
-          >
-            {isTranscribing ? (
-              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-            ) : (
-              <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
-            )}
-          </button> */}
         </div>
       </div>
 
