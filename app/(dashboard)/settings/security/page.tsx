@@ -8,7 +8,8 @@ import CheckIcon from "@/public/icons/Check";
 import { Pencil  , X , ChevronDown} from 'lucide-react';
 import SettingsHeader from "@/app/components/settingsHeader";
 import Modal from "@/app/components/Modal";
-import { HelpIndicator } from '@/public/icons/HelpIndicator'
+import { HelpIndicator } from '@/public/icons/HelpIndicator' ;
+import { logoutAllDevices } from "@/lib/api/security/endpoins";
 const page = () => {
   const router = useRouter();
    const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +31,20 @@ function handleOpen(
 
 const toggleDropdown = (section: DropdownType) => {
   setOpenDropdown(openDropdown === section ? null : section);
+};
+const handleLogoutAllDevices = async () => {
+  try {
+    const response = await logoutAllDevices();
+    router.replace('/auth/log-in')
+
+    console.log("Logged out from all devices:", response.data);
+
+   
+  } catch (error) {
+    console.error("Logout all devices failed:", error);
+
+    // alert("Failed to log out from all devices");
+  }
 };
   return (
       <div className="flex flex-col h-full">
@@ -101,8 +116,10 @@ const toggleDropdown = (section: DropdownType) => {
                     </p>
                   </div>
 
-                  <div className=" items-center justify-center px-4 py-2 w-[200px] rounded-[10px] bg-[#EDE6FF]">
-                    <p className="text-xs sm:text-base text-[#16375F] m-0">
+                  <div className=" items-center justify-center px-4 py-2 w-[200px] rounded-[10px] bg-[#EDE6FF] cursor-pointer">
+                    <p className="text-xs sm:text-base text-[#16375F] m-0"
+                    onClick={handleLogoutAllDevices}
+                    >
                       Log out of all devices
                     </p>
                   </div>

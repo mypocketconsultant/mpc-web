@@ -8,8 +8,45 @@ import InputFooterWithMic from "@/app/components/InputFooterWithMic";
 import SettingsHeader from "@/app/components/settingsHeader";
 import DailyTips from "../components/DailyTips";
 import dailyTips from "@/public/DailyTip.png";
+import { SocialImpactProject } from "@/lib/api/social-impact/types";
+import { getAllSocialImpactProjects , getSavedSocialImpactRoles } from "@/lib/api/social-impact/endpoints";
 const page = () => {
    const router = useRouter();
+   const [projects, setProjects] = useState<SocialImpactProject[]>([]);
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [roles, setRoles] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllSocialImpactProjects();
+        setProjects(response.data);
+
+      } catch (err) {
+        setError('Failed to load projects. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        setLoading(true);
+        const response = await getSavedSocialImpactRoles();
+        setRoles(response.data || response.data || []); 
+      } catch (err) {
+        console.error("Failed to load saved roles:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
+
   return (
 
 <div className="flex flex-col h-screen bg-white">
@@ -77,7 +114,7 @@ const page = () => {
         </div>
       </div>
 
-      {/* Saved Devotionals */}
+      {/* Saved Volunteer */}
       <div className="w-full md:w-[50%] my-6">
         <div className="flex flex-row items-center gap-2">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#D4AF37] text-[#3566A2]">
@@ -90,18 +127,39 @@ const page = () => {
         </div>
 
         <div className="mt-2 space-y-2">
-          <div className="flex justify-between items-center w-full">
+          {roles.length > 0 ? (
+          roles.map((role) => (
+            <div 
+              key={role.id} 
+              className="flex justify-between items-center w-full border-b border-gray-50 pb-2"
+            >
+              <h5 className="text-[#062950] font-medium">
+                {role.title || "Untitled Project"}
+              </h5>
+              
+              <Link href={`/modules/social-impact/projects/${role.id}`}>
+                <p className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer hover:text-[#5A3FFF] transition-colors">
+                  View details
+                </p>
+              </Link>
+            </div>
+          ))
+        ) : (
+          <h5 className="pl-2">No saved roles found.</h5>
+          // <h5 className="text-gray-500 text-sm">No saved roles found.</h5>
+        )}
+          {/* <div className="flex justify-between items-center w-full">
             <h5>Volunteers at Rego Park</h5>
             <p className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer">
               View details
             </p>
-          </div>
-          <div className="flex justify-between items-center w-full">
+          </div> */}
+          {/* <div className="flex justify-between items-center w-full">
             <h5>Volunteers at Woodhaven Blvd</h5>
             <p className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer">
               View details
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
       {/* social impact projects */}
@@ -139,20 +197,28 @@ const page = () => {
   </div>
 </div>
 </div>
-          <div className="mt-5  lg:w-[50%] w-full ">
-          <div className="flex justify-between items-center ">
-            <h5>Volunteers at Tin Can</h5>
-            <p className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer">
-              View details
-            </p>
-          </div>
-          <div className="flex justify-between items-center w-full">
-            <h5>Volunteers at Woodhaven Blvd</h5>
-            <p className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer">
-              View details
-            </p>
-          </div>
-        </div>
+        <div className="mt-5 lg:w-[50%] w-full space-y-3">
+  {projects.length > 0 ? (
+    projects.map((project) => (
+      <div key={project.id} className="flex justify-between items-center w-full">
+        {/* Dynamic Title based on your API response */}
+        <h5 className="text-gray-800 font-medium">
+          {project.title}
+        </h5>
+        
+        {/* Link to details - you can wrap this in a Link or use an onClick */}
+        <p 
+          className="text-[#3566A2] text-sm sm:text-base font-bold underline underline-offset-4 cursor-pointer hover:text-blue-800 transition-colors"
+          // onClick={() => handleViewDetails(project.id)}
+        >
+          View details
+        </p>
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-500 text-sm italic">No projects available at the moment.</p>
+  )}
+</div>
       </div>
     </div>
   </main>
@@ -164,10 +230,10 @@ const page = () => {
         placeholder="Describe to me what you need help with"
         onSend={(message) => {
           const encodedPrompt = encodeURIComponent(message);
-          router.push(`/Life/chat?prompt=${encodedPrompt}`);
+          router.push(`/modules/social-impact/chat?prompt=${encodedPrompt}`);
         }}
         onAttach={() => {}}
-        context="life"
+        context="social"
       />
     </div>
   </div>

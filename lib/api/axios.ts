@@ -1,12 +1,13 @@
 import axios from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+// const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+const baseURL = process.env.API_PROXY_TARGET
 export const BASE_URL = baseURL;
 export const BASE_API_URL = `${baseURL}/v1`;
 
 const axiosInstance = axios.create({
-  baseURL,
+  baseURL:'https://mpc-api.onrender.com',
   timeout: 60000,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
@@ -25,7 +26,8 @@ axiosInstance.interceptors.response.use(
       } catch {
         // Continue even if Firebase signout fails
       }
-
+       const storage = localStorage.getItem("signup-storage");
+        console.log("STORAGE" , storage)
       // Clear all client-side storage
       sessionStorage.clear();
       localStorage.removeItem("signup-storage");

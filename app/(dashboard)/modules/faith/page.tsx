@@ -21,6 +21,7 @@ import SuggestedPrompts from "./components/SuggestedPrompts";
 import { ClockLoading } from "@/public/icons/ClockLoading";
 
 const page = () => {
+   const [inputValue, setInputValue] = useState("");
    const quickLinks: QuickLink[] = [
     {
       id: "canvas",
@@ -125,10 +126,11 @@ const page = () => {
                                             placeholder="Ask me the bible’s stand on..."
                                             onSend={(message) => {
                                               const encodedPrompt = encodeURIComponent(message);
-                                              router.push(`/Life/chat?prompt=${encodedPrompt}`);
+                                              router.push(`/modules/faith/chat/chat?prompt=${encodedPrompt}`);
                                             }}
                                             onAttach={() => {}}
-                                            context="life"
+                                            context="faith"
+                                            initialValue={inputValue}
                                           />
         </div>
        </main>

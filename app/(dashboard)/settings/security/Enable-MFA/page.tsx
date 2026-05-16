@@ -8,10 +8,75 @@ import SettingsHeader from "@/app/components/settingsHeader";
 import CustomToggle from "@/app/components/CustomToggleButton";
 import Modal from "@/app/components/Modal";
 import { X } from 'lucide-react';
+import { updateMfaSettings , sendMfaCode } from "@/lib/api/security/endpoins";
+
 const page = () => {
     const router = useRouter();
     const [isNotificationsOn, setIsNotificationsOn] = useState<boolean>(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [backupEmail , setBackupEmail] = useState("")
+    const [phoneNumber , setPhoneNumber] = useState("");
+    const [channel, setChannel] = useState("");
+
+ const [loading, setLoading] = useState(false);
+
+
+const handleUpdate = async () => {
+ 
+  const hasNoData = !backupEmail && !phoneNumber && !isNotificationsOn;
+
+  if (hasNoData) {
+    setIsOpen(false); 
+    return;           
+  }
+
+  try {
+    setLoading(true);
+
+    const payloadData = {
+      backupEmail: backupEmail,
+      phoneNumber: phoneNumber,
+      authenticatorAppEnabled: isNotificationsOn,
+    };
+    console.log("PAYLOAD" , payloadData)
+    const response = await updateMfaSettings(payloadData);
+    
+    console.log("MFA Updated:", response.data);
+    
+    
+    setIsOpen(true); 
+
+  } catch (error) {
+    console.error("Update failed:", error);
+    alert("Failed to update MFA settings. Please check your inputs.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+// send code 
+const handleSendCode = async () => {
+  try {
+   
+
+
+    const response = await sendMfaCode({
+         channel: channel,
+    });
+
+    console.log("MFA Code Sent:", response);
+
+    alert("MFA code verified successfully");
+
+    setIsOpen(false);
+  } catch (error) {
+    console.error("Error sending MFA code:", error);
+    alert("Invalid MFA code");
+  } finally {
+
+  }
+};
   return (
      <div className="flex flex-col h-full">
       <SettingsHeader title="Settings" />
@@ -37,6 +102,8 @@ const page = () => {
     <input
       placeholder="Enter backup email"
       className="w-full border-none outline-none"
+      value={backupEmail}
+      onChange={(e) => setBackupEmail(e.target.value)}
     />
   </div>
 </div>
@@ -47,6 +114,8 @@ const page = () => {
     <input
       placeholder="Enter Phone number"
       className="w-full border-none outline-none"
+      value={phoneNumber}
+      onChange={(e) => setPhoneNumber(e.target.value)}
     />
   </div>
 </div>
@@ -55,7 +124,7 @@ const page = () => {
     <CustomToggle enabled={isNotificationsOn} setEnabled={setIsNotificationsOn} />
   </div>
   <div className=" mt-5 flex items-center justify-center px-4 py-2 w-[80px] rounded-[10px] cursor-pointer hover:opacity-90 active:scale-95 transition-all bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)]"
-  onClick={()=> setIsOpen(true)}
+  onClick={handleUpdate}
   >
     <p className="text-xs sm:text-base text-white m-0 font-medium">
       Save
@@ -90,7 +159,7 @@ const page = () => {
 <div className="flex justify-center items-center w-full h-full mt-2">
   <button
     className="mt-5 flex items-center justify-center px-4 py-2 w-[80px] rounded-[10px] cursor-pointer hover:opacity-90 active:scale-95 transition-all bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)]"
-    onClick={() => setIsOpen(true)}
+     onClick={handleSendCode}
   >
     <p className="text-xs sm:text-base text-white m-0 font-medium">Send</p>
   </button>

@@ -21,6 +21,7 @@ import SuggestedPrompts from "./components/SuggestedPrompts";
 import { ClockLoading } from "@/public/icons/ClockLoading";
 
 const page = () => {
+   const [inputValue, setInputValue] = useState("");
    const quickLinks: QuickLink[] = [
     {
       id: "canvas",
@@ -136,10 +137,11 @@ const page = () => {
                                             placeholder="Ask me how to volunteer better in..."
                                             onSend={(message) => {
                                               const encodedPrompt = encodeURIComponent(message);
-                                              router.push(`/faith/chat?prompt=${encodedPrompt}`);
+                                              router.push(`/modules/social-impact/chat?prompt=${encodedPrompt}`);
                                             }}
                                             onAttach={() => {}}
-                                            context="life"
+                                            context="social"
+                                             initialValue={inputValue}
                                           />
         </div>
        </main>

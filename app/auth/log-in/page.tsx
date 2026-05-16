@@ -81,7 +81,7 @@ export default function LoginPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
-
+      console.log('TOKEN-FIREBASE' , idToken)
       // Call unified /google endpoint
       const response = await apiService.post<{ profileRequired?: boolean }>(
         "/v1/auth/google",

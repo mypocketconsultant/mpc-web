@@ -68,24 +68,42 @@ export default function InputFooterWithMic({
     }
   };
 
-  const handleInputClick = () => {
-    let chatUrl = "/career/chat?context=career";
-    if (context === "financial-literacy") {
-      chatUrl = "/financial-literacy/chat";
-    } else if (context === "life") {
-      chatUrl = "/Life/chat";
-    } else if (context === "study") {
-      chatUrl = "/study/chat?context=study";
-    } else if (context === "business-consultancy") {
-      chatUrl = "/business-consultancy/chat?context=business-consultancy";
-    }else if(context === 'faith'){
-      "/faith/chat?context=faith";
-    }else if(context === 'social'){
-      chatUrl = "/social-impact/chat?context=social";
-    }
-    router.push(chatUrl);
-  };
+  // const handleInputClick = () => {
+  //   let chatUrl = "/career/chat?context=career";
+  //   if (context === "financial-literacy") {
+  //     chatUrl = "/financial-literacy/chat";
+  //   } else if (context === "life") {
+  //     chatUrl = "/Life/chat";
+  //   } else if (context === "study") {
+  //     chatUrl = "/study/chat?context=study";
+  //   } else if (context === "business-consultancy") {
+  //     chatUrl = "/business-consultancy/chat?context=business-consultancy";
+  //   }else if(context === 'faith'){
+  //     "/faith/chat?context=faith";
+  //   }else if(context === 'social'){
+  //     chatUrl = "/social-impact/chat?context=social";
+  //   }
+  //   router.push(chatUrl);
+  // };
+const handleInputClick = () => {
+  let chatUrl = "/career/chat?context=career";
 
+  if (context === "financial-literacy") {
+    chatUrl = "/financial-literacy/chat";
+  } else if (context === "life") {
+    chatUrl = "/Life/chat";
+  } else if (context === "study") {
+    chatUrl = "/study/chat?context=study";
+  } else if (context === "business-consultancy") {
+    chatUrl = "/business-consultancy/chat?context=business-consultancy";
+  } else if (context === "faith") {
+    chatUrl = "/modules/faith/chat?context=faith";
+  } else if (context === "social") {
+    chatUrl = "/modules/social-impact/chat?context=social";
+  }
+
+  router.push(chatUrl);
+};
   const handleAttachClick = () => {
     setIsModalOpen(true);
   };

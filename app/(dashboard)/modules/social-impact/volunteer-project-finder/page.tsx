@@ -11,6 +11,8 @@ import VolunteerList from "../components/VolunteerList";
 import CustomMap from "../components/CustomMap";
 import Modal from "@/app/components/Modal";
 import { X } from 'lucide-react';
+import { SocialImpactProject } from "@/lib/api/social-impact/types";
+
 
 const page = () => {
   
@@ -18,7 +20,7 @@ const page = () => {
   
     const router = useRouter();
      const [isOpen, setIsOpen] = useState(false);
- 
+    
   return (
     <div className="flex flex-col h-full">
        <SettingsHeader title="Social Impact" />

@@ -8,18 +8,64 @@ import Image from "next/image";
 import { ChevronLeft, Settings as SettingsIcon , ArrowLeft  , ChevronRight  } from "lucide-react";
 import SettingsHeader from "@/app/components/settingsHeader";
 import { AIPrompt } from "@/public/icons/AIPrompt";
-import tipsIcon from "@/public/tip.png";
-import InputFooterWithMic from "@/app/components/InputFooterWithMic";
-
-// Try using existing icons
-import careerIcon from "@/public/career.png";
-import aiIcon from "@/public/ai.png";
-import dailyIcon from "@/public/daily.png";
-import dailyTips from "@/public/DailyTip.png";
-import resourcesIcon from "@/public/ai.png";
+import { socialImpactProjectRequest } from "@/lib/api/social-impact/types";
+import { createSocialImpactProject , publishSocialImpactProject } from "@/lib/api/social-impact/endpoints";
 
 const page = () => {
+  const router = useRouter()
    const [step, setStep] = useState(1);
+   const [loading, setLoading] = useState(false);
+   const [projecID , setProjectID] = useState("")
+   const [formData, setFormData] = useState<socialImpactProjectRequest>({
+    title: "",
+    description: "",
+    location: "",
+    category: "", 
+    problem_profile: "",
+    hours_per_week: "",
+    solution_idea: "",
+    how_to_apply: "",
+  });
+
+
+  const handleChange = (field: keyof socialImpactProjectRequest, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreate = async () => {
+    setLoading(true);
+    try {
+      const response = await createSocialImpactProject(formData);
+      console.log('FORM' , formData)
+      console.log("Project created successfully:", response.data);
+      console.log(response.data.id)
+      setProjectID(response.data.id)
+      // alert("Project published successfully!");
+      router.back()
+    } catch (error) {
+    
+    } finally {
+      setLoading(false);
+    }
+  };
+
+const handlePublishProject = async () => {
+  setLoading(true);
+  try {
+    let idToPublish = projecID;
+    const response = await publishSocialImpactProject(idToPublish);
+    console.log("Published:", response);
+    alert("Project published successfully!");
+    router.back();
+  } catch (error) {
+    console.error("Publish failed:", error);
+    alert("Could not publish project.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   return (
       <div className="flex flex-col h-full">
        <SettingsHeader title="Social Impact" />
@@ -35,10 +81,26 @@ const page = () => {
           </div>
            <hr className="my-4 sm:my-10" />
            <div className="w-full sm:max-w-[350px] lg:max-w-[700px] mx-auto">
-              <div className="inline-flex items-center justify-center px-2 py-2 rounded-[10px] bg-[#EDE6FF]">
+<div className=" flex flex-row  gap-6  items-center ">
+                <button className="inline-flex items-center justify-center px-2 py-2 rounded-[10px] bg-[#EDE6FF] cursor-pointer"
+                 disabled={loading}
+                  onClick={handleCreate}
+                >
   <p className="text-xs sm:text-base text-[#16375F] m-0">
     Save to draft
   </p>
+</button>
+{step === 5 && (
+                  <button className="inline-flex items-center justify-center px-2 py-2 rounded-[10px]  cursor-pointer
+                bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)]
+                "
+               onClick={handlePublishProject}
+                >
+  <p className="text-xs sm:text-base text-white m-0">
+    Publish
+  </p>
+</button>
+)}
 </div>
 <h5 className="font-medium text-[#062950] py-5">Create a Social Impact Project</h5>
 <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
@@ -53,12 +115,18 @@ const page = () => {
     <h4 className="text-[14px] font-bold text-black py-2">Problem Profile</h4>
     <div className="border border-[#BBBBBB] rounded-2xl p-6 my-3 w-full mt-2">
       <textarea
+        value={formData.problem_profile}
+        onChange={(e) => handleChange("problem_profile", e.target.value)}
         placeholder="Describe the Problem You Want to Solve"
         className="w-full h-20 resize-none outline-none font-medium placeholder:text-[#CFCFCF]"
       />
     </div>
     <div className="border border-gray-300 rounded-md p-4 my-4">
-      <input placeholder="-Hours of work-" className="w-full outline-none" />
+      <input 
+      placeholder="-Hours of work-" className="w-full outline-none" 
+      value={formData.hours_per_week}
+      onChange={(e) => handleChange("hours_per_week", e.target.value)}
+      />
     </div>
   </div>
 )}
@@ -71,6 +139,8 @@ const page = () => {
       <input
         placeholder="Where is the volunteering taking place?"
         className="w-full outline-none"
+        value={formData.location}
+        onChange={(e) => handleChange("location", e.target.value)}
       />
     </div>
   </div>
@@ -84,6 +154,8 @@ const page = () => {
       <textarea
         placeholder="Describe the solution you want to provide"
         className="w-full h-20 resize-none outline-none font-medium placeholder:text-[#CFCFCF]"
+        value={formData.solution_idea}
+        onChange={(e) => handleChange("solution_idea", e.target.value)}
       />
     </div>
   </div>
@@ -97,6 +169,8 @@ const page = () => {
       <textarea
         placeholder="Provide application details here"
         className="w-full h-20 resize-none outline-none font-medium placeholder:text-[#CFCFCF]"
+        value={formData.how_to_apply}
+        onChange={(e) => handleChange("how_to_apply", e.target.value)}
       />
     </div>
   </div>
@@ -107,22 +181,31 @@ const page = () => {
   <div>
     <h4 className="text-[14px] font-bold text-black py-2">Resources & Partners</h4>
     <div className="border border-gray-300 rounded-md p-4 my-2">
-      <input placeholder="Title" className="w-full outline-none" />
+      <input placeholder="Title" className="w-full outline-none" 
+      value={formData.title}
+      onChange={(e) => handleChange("title", e.target.value)}
+      />
     </div>
     <div className="border border-gray-300 rounded-md p-4 my-4">
-      <input placeholder="Address" className="w-full outline-none" />
+      <input placeholder="Address" 
+      className="w-full outline-none" 
+      />
     </div>
   </div>
 )}
  <div className="flex justify-end items-start gap-2 w-full">
   {/* Stack the two divs vertically */}
   <div className="flex flex-col gap-y-5 items-end">
-    <div className="inline-flex items-center justify-center px-3 py-2 rounded-[10px] cursor-pointer     bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)]"
+   {step !== 5 && (
+  <div
+    className="inline-flex items-center justify-center px-3 py-2 rounded-[10px] cursor-pointer bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)]"
     onClick={() => setStep((prev) => Math.min(prev + 1, 5))}
-    >
-      <p className="text-xs sm:text-base text-white m-0">Next</p>
-    </div>
-
+  >
+    <p className="text-xs sm:text-base text-white m-0">
+      Next
+    </p>
+  </div>
+)}
     <div className="flex flex-row gap-2 items-center">
       <AIPrompt />
       <p className="text-[#8D8D8D] font-medium">Show me how similar projects work</p>
