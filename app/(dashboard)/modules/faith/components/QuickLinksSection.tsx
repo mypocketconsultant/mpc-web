@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+//import Image from "next/image";
 import DailyTips from "./DailyTips";
 
 export interface QuickLink {
@@ -16,6 +16,7 @@ export interface QuickLink {
 interface DailyTip {
   title: string;
   description: string;
+  bibleverse: string;
 }
 
 interface QuickLinksSectionProps {
