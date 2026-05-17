@@ -68,6 +68,7 @@ export default function InputFooterWithMic({
     }
   };
 
+
   // const handleInputClick = () => {
   //   let chatUrl = "/career/chat?context=career";
   //   if (context === "financial-literacy") {
@@ -87,6 +88,7 @@ export default function InputFooterWithMic({
   // };
 const handleInputClick = () => {
   let chatUrl = "/career/chat?context=career";
+
 
   if (context === "financial-literacy") {
     chatUrl = "/financial-literacy/chat";
