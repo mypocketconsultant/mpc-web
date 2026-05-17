@@ -11,6 +11,7 @@ interface InputFooterProps {
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
   context:
+    | "general"
     | "career"
     | "life"
     | "financial-literacy"

@@ -11,11 +11,16 @@ interface InputFooterProps {
   onAttach?: (file: File) => void;
   onMicrophone?: () => void;
   context:
+    | "general"
     | "career"
     | "life"
     | "financial-literacy"
     | "study"
-    | "business-consultancy";
+    | "business-consultancy"
+    | "faith"
+    | "social";
+   
+
   initialValue?: string;
   isRecording?: boolean;
   isTranscribing?: boolean;
@@ -66,6 +71,8 @@ export default function InputFooter({
   };
 
   const handleInputClick = () => {
+    if (context === "general") return; // do nothing on home page
+
     let chatUrl = "/career/chat?context=career";
     if (context === "financial-literacy") {
       chatUrl = "/financial-literacy/chat";
@@ -75,6 +82,10 @@ export default function InputFooter({
       chatUrl = "/study/chat?context=study";
     } else if (context === "business-consultancy") {
       chatUrl = "/business-consultancy/chat?context=business-consultancy";
+    } else if (context === "faith") {
+      chatUrl = "/modules/faith/chat?context=faith";
+    } else if (context === "social") {
+      chatUrl = "/modules/social-impact/chat?context=social";
     }
     router.push(chatUrl);
   };
