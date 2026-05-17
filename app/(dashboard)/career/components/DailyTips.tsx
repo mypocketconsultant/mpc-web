@@ -29,7 +29,7 @@ export default function DailyTips({
             className="w-7 h-7 sm:w-9 sm:h-9"
           />
         </div>
-        <h6 className="font-medium text-base sm:text-xl text-gray-900">
+        <h6 className="font-medium text-base  sm:text-xl text-gray-900">
           {title}
         </h6>
       </div>

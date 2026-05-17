@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Lato, Raleway } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -103,14 +103,23 @@ export const metadata: Metadata = {
   },
 };
 
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const queryClient = new QueryClient()
   return (
     <html lang="en" className={railway.variable}>
-      <body className={`${railway.className} antialiased`}>{children}</body>
+      <body className={`${railway.className} antialiased`}>
+         {children}
+        {/* <QueryClientProvider client={queryClient}>
+       
+        </QueryClientProvider> */}
+        </body>
+
     </html>
   );
 }

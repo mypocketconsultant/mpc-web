@@ -20,7 +20,17 @@ import {
   Menu,
   X,
 } from "lucide-react";
-
+import UserCircleIcon from "@/public/navbar/User";
+import { BusinessConsultancyIcon } from "@/public/navbar/BusinessConsultancy";
+import { FaithIcon } from "@/public/navbar/Faith";
+import { SettingsIcon } from "@/public/navbar/Settings";
+import { HelpCenterIcon } from "@/public/navbar/HelpCenter";
+import { StudysupportIcon } from "@/public/navbar/StudySupport";
+import { FinancialLiteracyIcon } from "@/public/navbar/FinancialLiteracy";
+import { LifeAdvisory } from "@/public/navbar/LifeAdvisory";
+import { CareerAdvisoryIcon } from "@/public/navbar/CareerAdvisory";
+import { SocialImpact } from "@/public/navbar/SocialImpact";
+import { PricingIcon } from "@/public/navbar/Pricing";
 export default function DashboardLayout({
   children,
 }: {
@@ -31,32 +41,32 @@ export default function DashboardLayout({
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
-    { icon: Wrench, label: "Tools", href: "/tools" },
+    // { icon: Wrench, label: "Tools", href: "/tools" },
   ];
 
   const modules = [
-    { icon: LifeBuoy, label: "Life Advisor", href: "/Life" },
-    { icon: Briefcase, label: "Career Consulting", href: "/career" },
+    { icon: LifeAdvisory, label: "Life Advisor", href: "/Life" },
+    { icon: CareerAdvisoryIcon, label: "Career Consulting", href: "/career" },
     {
-      icon: Users,
+      icon: BusinessConsultancyIcon,
       label: "Business Consultancy",
       href: "/business-consultancy",
     },
     { icon: BookOpen, label: "Study Support", href: "/study" },
     {
-      icon: DollarSign,
+      icon: FinancialLiteracyIcon,
       label: "Financial Literacy",
       href: "/financial-literacy",
     },
-    { icon: Heart, label: "Faith (opt-in)", href: "/modules/faith" },
-    { icon: Target, label: "Social Impact", href: "/modules/social-impact" },
+    { icon: FaithIcon, label: "Faith ", href: "/modules/faith" },
+    { icon: SocialImpact, label: "Social Impact", href: "/modules/social-impact" },
   ];
 
   const settings = [
-    { icon: Users, label: "User", href: "/settings/user" },
-    { icon: Settings, label: "Security", href: "/settings/security" },
-    { icon: DollarSign, label: "Pricing", href: "/settings/pricing" },
-    { icon: HelpCircle, label: "Help Center", href: "/settings/help" },
+    { icon: UserCircleIcon, label: "User", href: "/settings/user" },
+    { icon: SettingsIcon, label: "Security", href: "/settings/security" },
+    { icon: PricingIcon, label: "Pricing", href: "/settings/pricing" },
+    { icon: HelpCenterIcon, label: "Help Center", href: "/settings/help" },
   ];
 
   const NavLink = ({ icon: Icon, label, href, active = false }: any) => (
@@ -64,12 +74,17 @@ export default function DashboardLayout({
       href={href}
       className={`flex items-center gap-3 px-2 py-4 rounded-full transition-all font-medium ${
         active
-          ? "bg-linear-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg shrink-0"
+        ? ' px-2 bg-[conic-gradient(from_236.3deg_at_92.05%_3.9%,_#300878_-5.19deg,_#5A3FFF_133.27deg,_#D4AF37_254.42deg,_#300878_354.81deg,_#5A3FFF_493.27deg)] text-white shadow-lg shrink-0 '
+          // ? "bg-linear-to-r from-[#5A3FFF] to-[#300878] text-white shadow-lg shrink-0"
           : "text-gray-700 hover:bg-gray-100"
       }`}
-      style={active ? { backgroundColor: "#5A3FFF" } : {}}
+      style={active ? { backgroundColor: "#5A3FF" } : {}}
     >
-      <Icon className="h-[17px] w-[17px] shrink-0" />
+      <Icon className={`h-[17px] w-[17px] shrink-0 ${
+        active ? "text-white " : "text-black"
+      }`}
+        color={active ? "white" : "black"}
+      />
       {sidebarOpen && <span className="text-sm">{label}</span>}
     </Link>
   );

@@ -13,6 +13,7 @@ import ThinkingBubble from "@/components/ThinkingBubble";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import ChatHistoryDrawer from "@/components/ChatHistoryDrawer";
 import FormattedMessage from "@/components/FormattedMessage";
+import { ClockLoading } from "@/public/icons/ClockLoading";
 
 interface Message {
   id: string;
@@ -295,14 +296,15 @@ function ChatPageContent() {
                 className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                New Chat
+                {/* New Chat */}
               </button>
               <button
                 onClick={() => setIsDrawerOpen(true)}
                 className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-[#5A3FFF] bg-[#F0EDFF] rounded-lg hover:bg-[#E8E4FF] transition-colors"
               >
-                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                History
+                 <ClockLoading className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {/* <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> */}
+                {/* History */}
               </button>
             </div>
           </div>

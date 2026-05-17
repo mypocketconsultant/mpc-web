@@ -38,6 +38,7 @@ export default function InputFooter({
   const router = useRouter();
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   // Use controlled value if provided, otherwise use internal state
   const inputValue = value !== undefined ? value : internalValue;
@@ -122,7 +123,8 @@ export default function InputFooter({
             onClick={handleInputClick}
             className="flex-1 min-w-0 rounded-2xl border shadow-md border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 md:py-4 text-xs sm:text-sm placeholder:text-gray-400 sm:placeholder:text-gray-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5A3FFF] cursor-pointer resize-none overflow-hidden max-h-[120px]"
           />
-          <button
+          {canSend ? (
+            <button
             onClick={handleSend}
             disabled={!canSend}
             className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
@@ -134,7 +136,8 @@ export default function InputFooter({
           >
             <Send className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
-          <button
+          ):(
+              <button
             onClick={onMicrophone}
             disabled={isTranscribing}
             className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
@@ -165,6 +168,50 @@ export default function InputFooter({
               <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
             )}
           </button>
+          )}
+          {/* <button
+            onClick={handleSend}
+            disabled={!canSend}
+            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+              canSend
+                ? "bg-[#5A3FFF] hover:bg-[#4A2FEF]"
+                : "bg-gray-300 cursor-not-allowed"
+            }`}
+            aria-label="Send message"
+          >
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button> */}
+          {/* <button
+            onClick={onMicrophone}
+            disabled={isTranscribing}
+            className={`flex-shrink-0 h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center ${
+              isRecording
+                ? "bg-red-500"
+                : isTranscribing
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-br from-purple-600 to-purple-800"
+            }`}
+            style={
+              isRecording
+                ? {
+                    animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                  }
+                : undefined
+            }
+            aria-label={
+              isRecording
+                ? "Stop recording"
+                : isTranscribing
+                  ? "Transcribing..."
+                  : "Voice input"
+            }
+          >
+            {isTranscribing ? (
+              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+            ) : (
+              <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
+          </button> */}
         </div>
       </div>
 

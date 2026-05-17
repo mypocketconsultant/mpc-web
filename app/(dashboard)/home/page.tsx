@@ -80,10 +80,10 @@ export default function HomePage() {
       <div className="border-gray-200 bg-white px-3 sm:px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
           <InputFooter
-            placeholder="Ask me to optimize your LinkedIn..."
+            placeholder="Ask me anything about MPC"
             onSend={() => {}}
             onAttach={() => {}}
-            context="career"
+            context="general"
           />
         </div>
       </div>
